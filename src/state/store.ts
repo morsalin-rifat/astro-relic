@@ -40,6 +40,7 @@ interface GameState {
   activeHotspot: string | null;
   flags: string[]; // raised mission flags
   tutorialDone: boolean;
+  hasSeenHubIntro: boolean;
   fading: boolean; // black fade overlay
   metSojourner: boolean;
   storyDone: boolean;
@@ -78,6 +79,7 @@ class Store {
     activeHotspot: null,
     flags: Array.isArray(persisted.flags) ? persisted.flags : [],
     tutorialDone: !!persisted.tutorialDone,
+    hasSeenHubIntro: !!persisted.hasSeenHubIntro,
     fading: false,
     metSojourner: false,
     storyDone: false,
@@ -99,7 +101,12 @@ class Store {
 
   set(partial: Partial<GameState>) {
     this.state = { ...this.state, ...partial };
-    if ("flags" in partial || "lang" in partial || "tutorialDone" in partial) {
+    if (
+      "flags" in partial ||
+      "lang" in partial ||
+      "tutorialDone" in partial ||
+      "hasSeenHubIntro" in partial
+    ) {
       try {
         localStorage.setItem(
           "astro-relic",
@@ -107,6 +114,7 @@ class Store {
             flags: this.state.flags,
             lang: this.state.lang,
             tutorialDone: this.state.tutorialDone,
+            hasSeenHubIntro: this.state.hasSeenHubIntro,
           }),
         );
       } catch {

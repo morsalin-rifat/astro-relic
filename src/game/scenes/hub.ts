@@ -814,10 +814,11 @@ export class HubScene implements Scene {
       "/assets/aistudio/daniele-colucci-OtXJhYjbKeg-unsplash__1__b9d9b85e.jpg",
       (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace;
-        const bgGeo = new THREE.PlaneGeometry(380, 220);
-        const bgMat = new THREE.MeshBasicMaterial({ map: tex, fog: false });
+        const bgGeo = new THREE.PlaneGeometry(420, 240);
+        const bgMat = new THREE.MeshBasicMaterial({ map: tex, fog: false, depthWrite: false });
         this.marsBgMesh = new THREE.Mesh(bgGeo, bgMat);
-        this.marsBgMesh.position.set(0, 18, -135);
+        this.marsBgMesh.position.set(0, 2.8, -130);
+        this.marsBgMesh.renderOrder = -100;
         this.marsBgMesh.visible = this.universe === "mars";
         this.scene.add(this.marsBgMesh);
         this.disposables.push(tex, bgGeo, bgMat);
@@ -829,10 +830,11 @@ export class HubScene implements Scene {
       "/assets/aistudio/High_Resolution_Planet_Earth_view_f__by_Vadim_Sadovski_on__creativemarket_d82d8335.jpg",
       (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace;
-        const bgGeo = new THREE.PlaneGeometry(360, 210);
-        const bgMat = new THREE.MeshBasicMaterial({ map: tex, fog: false });
+        const bgGeo = new THREE.PlaneGeometry(420, 240);
+        const bgMat = new THREE.MeshBasicMaterial({ map: tex, fog: false, depthWrite: false });
         this.moonBgMesh = new THREE.Mesh(bgGeo, bgMat);
-        this.moonBgMesh.position.set(0, 18, -130);
+        this.moonBgMesh.position.set(0, 2.8, -130);
+        this.moonBgMesh.renderOrder = -100;
         this.moonBgMesh.visible = this.universe === "moon";
         this.scene.add(this.moonBgMesh);
         this.disposables.push(tex, bgGeo, bgMat);
