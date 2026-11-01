@@ -779,7 +779,7 @@ function HubUI() {
                 <div key={a.id} className="relative">
                   {/* Floating Animated Pointer for Target Button during Onboarding */}
                   {isTargetNewGame && (
-                    <div className="absolute right-3 -top-6 sm:right-auto sm:-left-36 sm:top-1/2 sm:-translate-y-1/2 z-40 flex items-center gap-1.5 pointer-events-none animate-gold-arrow">
+                    <div className="absolute right-3 -top-6 sm:right-auto sm:-left-36 sm:top-1/2 sm:-translate-y-1/2 z-40 flex md:hidden items-center gap-1.5 pointer-events-none animate-gold-arrow">
                       <span className="px-2 py-0.5 rounded bg-amber-400 text-slate-950 font-mono font-bold text-[10px] tracking-wider shadow-[0_0_15px_rgba(245,158,11,0.9)] whitespace-nowrap">
                         {lang === "bn" ? "এখানে ট্যাপ করো!" : "TAP HERE!"}
                       </span>
