@@ -770,3 +770,10 @@ body {
 @keyframes nova-wave { 0%,100% { height: 4px } 50% { height: 16px } }
 @keyframes nova-point { 50% { transform: translateX(5px) } }
 @keyframes nova-twinkle { 0%,100% { opacity: .35; transform: scale(.85) } 50% { opacity: 1; transform: scale(1.15) } }
+
+.nova-guide-line {
+  fill: none; stroke: #ffd97d; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 10 8;
+  filter: drop-shadow(0 0 6px rgb(255 200 80 / .9));
+  animation: nova-line-flow .8s linear infinite;
+}
+@keyframes nova-line-flow { to { stroke-dashoffset: -18; } }
