@@ -79,7 +79,7 @@ class Store {
     activeHotspot: null,
     flags: Array.isArray(persisted.flags) ? persisted.flags : [],
     tutorialDone: !!persisted.tutorialDone,
-    hasSeenHubIntro: !!persisted.hasSeenHubIntro,
+    hasSeenHubIntro: false, // session-only: guide returns on every fresh browser run
     fading: false,
     metSojourner: false,
     storyDone: false,
@@ -114,7 +114,6 @@ class Store {
             flags: this.state.flags,
             lang: this.state.lang,
             tutorialDone: this.state.tutorialDone,
-            hasSeenHubIntro: this.state.hasSeenHubIntro,
           }),
         );
       } catch {

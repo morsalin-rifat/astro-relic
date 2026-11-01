@@ -112,6 +112,12 @@ class AmbientAudio {
     }, 250);
   }
 
+  // Lower ambience while a voice line plays so voices never overlap the drone.
+  duck(on: boolean) {
+    if (!this.ctx || !this.master) return;
+    this.fadeTo(on ? 0.12 : 1, 0.4);
+  }
+
   setMuted(muted: boolean) {
     if (!this.ctx || !this.master) return;
     this.fadeTo(muted ? 0 : 1, 0.4);

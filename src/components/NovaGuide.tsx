@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { store, useGame } from "@/state/store";
+import { audio as ambient } from "@/game/audio";
 import novaImg from "@/assets/nova.png.asset.json";
 import voiceEn from "@/assets/hub_voice_en.mp3.asset.json";
 import voiceBn from "@/assets/hub_voice_bn.mp3.asset.json";
@@ -36,7 +37,10 @@ export function NovaGuide({ onComplete }: NovaGuideProps) {
   const phase = useGame((s) => s.phase);
   const hasSeenHubIntro = useGame((s) => s.hasSeenHubIntro);
 
-  const [visible, setVisible] = useState(!hasSeenHubIntro);
+  const visible = !hasSeenHubIntro;
+  const [typeKey, setTypeKey] = useState(0);
+  const bubbleRef = useRef<HTMLDivElement | null>(null);
+  const [line, setLine] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const [displayedText, setDisplayedText] = useState("");
@@ -51,11 +55,14 @@ export function NovaGuide({ onComplete }: NovaGuideProps) {
   // Stop audio helper
   const stopAudio = useCallback(() => {
     if (audioRef.current) {
-      audioRef.current.pause();
+      const a = audioRef.current;
+      a.onerror = a.onplay = a.onended = a.onpause = null;
+      a.pause();
       audioRef.current.currentTime = 0;
       audioRef.current.src = "";
       audioRef.current = null;
     }
+    ambient.duck(false);
     setIsPlaying(false);
   }, []);
 
@@ -65,7 +72,6 @@ export function NovaGuide({ onComplete }: NovaGuideProps) {
     if (typingTimerRef.current) {
       window.clearTimeout(typingTimerRef.current);
     }
-    setVisible(false);
     store.set({ tutorialDone: true, hasSeenHubIntro: true });
     onComplete?.();
   }, [stopAudio, onComplete]);
@@ -93,11 +99,13 @@ export function NovaGuide({ onComplete }: NovaGuideProps) {
     };
 
     audio.onplay = () => {
+      ambient.duck(true);
       setIsPlaying(true);
       setAutoplayBlocked(false);
     };
 
     audio.onended = () => {
+      ambient.duck(false);
       setIsPlaying(false);
     };
 
@@ -112,7 +120,10 @@ export function NovaGuide({ onComplete }: NovaGuideProps) {
       playPromise
         .then(() => {
           setIsPlaying(true);
-          setAutoplayBlocked(false);
+          setAutoplayBlocked((was) => {
+            if (was) setTypeKey((k) => k + 1); // re-sync typing with voice
+            return false;
+          });
         })
         .catch(() => {
           // Autoplay blocked by browser policy without user gesture
@@ -155,7 +166,7 @@ export function NovaGuide({ onComplete }: NovaGuideProps) {
         window.clearTimeout(typingTimerRef.current);
       }
     };
-  }, [fullText, visible]);
+  }, [fullText, visible, typeKey]);
 
   // Audio start & language change reaction
   useEffect(() => {
@@ -177,8 +188,7 @@ export function NovaGuide({ onComplete }: NovaGuideProps) {
       handleDismiss();
     });
     const unsub2 = store.on("hub:callNova", () => {
-      setVisible(true);
-      playAudio();
+      store.set({ hasSeenHubIntro: false });
     });
     return () => {
       unsub1();
@@ -186,12 +196,44 @@ export function NovaGuide({ onComplete }: NovaGuideProps) {
     };
   }, [handleDismiss, playAudio]);
 
+  // Measure a guide line from the bubble to the NEW GAME button
+  useEffect(() => {
+    if (!visible || phase !== "hub") return;
+    const measure = () => {
+      const b = bubbleRef.current?.getBoundingClientRect();
+      const t = document.getElementById("hub-newgame-btn")?.getBoundingClientRect();
+      if (!b || !t || window.innerWidth < 768 || t.left - b.right < 40) return setLine(null);
+      setLine({ x1: b.right + 6, y1: b.top + b.height / 2, x2: t.left - 10, y2: t.top + t.height / 2 });
+    };
+    measure();
+    const id = window.setInterval(measure, 300);
+    window.addEventListener("resize", measure);
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener("resize", measure);
+    };
+  }, [visible, phase]);
+
   if (!visible || phase !== "hub") return null;
 
   return (
     <div className="fixed inset-0 pointer-events-none z-40 select-none">
-      {/* ── Nova Mascot Sprite Container ── */}
-      <div className="fixed bottom-3 left-3 sm:bottom-6 sm:left-6 md:bottom-8 md:left-8 pointer-events-auto flex items-end gap-3 sm:gap-4 z-40">
+      {line && (
+        <svg className="fixed inset-0 w-full h-full pointer-events-none" aria-hidden>
+          <defs>
+            <marker id="nova-arrow" markerWidth="10" markerHeight="10" refX="6" refY="5" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#ffd97d" />
+            </marker>
+          </defs>
+          <path
+            d={`M${line.x1},${line.y1} C${(line.x1 + line.x2) / 2},${line.y1} ${(line.x1 + line.x2) / 2},${line.y2} ${line.x2},${line.y2}`}
+            className="nova-guide-line"
+            markerEnd="url(#nova-arrow)"
+          />
+        </svg>
+      )}
+      {/* ── Nova Mascot + bubble: bottom on phones, raised mid-left on larger screens ── */}
+      <div className="fixed bottom-2 left-2 right-2 md:right-auto md:bottom-auto md:top-[16%] md:left-8 pointer-events-auto flex items-end gap-2 sm:gap-4 z-40">
         <div
           className={`relative cursor-pointer transition-all duration-300 ${
             isPlaying ? "animate-talking-glow" : "animate-float-gentle"
@@ -217,7 +259,7 @@ export function NovaGuide({ onComplete }: NovaGuideProps) {
               (e.currentTarget as HTMLImageElement).src = "/assets/aistudio/chact__2__4eb39933.png";
             }}
             alt="Nova Co-Pilot"
-            className="w-[125px] sm:w-[155px] md:w-[195px] lg:w-[215px] h-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.65)] filter"
+            className="w-[78px] sm:w-[120px] md:w-[150px] lg:w-[170px] h-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.65)] filter"
             draggable={false}
           />
 
@@ -238,7 +280,7 @@ export function NovaGuide({ onComplete }: NovaGuideProps) {
         </div>
 
         {/* ── Speech Bubble: kid-friendly holo comms ── */}
-        <div className="nova-bubble pointer-events-auto relative w-[min(440px,calc(100vw-170px))] md:w-[420px] mb-6 sm:mb-10 animate-[hubrise_0.45s_ease]">
+        <div ref={bubbleRef} className="nova-bubble pointer-events-auto relative flex-1 md:flex-none md:w-[min(400px,calc(100vw-620px))] md:min-w-[300px] mb-4 sm:mb-8 animate-[hubrise_0.45s_ease]">
           <span className="nova-bubble-tail" aria-hidden />
           <div className={`nova-bubble-inner ${isPlaying ? "is-speaking" : ""}`}>
             <div className="flex items-center justify-between gap-2 mb-2">
