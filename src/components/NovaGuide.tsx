@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { store, useGame } from "@/state/store";
+import novaImg from "@/assets/nova.png.asset.json";
+import voiceEn from "@/assets/hub_voice_en.mp3.asset.json";
+import voiceBn from "@/assets/hub_voice_bn.mp3.asset.json";
 
 interface NovaGuideProps {
   onComplete?: () => void;
@@ -8,7 +11,7 @@ interface NovaGuideProps {
 
 const DIALOGUES = {
   en: {
-    audio: "/audio/nova_hub_en.mp3",
+    audio: voiceEn.url,
     fallbackAudio: "/assets/aistudio/hub_voice_en_4754a8a1.mp3",
     text: "Bip-boop! Hello Explorer! I'm Nova, your mission co-pilot. Look! The Red Planet Mars is calling us. Ready to uncover its secrets? Tap that glowing golden button on the right!",
     tapToPlay: "🔊 Tap to Listen",
@@ -17,7 +20,7 @@ const DIALOGUES = {
     tapHere: "TAP HERE!",
   },
   bn: {
-    audio: "/audio/nova_hub_bn.mp3",
+    audio: voiceBn.url,
     fallbackAudio: "/assets/aistudio/hub_voice_bn_a707abac.mp3",
     text: "বিপ-বুপ! হ্যালো এক্সপ্লোরার! আমি নোভা, তোমার মিশন কো-পাইলট। দেখো, লাল গ্রহ মঙ্গল আমাদের ডাকছে! চলো এর রহস্যগুলো খুঁজে দেখি! ডানের সোনালী বাটনটিতে ট্যাপ করো!",
     tapToPlay: "🔊 শুনতে ট্যাপ করো",
@@ -209,7 +212,7 @@ export function NovaGuide({ onComplete }: NovaGuideProps) {
 
           {/* Nova Sprite Image (Uploaded high-res transparent mascot) */}
           <img
-            src="/images/nova_sprite.png"
+            src={novaImg.url}
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src = "/assets/aistudio/chact__2__4eb39933.png";
             }}
@@ -234,83 +237,52 @@ export function NovaGuide({ onComplete }: NovaGuideProps) {
           )}
         </div>
 
-        {/* ── Speech Bubble (Desktop beside Nova, Mobile anchored clean) ── */}
-        <div
-          className="pointer-events-auto relative max-w-[min(440px,88vw)] md:max-w-[420px] mb-2 sm:mb-4 bg-slate-900/85 backdrop-blur-md border border-cyan-500/40 rounded-2xl p-4 sm:p-5 text-slate-100 shadow-[0_0_24px_rgba(6,182,212,0.25)] transition-all animate-[hubrise_0.4s_ease]"
-          style={{
-            boxShadow: isPlaying
-              ? "0 0 30px rgba(6, 182, 212, 0.35), inset 0 0 15px rgba(6, 182, 212, 0.12)"
-              : "0 0 20px rgba(6, 182, 212, 0.2)",
-          }}
-        >
-          {/* Cybernetic Accent Corners */}
-          <div className="absolute -top-1 -left-1 w-3 h-3 border-t-2 border-l-2 border-cyan-400 rounded-tl" />
-          <div className="absolute -bottom-1 -right-1 w-3 h-3 border-b-2 border-r-2 border-amber-400 rounded-br" />
-
-          {/* Header Row: Badge, Autoplay Alert, Skip button */}
-          <div className="flex items-center justify-between gap-2 pb-2.5 mb-2.5 border-b border-cyan-500/20">
-            <div className="inline-flex items-center gap-1.5 bg-cyan-500/20 text-cyan-300 font-mono text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full border border-cyan-400/30">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-              <span>{currentDialogue.badge}</span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {/* If browser blocked autoplay, show pulse button to easily tap */}
-              {autoplayBlocked && (
+        {/* ── Speech Bubble: kid-friendly holo comms ── */}
+        <div className="nova-bubble pointer-events-auto relative w-[min(440px,calc(100vw-170px))] md:w-[420px] mb-6 sm:mb-10 animate-[hubrise_0.45s_ease]">
+          <span className="nova-bubble-tail" aria-hidden />
+          <div className={`nova-bubble-inner ${isPlaying ? "is-speaking" : ""}`}>
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="nova-nameplate">
+                <span className="nova-dot" />
+                {currentDialogue.badge}
+              </div>
+              <div className="flex items-center gap-1.5">
+                {isPlaying && (
+                  <div className="nova-wave" aria-hidden>
+                    <i /><i /><i /><i />
+                  </div>
+                )}
                 <button
-                  onClick={playAudio}
-                  className="bg-amber-400 text-slate-950 hover:bg-amber-300 font-semibold text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full shadow-[0_0_12px_rgba(245,158,11,0.6)] animate-pulse transition-transform hover:scale-105"
+                  onClick={() => (isPlaying ? stopAudio() : playAudio())}
+                  className="nova-icon-btn"
+                  title={isPlaying ? "Stop voice" : "Play voice"}
                 >
-                  {currentDialogue.tapToPlay}
+                  {isPlaying ? "🔊" : "🔈"}
                 </button>
-              )}
-
-              {/* Mute/Sound toggle */}
-              <button
-                onClick={() => {
-                  if (isPlaying) stopAudio();
-                  else playAudio();
-                }}
-                className="text-white/50 hover:text-cyan-300 text-xs px-1.5 py-0.5 rounded transition-colors"
-                title={isPlaying ? "Mute Voice" : "Play Voice"}
-              >
-                {isPlaying ? "🔊" : "🔇"}
-              </button>
-
-              {/* Skip / Dismiss button */}
-              <button
-                onClick={handleDismiss}
-                className="text-white/40 hover:text-amber-400 text-xs font-mono px-2 py-0.5 rounded hover:bg-white/10 transition-colors"
-                title="Dismiss Guide"
-              >
-                {currentDialogue.skip}
-              </button>
+                <button onClick={handleDismiss} className="nova-icon-btn text-[11px] px-2 w-auto" title="Skip">
+                  {currentDialogue.skip}
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Dialogue Body Text */}
-          <div className="text-xs sm:text-sm md:text-[15px] font-sans leading-relaxed text-slate-100/95 min-h-[3.8rem]">
-            {displayedText}
-            {isTyping && (
-              <span className="inline-block w-1.5 h-3.5 ml-1 bg-cyan-400 animate-pulse align-middle" />
-            )}
-          </div>
+            <p className="nova-text min-h-[4.2rem]">
+              {displayedText}
+              {isTyping && <span className="nova-caret" />}
+            </p>
 
-          {/* Bottom Hint */}
-          <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-cyan-300/70">
-            <span className="flex items-center gap-1">
-              <span className="text-amber-400 animate-bounce">👉</span>
-              <span>{lang === "bn" ? "ডানের বোতামটি দেখো" : "Look at the menu button"}</span>
-            </span>
-            <span className="text-white/40 text-[9px] uppercase tracking-wider">
-              {isPlaying
-                ? lang === "bn"
-                  ? "কথা বলছে..."
-                  : "Speaking..."
-                : lang === "bn"
-                  ? "প্রস্তুত"
-                  : "Ready"}
-            </span>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              {autoplayBlocked ? (
+                <button onClick={playAudio} className="nova-listen-btn">{currentDialogue.tapToPlay}</button>
+              ) : (
+                <span className="text-[11px] font-semibold text-[#ffd97d] flex items-center gap-1">
+                  <span className="nova-point">👉</span>
+                  {lang === "bn" ? "ডানের সোনালী বাটন" : "Golden button on the right"}
+                </span>
+              )}
+              <div className="flex gap-1" aria-hidden>
+                <span className="nova-star">★</span><span className="nova-star [animation-delay:.3s]">★</span><span className="nova-star [animation-delay:.6s]">★</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
