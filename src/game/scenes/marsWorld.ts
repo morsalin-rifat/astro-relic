@@ -403,13 +403,12 @@ export class MarsWorldScene implements Scene {
     g.fillStyle = "rgba(0,0,0,.55)"; g.fillRect(0, W - 30, W, 30);
     g.fillStyle = "#ffe2b8"; g.font = "bold 15px sans-serif"; g.textAlign = "center";
     g.fillText(`SOJOURNER · ${Math.round(p.distanceTo(this.rover.position))}m`, R, W - 10);
-    g.fillStyle = "#fff"; g.fillText("N", R + Math.sin(-this.camYaw) * -(R - 12), R - Math.cos(this.camYaw) * (R - 12) + 5);
     // sector banner
     this.sectorTimer -= dt;
     const name = this.sectorAt(p.x, p.z);
     if (name !== this.sectorName) {
       this.sectorName = name;
-      if (name !== "MA'ADIM VALLIS") store.set({ hint: "📍 " + name });
+      if (name !== "MA'ADIM VALLIS") store.set({ hint: { en: "📍 " + name, bn: "📍 " + name } });
     }
   }
 
