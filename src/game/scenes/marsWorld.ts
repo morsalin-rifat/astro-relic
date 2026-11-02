@@ -3,6 +3,7 @@ import { store } from "../../state/store";
 import { audio } from "../audio";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import mapAsset from "@/assets/maadim_valles.glb.asset.json";
+import heroAsset from "@/assets/astronaut.glb.asset.json";
 import { makeStarfield, fbm, type Scene } from "../utils";
 import { buildExplorer, buildNova, buildSojourner } from "../models/builders";
 import { NOVA_WELCOME_MARS, NOVA_NEAR_SITE, SOJOURNER_WAKE, UI } from "../../data/content";
@@ -40,14 +41,22 @@ export class MarsWorldScene implements Scene {
   private rockData: { x: number; z: number; s: number; r: THREE.Euler }[] = [];
   private lander!: THREE.Group;
   private disposed = false;
+  private mixer: THREE.AnimationMixer | null = null;
+  private walkAction: THREE.AnimationAction | null = null;
+  private mini!: HTMLCanvasElement;
+  private miniBg: HTMLCanvasElement | null = null;
+  private sectorName = "";
+  private sectorTimer = 0;
 
   constructor(renderer: THREE.WebGLRenderer) {
     this.renderer = renderer;
     this.metAtStart = store.get().metSojourner;
     this.camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 1500);
-    this.scene.background = new THREE.Color(0x140806);
-    this.scene.fog = new THREE.Fog(0x3a1a0c, 60, 520);
-    this.scene.add(this.stars);
+    this.scene.background = this.makeSky();
+    this.scene.fog = new THREE.Fog(0xc98a5e, 80, 620);
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.05;
+    this.scene.add(new THREE.HemisphereLight(0xffd2a8, 0x5a2a14, 0.7));
 
     // lighting: low warm sun
     this.sun = new THREE.DirectionalLight(0xffc9a0, 2.6);
@@ -184,6 +193,8 @@ export class MarsWorldScene implements Scene {
     this.scene.add(this.nova.group);
 
     this.loadNasaMap();
+    this.loadHero();
+    this.buildMinimap();
     audio.play("mars");
     store.set({ hint: UI.moveHint });
     (window as any).__marsDebug = () => ({
@@ -286,7 +297,119 @@ export class MarsWorldScene implements Scene {
       this.terrain.geometry.dispose();
       this.scene.add(wrap);
       this.resnap();
+      this.bakeMinimap();
     });
+  }
+
+  private makeSky() {
+    const c = document.createElement("canvas");
+    c.width = 4; c.height = 256;
+    const g = c.getContext("2d")!;
+    const gr = g.createLinearGradient(0, 0, 0, 256);
+    gr.addColorStop(0, "#5a3524");
+    gr.addColorStop(0.45, "#b9784f");
+    gr.addColorStop(0.62, "#e0a77a");
+    gr.addColorStop(1, "#c98a5e");
+    g.fillStyle = gr; g.fillRect(0, 0, 4, 256);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
+
+  /** Your rigged astronaut replaces the placeholder explorer. */
+  private loadHero() {
+    new GLTFLoader().load(heroAsset.url, (gltf) => {
+      if (this.disposed) return;
+      const m = gltf.scene;
+      const box = new THREE.Box3().setFromObject(m);
+      const size = box.getSize(new THREE.Vector3());
+      const k = 1.8 / Math.max(size.y, 0.001);
+      m.scale.setScalar(k);
+      m.position.set(0, -box.min.y * k, 0);
+      m.traverse((o) => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+      this.player.children.forEach((c) => (c.visible = false));
+      delete this.player.userData["limbs"];
+      this.player.add(m);
+      if (gltf.animations[0]) {
+        this.mixer = new THREE.AnimationMixer(m);
+        this.walkAction = this.mixer.clipAction(gltf.animations[0]);
+        this.walkAction.play();
+      }
+    });
+  }
+
+  private buildMinimap() {
+    const c = document.createElement("canvas");
+    c.width = c.height = 180;
+    c.style.cssText = "position:fixed;top:72px;right:16px;width:150px;height:150px;border-radius:50%;border:2px solid rgba(255,210,150,.7);box-shadow:0 0 18px rgba(0,0,0,.5);z-index:40;pointer-events:none;background:#2a140a";
+    document.body.appendChild(c);
+    this.mini = c;
+  }
+
+  private bakeMinimap() {
+    const h = this.hf; if (!h) return;
+    let lo = Infinity, hi = -Infinity;
+    for (const v of h.data) { if (v < lo) lo = v; if (v > hi) hi = v; }
+    const c = document.createElement("canvas");
+    c.width = c.height = h.n;
+    const g = c.getContext("2d")!;
+    const img = g.createImageData(h.n, h.n);
+    for (let i = 0; i < h.data.length; i++) {
+      const t = (h.data[i] - lo) / (hi - lo || 1);
+      img.data[i * 4] = 90 + t * 160; img.data[i * 4 + 1] = 40 + t * 110; img.data[i * 4 + 2] = 20 + t * 70; img.data[i * 4 + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+    this.miniBg = c;
+  }
+
+  private sectorAt(x: number, z: number) {
+    const zones = [
+      { n: "SECTOR 01 · OUTPOST TOUCHDOWN", x: 0, z: 0, r: 25 },
+      { n: "SECTOR 02 · ARES PATHFINDER RELIC SITE", x: SITE.x, z: SITE.z, r: 30 },
+      { n: "SECTOR 03 · MA'ADIM ANCIENT WATERWAY", x: 120, z: -150, r: 90 },
+      { n: "SECTOR 04 · GUSEV CRATER DESCENT", x: 250, z: -400, r: 120 },
+    ];
+    for (const s of zones) if (Math.hypot(x - s.x, z - s.z) < s.r) return s.n;
+    return "MA'ADIM VALLIS";
+  }
+
+  private drawMinimap(dt: number) {
+    const c = this.mini; if (!c) return;
+    const g = c.getContext("2d")!;
+    const W = c.width, R = W / 2, range = 120; // metres shown from centre
+    const p = this.player.position;
+    g.save();
+    g.clearRect(0, 0, W, W);
+    g.beginPath(); g.arc(R, R, R, 0, Math.PI * 2); g.clip();
+    g.translate(R, R);
+    g.rotate(this.camYaw);
+    const sc = R / range;
+    const h = this.hf;
+    if (this.miniBg && h) {
+      g.drawImage(this.miniBg, (h.minX - p.x) * sc, (h.minZ - p.z) * sc, h.sx * (h.n - 1) * sc, h.sz * (h.n - 1) * sc);
+    } else { g.fillStyle = "#5a2e18"; g.fillRect(-R * 2, -R * 2, W * 2, W * 2); }
+    // rover pin
+    const rx = (this.rover.position.x - p.x) * sc, rz = (this.rover.position.z - p.z) * sc;
+    const rd = Math.hypot(rx, rz), lim = R - 10;
+    const k = rd > lim ? lim / rd : 1;
+    g.fillStyle = "#ffd97d"; g.strokeStyle = "#000"; g.lineWidth = 2;
+    g.beginPath(); g.arc(rx * k, rz * k, 7, 0, Math.PI * 2); g.fill(); g.stroke();
+    g.restore();
+    // player arrow (camera-forward = up)
+    g.save(); g.translate(R, R);
+    g.rotate(this.camYaw - this.player.rotation.y + Math.PI);
+    g.fillStyle = "#7fe3ff"; g.beginPath(); g.moveTo(0, -11); g.lineTo(7, 8); g.lineTo(0, 4); g.lineTo(-7, 8); g.closePath(); g.fill();
+    g.restore();
+    g.fillStyle = "rgba(0,0,0,.55)"; g.fillRect(0, W - 30, W, 30);
+    g.fillStyle = "#ffe2b8"; g.font = "bold 15px sans-serif"; g.textAlign = "center";
+    g.fillText(`SOJOURNER · ${Math.round(p.distanceTo(this.rover.position))}m`, R, W - 10);
+    // sector banner
+    this.sectorTimer -= dt;
+    const name = this.sectorAt(p.x, p.z);
+    if (name !== this.sectorName) {
+      this.sectorName = name;
+      if (name !== "MA'ADIM VALLIS") store.set({ hint: { en: "📍 " + name, bn: "📍 " + name } });
+    }
   }
 
   private resnap() {
@@ -480,16 +603,11 @@ export class MarsWorldScene implements Scene {
     }
     this.player.position.addScaledVector(this.velocity, dt);
     // world bounds
-    this.player.position.x = THREE.MathUtils.clamp(
-      this.player.position.x,
-      -WORLD / 2 + 10,
-      WORLD / 2 - 10,
-    );
-    this.player.position.z = THREE.MathUtils.clamp(
-      this.player.position.z,
-      -WORLD / 2 + 10,
-      WORLD / 2 - 10,
-    );
+    const h = this.hf;
+    const bx0 = h ? h.minX + 15 : -WORLD / 2 + 10, bx1 = h ? h.minX + h.sx * (h.n - 1) - 15 : WORLD / 2 - 10;
+    const bz0 = h ? h.minZ + 15 : -WORLD / 2 + 10, bz1 = h ? h.minZ + h.sz * (h.n - 1) - 15 : WORLD / 2 - 10;
+    this.player.position.x = THREE.MathUtils.clamp(this.player.position.x, bx0, bx1);
+    this.player.position.z = THREE.MathUtils.clamp(this.player.position.z, bz0, bz1);
     this.player.position.y = this.groundHeight(this.player.position.x, this.player.position.z);
 
     // walk animation
@@ -503,6 +621,14 @@ export class MarsWorldScene implements Scene {
       limbs.armR.rotation.x = sw * 0.7;
       this.player.position.y += Math.abs(Math.sin(t * 9)) * 0.05 * speedK;
     }
+
+    if (this.mixer && this.walkAction) {
+      const sk = Math.min(this.velocity.length() / 6.5, 1);
+      this.walkAction.setEffectiveWeight(1);
+      this.walkAction.timeScale = sk < 0.05 ? 0 : 0.6 + sk * 0.8;
+      this.mixer.update(dt);
+    }
+    this.drawMinimap(dt);
 
     // Nova hover-follow
     this.nova.update(dt, t);
@@ -560,8 +686,9 @@ export class MarsWorldScene implements Scene {
     this.camera.lookAt(target);
 
     // sun follows player for tight shadows
-    this.sun.position.set(this.player.position.x + 60, 40, this.player.position.z - 30);
-    this.sun.target.position.copy(this.player.position);
+    const sxp = Math.round(this.player.position.x / 8) * 8, szp = Math.round(this.player.position.z / 8) * 8;
+    this.sun.target.position.set(sxp, this.player.position.y, szp);
+    this.sun.position.set(sxp + 60, this.player.position.y + 40, szp - 30);
     this.sun.target.updateMatrixWorld();
 
     this.stars.rotation.y += dt * 0.002;
@@ -570,6 +697,7 @@ export class MarsWorldScene implements Scene {
 
   dispose() {
     this.disposed = true;
+    this.mini?.remove();
     store.set({ objective: null, hint: null });
     this.disposers.forEach((d) => d());
     this.scene.traverse((o: THREE.Object3D) => {
