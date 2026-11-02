@@ -1,12 +1,16 @@
 import * as THREE from "three";
 import { store } from "../../state/store";
 import { audio } from "../audio";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import mapAsset from "@/assets/maadim_valles.glb.asset.json";
 import { makeStarfield, fbm, type Scene } from "../utils";
 import { buildExplorer, buildNova, buildSojourner } from "../models/builders";
 import { NOVA_WELCOME_MARS, NOVA_NEAR_SITE, SOJOURNER_WAKE, UI } from "../../data/content";
 
 const SITE = new THREE.Vector3(42, 0, -30);
 const WORLD = 320;
+const MAP_LENGTH = 1000; // metres along the canyon
+const MAP_DEPTH = 70; // vertical relief (exaggerated for drama)
 
 export class MarsWorldScene implements Scene {
   private renderer: THREE.WebGLRenderer;
@@ -30,13 +34,19 @@ export class MarsWorldScene implements Scene {
   private meeting = false;
   private disposers: (() => void)[] = [];
   private metAtStart: boolean;
+  private hf: { data: Float32Array; n: number; minX: number; minZ: number; sx: number; sz: number } | null = null;
+  private terrain!: THREE.Mesh;
+  private rocks!: THREE.InstancedMesh;
+  private rockData: { x: number; z: number; s: number; r: THREE.Euler }[] = [];
+  private lander!: THREE.Group;
+  private disposed = false;
 
   constructor(renderer: THREE.WebGLRenderer) {
     this.renderer = renderer;
     this.metAtStart = store.get().metSojourner;
     this.camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 1500);
     this.scene.background = new THREE.Color(0x140806);
-    this.scene.fog = new THREE.Fog(0x241009, 50, 260);
+    this.scene.fog = new THREE.Fog(0x3a1a0c, 60, 520);
     this.scene.add(this.stars);
 
     // lighting: low warm sun
@@ -83,6 +93,7 @@ export class MarsWorldScene implements Scene {
       new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0 }),
     );
     terrain.receiveShadow = true;
+    this.terrain = terrain;
     this.scene.add(terrain);
 
     // rocks
@@ -94,20 +105,24 @@ export class MarsWorldScene implements Scene {
       const x = (Math.random() - 0.5) * (WORLD - 30);
       const z = (Math.random() - 0.5) * (WORLD - 30);
       const s = 0.2 + Math.pow(Math.random(), 2.4) * 2.2;
+      const r = new THREE.Euler(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+      this.rockData.push({ x, z, s, r });
       dummy.position.set(x, this.groundHeight(x, z) + s * 0.25, z);
-      dummy.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+      dummy.rotation.copy(r);
       dummy.scale.setScalar(s);
       dummy.updateMatrix();
       rocks.setMatrixAt(i, dummy.matrix);
     }
     rocks.castShadow = true;
     rocks.receiveShadow = true;
+    this.rocks = rocks;
     this.scene.add(rocks);
 
     // Pathfinder lander at site
     const lander = this.buildLander();
     lander.position.set(SITE.x, this.groundHeight(SITE.x, SITE.z), SITE.z);
     lander.rotation.y = 0.7;
+    this.lander = lander;
     this.scene.add(lander);
 
     // Sojourner rover near lander
@@ -168,6 +183,7 @@ export class MarsWorldScene implements Scene {
     this.nova.group.position.copy(this.player.position).add(new THREE.Vector3(1.4, 2.4, 1));
     this.scene.add(this.nova.group);
 
+    this.loadNasaMap();
     audio.play("mars");
     store.set({ hint: UI.moveHint });
     (window as any).__marsDebug = () => ({
@@ -200,7 +216,119 @@ export class MarsWorldScene implements Scene {
     }, 900);
   }
 
+  /** Real NASA MOLA Ma'adim Vallis canyon, scaled to ~1 km long. */
+  private loadNasaMap() {
+    new GLTFLoader().load(mapAsset.url, (gltf) => {
+      if (this.disposed) return;
+      const root = gltf.scene;
+      root.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(root);
+      const size = box.getSize(new THREE.Vector3());
+      const horiz = Math.max(size.x, size.z);
+      const k = MAP_LENGTH / horiz;
+      const kv = MAP_DEPTH / Math.max(size.y, 0.001);
+      const c = box.getCenter(new THREE.Vector3());
+      const wrap = new THREE.Group();
+      wrap.add(root);
+      root.position.set(-c.x, -c.y, -c.z);
+      wrap.scale.set(k, kv, k);
+      wrap.updateMatrixWorld(true);
+      // collect world triangles → heightfield
+      const N = 512;
+      const fb = new THREE.Box3().setFromObject(wrap);
+      const minX = fb.min.x, minZ = fb.min.z;
+      const sx = (fb.max.x - minX) / (N - 1), sz = (fb.max.z - minZ) / (N - 1);
+      const data = new Float32Array(N * N).fill(-1e9);
+      const a = new THREE.Vector3(), b = new THREE.Vector3(), d = new THREE.Vector3();
+      wrap.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (!m.isMesh) return;
+        m.receiveShadow = true;
+        const mat = m.material as THREE.MeshStandardMaterial;
+        mat.color = new THREE.Color(1.25, 0.82, 0.6); // butterscotch ochre grade
+        mat.roughness = 0.95;
+        mat.metalness = 0;
+        if (mat.map) mat.map.anisotropy = 8;
+        const g = m.geometry;
+        const pos = g.attributes.position as THREE.BufferAttribute;
+        const idx = g.index;
+        const tri = idx ? idx.count / 3 : pos.count / 3;
+        for (let t = 0; t < tri; t++) {
+          const i0 = idx ? idx.getX(t * 3) : t * 3;
+          const i1 = idx ? idx.getX(t * 3 + 1) : t * 3 + 1;
+          const i2 = idx ? idx.getX(t * 3 + 2) : t * 3 + 2;
+          a.fromBufferAttribute(pos, i0).applyMatrix4(m.matrixWorld);
+          b.fromBufferAttribute(pos, i1).applyMatrix4(m.matrixWorld);
+          d.fromBufferAttribute(pos, i2).applyMatrix4(m.matrixWorld);
+          const x0 = Math.max(0, Math.floor((Math.min(a.x, b.x, d.x) - minX) / sx));
+          const x1 = Math.min(N - 1, Math.ceil((Math.max(a.x, b.x, d.x) - minX) / sx));
+          const z0 = Math.max(0, Math.floor((Math.min(a.z, b.z, d.z) - minZ) / sz));
+          const z1 = Math.min(N - 1, Math.ceil((Math.max(a.z, b.z, d.z) - minZ) / sz));
+          const den = (b.z - d.z) * (a.x - d.x) + (d.x - b.x) * (a.z - d.z);
+          if (Math.abs(den) < 1e-9) continue;
+          for (let gz = z0; gz <= z1; gz++) {
+            for (let gx = x0; gx <= x1; gx++) {
+              const px = minX + gx * sx, pz = minZ + gz * sz;
+              const w0 = ((b.z - d.z) * (px - d.x) + (d.x - b.x) * (pz - d.z)) / den;
+              const w1 = ((d.z - a.z) * (px - d.x) + (a.x - d.x) * (pz - d.z)) / den;
+              const w2 = 1 - w0 - w1;
+              if (w0 < -1e-4 || w1 < -1e-4 || w2 < -1e-4) continue;
+              const h = w0 * a.y + w1 * b.y + w2 * d.y;
+              const ii = gz * N + gx;
+              if (h > data[ii]) data[ii] = h;
+            }
+          }
+        }
+      });
+      for (let i = 0; i < data.length; i++) if (data[i] < -1e8) data[i] = fb.min.y;
+      this.hf = { data, n: N, minX, minZ, sx, sz };
+      this.scene.remove(this.terrain);
+      this.terrain.geometry.dispose();
+      this.scene.add(wrap);
+      this.resnap();
+    });
+  }
+
+  private resnap() {
+    const dummy = new THREE.Object3D();
+    this.rockData.forEach((r, i) => {
+      dummy.position.set(r.x, this.groundHeight(r.x, r.z) + r.s * 0.25, r.z);
+      dummy.rotation.copy(r.r);
+      dummy.scale.setScalar(r.s * 0.6);
+      dummy.updateMatrix();
+      this.rocks.setMatrixAt(i, dummy.matrix);
+    });
+    this.rocks.instanceMatrix.needsUpdate = true;
+    for (const o of [this.lander, this.rover, this.beacon, this.player]) {
+      o.position.y = this.groundHeight(o.position.x, o.position.z);
+    }
+  }
+
+  private sampleHf(x: number, z: number): number {
+    const h = this.hf!;
+    const fx = THREE.MathUtils.clamp((x - h.minX) / h.sx, 0, h.n - 1.001);
+    const fz = THREE.MathUtils.clamp((z - h.minZ) / h.sz, 0, h.n - 1.001);
+    const ix = Math.floor(fx), iz = Math.floor(fz);
+    const tx = fx - ix, tz = fz - iz;
+    const g = (u: number, v: number) => h.data[v * h.n + u];
+    const top = g(ix, iz) * (1 - tx) + g(ix + 1, iz) * tx;
+    const bot = g(ix, iz + 1) * (1 - tx) + g(ix + 1, iz + 1) * tx;
+    return top * (1 - tz) + bot * tz;
+  }
+
   private groundHeight(x: number, z: number): number {
+    if (this.hf) {
+      let h = this.sampleHf(x, z);
+      // flatten pads at landing site and start
+      for (const [fx, fz, fr] of [
+        [SITE.x, SITE.z, 14],
+        [0, 0, 10],
+      ] as const) {
+        const dd = Math.hypot(x - fx, z - fz);
+        if (dd < fr) h = THREE.MathUtils.lerp(this.sampleHf(fx, fz), h, dd / fr);
+      }
+      return h;
+    }
     let h = fbm(x * 0.012 + 7, z * 0.012 + 3, 4) * 7 - 3.5;
     // craters
     const craters: [number, number, number][] = [
