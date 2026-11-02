@@ -569,6 +569,7 @@ export class MarsWorldScene implements Scene {
   }
 
   dispose() {
+    this.disposed = true;
     store.set({ objective: null, hint: null });
     this.disposers.forEach((d) => d());
     this.scene.traverse((o: THREE.Object3D) => {
