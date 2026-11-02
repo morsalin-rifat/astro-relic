@@ -61,7 +61,7 @@ const persisted = (() => {
 
 class Store {
   state: GameState = {
-    phase: "home",
+    phase: (import.meta.env.DEV && new URLSearchParams(location.search).get("phase")) as Phase || "home",
     universe: "mars",
     lang: persisted.lang === "bn" ? "bn" : "en",
     muted: false,
