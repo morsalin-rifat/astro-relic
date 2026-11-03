@@ -261,7 +261,7 @@ export class MarsWorldScene implements Scene {
         mat.metalness = 0;
         if (mat.map) mat.map.anisotropy = 8;
         const g = m.geometry;
-        const pos = g.attributes.position as THREE.BufferAttribute;
+        const pos = g.attributes["position"] as THREE.BufferAttribute;
         const idx = g.index;
         const tri = idx ? idx.count / 3 : pos.count / 3;
         for (let t = 0; t < tri; t++) {
@@ -286,12 +286,12 @@ export class MarsWorldScene implements Scene {
               if (w0 < -1e-4 || w1 < -1e-4 || w2 < -1e-4) continue;
               const h = w0 * a.y + w1 * b.y + w2 * d.y;
               const ii = gz * N + gx;
-              if (h > data[ii]) data[ii] = h;
+              if (h > (data[ii] ?? -Infinity)) data[ii] = h;
             }
           }
         }
       });
-      for (let i = 0; i < data.length; i++) if (data[i] < -1e8) data[i] = fb.min.y;
+      for (let i = 0; i < data.length; i++) { const v = data[i]; if (v !== undefined && v < -1e8) data[i] = fb.min.y; }
       this.hf = { data, n: N, minX, minZ, sx, sz };
       this.scene.remove(this.terrain);
       this.terrain.geometry.dispose();
@@ -355,7 +355,7 @@ export class MarsWorldScene implements Scene {
     const g = c.getContext("2d")!;
     const img = g.createImageData(h.n, h.n);
     for (let i = 0; i < h.data.length; i++) {
-      const t = (h.data[i] - lo) / (hi - lo || 1);
+      const t = ((h.data[i] ?? lo) - lo) / (hi - lo || 1);
       img.data[i * 4] = 90 + t * 160; img.data[i * 4 + 1] = 40 + t * 110; img.data[i * 4 + 2] = 20 + t * 70; img.data[i * 4 + 3] = 255;
     }
     g.putImageData(img, 0, 0);
@@ -433,7 +433,7 @@ export class MarsWorldScene implements Scene {
     const fz = THREE.MathUtils.clamp((z - h.minZ) / h.sz, 0, h.n - 1.001);
     const ix = Math.floor(fx), iz = Math.floor(fz);
     const tx = fx - ix, tz = fz - iz;
-    const g = (u: number, v: number) => h.data[v * h.n + u];
+    const g = (u: number, v: number) => h.data[v * h.n + u] ?? 0;
     const top = g(ix, iz) * (1 - tx) + g(ix + 1, iz) * tx;
     const bot = g(ix, iz + 1) * (1 - tx) + g(ix + 1, iz + 1) * tx;
     return top * (1 - tz) + bot * tz;
