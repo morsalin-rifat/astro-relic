@@ -73,3 +73,18 @@ Lovable ⇄ GitHub (code bank) ⇄ Google AI Studio / Cursor. Work in one tool a
 ## Dual universe rule
 
 Mars and Moon share ONE engine/mechanics/controls; only visuals, gravity (Mars 0.38g, Moon 0.16g), chapters and Nova lines differ.
+
+---
+## 🗺️ Master Plan Update — Mars Relic Expedition Map (Nov 2026)
+**One seamless open-world map, 4 real NASA abandoned-mission sites, 350 m each (≈1.4 km total), tall exaggerated relief (PUBG scale).**
+
+| Zone | Year | Mission | Real site | File |
+|---|---|---|---|---|
+| 1 | 1997 | Sojourner (Pathfinder) | Ares Vallis / Carl Sagan Memorial Station | `public/models/zone1_ares.glb` |
+| 2 | 2004 | Spirit | Gusev Crater / Ma'adim Vallis | `public/models/zone2_gusev.glb` |
+| 3 | 2004–2018 | Opportunity | Perseverance Valley analogue (Jezero terrain, labelled honestly) | `public/models/zone3_meridiani.glb` |
+| 4 | 2018–2022 | InSight | Elysium Planitia (HiRISE ESP_028532_1790) | `public/models/zone4_elysium.glb` |
+
+- ✅ Done: all models optimized (~3.7 MB total, was ~40 MB), served from `public/models/` → works on GitHub, Vercel, AI Studio.
+- ✅ Done: seamless walking across zones, zone name banners, minimap covers whole map, 700 real Martian rocks (one draw call).
+- ⏭ Next: progressive unlock gates between zones, Sojourner mission, Spirit/Opportunity/InSight models + missions, rover driving, dust devils & tire tracks, sound, Discovery Cards with real coordinates.
