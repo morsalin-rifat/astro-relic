@@ -2,15 +2,21 @@ import * as THREE from "three";
 import { store } from "../../state/store";
 import { audio } from "../audio";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import mapAsset from "@/assets/maadim_valles.glb.asset.json";
-import heroAsset from "@/assets/astronaut.glb.asset.json";
+import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import { makeStarfield, fbm, type Scene } from "../utils";
 import { buildExplorer, buildNova, buildSojourner } from "../models/builders";
 import { NOVA_WELCOME_MARS, NOVA_NEAR_SITE, SOJOURNER_WAKE, UI } from "../../data/content";
 
 const SITE = new THREE.Vector3(42, 0, -30);
 const WORLD = 320;
-const MAP_LENGTH = 1000; // metres along the canyon
+const ZONE = 350; // metres per real NASA site
+const ZONES = [
+  { url: "/models/zone1_ares.glb", name: "ZONE 1 · ARES VALLIS — SOJOURNER 1997", grade: [1.25, 0.82, 0.6] },
+  { url: "/models/zone2_gusev.glb", name: "ZONE 2 · GUSEV CRATER — SPIRIT 2004", grade: [1.2, 0.75, 0.55] },
+  { url: "/models/zone3_meridiani.glb", name: "ZONE 3 · PERSEVERANCE VALLEY ANALOGUE — OPPORTUNITY", grade: [1.05, 0.8, 0.7] },
+  { url: "/models/zone4_elysium.glb", name: "ZONE 4 · ELYSIUM PLANITIA — INSIGHT 2018", grade: [1.15, 0.85, 0.68] },
+];
+const loader = () => new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const MAP_DEPTH = 70; // vertical relief (exaggerated for drama)
 
 export class MarsWorldScene implements Scene {
@@ -35,7 +41,7 @@ export class MarsWorldScene implements Scene {
   private meeting = false;
   private disposers: (() => void)[] = [];
   private metAtStart: boolean;
-  private hf: { data: Float32Array; n: number; minX: number; minZ: number; sx: number; sz: number } | null = null;
+  private hf: { data: Float32Array; nx: number; nz: number; minX: number; minZ: number; sx: number; sz: number } | null = null;
   private terrain!: THREE.Mesh;
   private rocks!: THREE.InstancedMesh;
   private rockData: { x: number; z: number; s: number; r: THREE.Euler }[] = [];
@@ -53,7 +59,7 @@ export class MarsWorldScene implements Scene {
     this.metAtStart = store.get().metSojourner;
     this.camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 1500);
     this.scene.background = this.makeSky();
-    this.scene.fog = new THREE.Fog(0xc98a5e, 80, 620);
+    this.scene.fog = new THREE.Fog(0xc98a5e, 90, 480);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     this.scene.add(new THREE.HemisphereLight(0xffd2a8, 0x5a2a14, 0.7));
@@ -227,36 +233,35 @@ export class MarsWorldScene implements Scene {
     }, 900);
   }
 
-  /** Real NASA MOLA Ma'adim Vallis canyon, scaled to ~1 km long. */
+  /** 4 real NASA sites laid end-to-end along -Z, 350 m each, tall relief. */
   private loadNasaMap() {
-    new GLTFLoader().load(mapAsset.url, (gltf) => {
+    const NX = 256, NZ = 1024;
+    const minX = -ZONE / 2, minZ = -ZONE * (ZONES.length - 0.5);
+    const sx = ZONE / (NX - 1), sz = (ZONE * ZONES.length) / (NZ - 1);
+    const data = new Float32Array(NX * NZ).fill(-1e9);
+    let left = ZONES.length;
+    const a = new THREE.Vector3(), b = new THREE.Vector3(), d = new THREE.Vector3();
+    ZONES.forEach((zone, zi) => loader().load(zone.url, (gltf) => {
       if (this.disposed) return;
       const root = gltf.scene;
       root.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(root);
       const size = box.getSize(new THREE.Vector3());
-      const horiz = Math.max(size.x, size.z);
-      const k = MAP_LENGTH / horiz;
+      const k = (ZONE + 6) / Math.max(size.x, size.z);
       const kv = MAP_DEPTH / Math.max(size.y, 0.001);
       const c = box.getCenter(new THREE.Vector3());
       const wrap = new THREE.Group();
       wrap.add(root);
       root.position.set(-c.x, -c.y, -c.z);
       wrap.scale.set(k, kv, k);
+      wrap.position.z = -zi * ZONE;
       wrap.updateMatrixWorld(true);
-      // collect world triangles → heightfield
-      const N = 512;
-      const fb = new THREE.Box3().setFromObject(wrap);
-      const minX = fb.min.x, minZ = fb.min.z;
-      const sx = (fb.max.x - minX) / (N - 1), sz = (fb.max.z - minZ) / (N - 1);
-      const data = new Float32Array(N * N).fill(-1e9);
-      const a = new THREE.Vector3(), b = new THREE.Vector3(), d = new THREE.Vector3();
       wrap.traverse((o) => {
         const m = o as THREE.Mesh;
         if (!m.isMesh) return;
         m.receiveShadow = true;
         const mat = m.material as THREE.MeshStandardMaterial;
-        mat.color = new THREE.Color(1.25, 0.82, 0.6); // butterscotch ochre grade
+        mat.color = new THREE.Color(...(zone.grade as [number, number, number]));
         mat.roughness = 0.95;
         mat.metalness = 0;
         if (mat.map) mat.map.anisotropy = 8;
@@ -272,9 +277,9 @@ export class MarsWorldScene implements Scene {
           b.fromBufferAttribute(pos, i1).applyMatrix4(m.matrixWorld);
           d.fromBufferAttribute(pos, i2).applyMatrix4(m.matrixWorld);
           const x0 = Math.max(0, Math.floor((Math.min(a.x, b.x, d.x) - minX) / sx));
-          const x1 = Math.min(N - 1, Math.ceil((Math.max(a.x, b.x, d.x) - minX) / sx));
+          const x1 = Math.min(NX - 1, Math.ceil((Math.max(a.x, b.x, d.x) - minX) / sx));
           const z0 = Math.max(0, Math.floor((Math.min(a.z, b.z, d.z) - minZ) / sz));
-          const z1 = Math.min(N - 1, Math.ceil((Math.max(a.z, b.z, d.z) - minZ) / sz));
+          const z1 = Math.min(NZ - 1, Math.ceil((Math.max(a.z, b.z, d.z) - minZ) / sz));
           const den = (b.z - d.z) * (a.x - d.x) + (d.x - b.x) * (a.z - d.z);
           if (Math.abs(den) < 1e-9) continue;
           for (let gz = z0; gz <= z1; gz++) {
@@ -285,19 +290,56 @@ export class MarsWorldScene implements Scene {
               const w2 = 1 - w0 - w1;
               if (w0 < -1e-4 || w1 < -1e-4 || w2 < -1e-4) continue;
               const h = w0 * a.y + w1 * b.y + w2 * d.y;
-              const ii = gz * N + gx;
+              const ii = gz * NX + gx;
               if (h > (data[ii] ?? -Infinity)) data[ii] = h;
             }
           }
         }
       });
-      for (let i = 0; i < data.length; i++) { const v = data[i]; if (v !== undefined && v < -1e8) data[i] = fb.min.y; }
-      this.hf = { data, n: N, minX, minZ, sx, sz };
+      this.scene.add(wrap);
+      if (--left > 0) return;
+      // fill holes, then smooth seams between sites so walking is continuous
+      for (let i = 0; i < data.length; i++) if ((data[i] ?? 0) < -1e8) data[i] = 0;
+      for (let s = 1; s < ZONES.length; s++) {
+        const zc = Math.round((-s * ZONE + ZONE / 2 - minZ) / sz), w = 14;
+        for (let gx = 0; gx < NX; gx++) {
+          const lo = data[(zc - w) * NX + gx] ?? 0, hi = data[(zc + w) * NX + gx] ?? 0;
+          for (let o = -w; o <= w; o++) data[(zc + o) * NX + gx] = THREE.MathUtils.lerp(lo, hi, (o + w) / (2 * w));
+        }
+      }
+      this.hf = { data, nx: NX, nz: NZ, minX, minZ, sx, sz };
       this.scene.remove(this.terrain);
       this.terrain.geometry.dispose();
-      this.scene.add(wrap);
       this.resnap();
       this.bakeMinimap();
+    }));
+    // real Mars rock model replaces the procedural dodecahedrons
+    loader().load("/models/rock.glb", (gltf) => {
+      if (this.disposed) return;
+      let mesh: THREE.Mesh | null = null;
+      gltf.scene.traverse((o) => { if (!mesh && (o as THREE.Mesh).isMesh) mesh = o as THREE.Mesh; });
+      if (!mesh) return;
+      const src = mesh as THREE.Mesh;
+      const geo = src.geometry.clone();
+      geo.computeBoundingBox();
+      const bb = geo.boundingBox!;
+      const sc = 1 / Math.max(bb.max.x - bb.min.x, bb.max.y - bb.min.y, bb.max.z - bb.min.z, 1e-3);
+      geo.translate(-(bb.min.x + bb.max.x) / 2, -bb.min.y, -(bb.min.z + bb.max.z) / 2);
+      geo.scale(sc * 2, sc * 2, sc * 2);
+      this.scene.remove(this.rocks);
+      const count = 700;
+      const rocks = new THREE.InstancedMesh(geo, src.material as THREE.Material, count);
+      rocks.castShadow = rocks.receiveShadow = true;
+      this.rocks = rocks;
+      this.rockData = [];
+      for (let i = 0; i < count; i++) {
+        const x = (Math.random() - 0.5) * (ZONE - 30);
+        const z = ZONE / 2 - 15 - Math.random() * (ZONE * ZONES.length - 30);
+        const s = 0.3 + Math.pow(Math.random(), 2.6) * 3;
+        this.rockData.push({ x, z, s, r: new THREE.Euler(0, Math.random() * 6.28, 0) });
+      }
+      this.scene.add(rocks);
+      this.resnap();
     });
   }
 
@@ -318,7 +360,7 @@ export class MarsWorldScene implements Scene {
 
   /** Your rigged astronaut replaces the placeholder explorer. */
   private loadHero() {
-    new GLTFLoader().load(heroAsset.url, (gltf) => {
+    loader().load("/models/astronaut.glb", (gltf) => {
       if (this.disposed) return;
       const m = gltf.scene;
       const box = new THREE.Box3().setFromObject(m);
@@ -351,9 +393,9 @@ export class MarsWorldScene implements Scene {
     let lo = Infinity, hi = -Infinity;
     for (const v of h.data) { if (v < lo) lo = v; if (v > hi) hi = v; }
     const c = document.createElement("canvas");
-    c.width = c.height = h.n;
+    c.width = h.nx; c.height = h.nz;
     const g = c.getContext("2d")!;
-    const img = g.createImageData(h.n, h.n);
+    const img = g.createImageData(h.nx, h.nz);
     for (let i = 0; i < h.data.length; i++) {
       const t = ((h.data[i] ?? lo) - lo) / (hi - lo || 1);
       img.data[i * 4] = 90 + t * 160; img.data[i * 4 + 1] = 40 + t * 110; img.data[i * 4 + 2] = 20 + t * 70; img.data[i * 4 + 3] = 255;
@@ -363,14 +405,9 @@ export class MarsWorldScene implements Scene {
   }
 
   private sectorAt(x: number, z: number) {
-    const zones = [
-      { n: "SECTOR 01 · OUTPOST TOUCHDOWN", x: 0, z: 0, r: 25 },
-      { n: "SECTOR 02 · ARES PATHFINDER RELIC SITE", x: SITE.x, z: SITE.z, r: 30 },
-      { n: "SECTOR 03 · MA'ADIM ANCIENT WATERWAY", x: 120, z: -150, r: 90 },
-      { n: "SECTOR 04 · GUSEV CRATER DESCENT", x: 250, z: -400, r: 120 },
-    ];
-    for (const s of zones) if (Math.hypot(x - s.x, z - s.z) < s.r) return s.n;
-    return "MA'ADIM VALLIS";
+    if (Math.hypot(x - SITE.x, z - SITE.z) < 30) return "ARES VALLIS · CARL SAGAN MEMORIAL STATION";
+    const i = THREE.MathUtils.clamp(Math.floor((ZONE / 2 - z) / ZONE), 0, ZONES.length - 1);
+    return ZONES[i]!.name;
   }
 
   private drawMinimap(dt: number) {
@@ -386,7 +423,7 @@ export class MarsWorldScene implements Scene {
     const sc = R / range;
     const h = this.hf;
     if (this.miniBg && h) {
-      g.drawImage(this.miniBg, (h.minX - p.x) * sc, (h.minZ - p.z) * sc, h.sx * (h.n - 1) * sc, h.sz * (h.n - 1) * sc);
+      g.drawImage(this.miniBg, (h.minX - p.x) * sc, (h.minZ - p.z) * sc, h.sx * (h.nx - 1) * sc, h.sz * (h.nz - 1) * sc);
     } else { g.fillStyle = "#5a2e18"; g.fillRect(-R * 2, -R * 2, W * 2, W * 2); }
     // rover pin
     const rx = (this.rover.position.x - p.x) * sc, rz = (this.rover.position.z - p.z) * sc;
@@ -408,7 +445,7 @@ export class MarsWorldScene implements Scene {
     const name = this.sectorAt(p.x, p.z);
     if (name !== this.sectorName) {
       this.sectorName = name;
-      if (name !== "MA'ADIM VALLIS") store.set({ hint: { en: "📍 " + name, bn: "📍 " + name } });
+      store.set({ hint: { en: "📍 " + name, bn: "📍 " + name } });
     }
   }
 
@@ -429,11 +466,11 @@ export class MarsWorldScene implements Scene {
 
   private sampleHf(x: number, z: number): number {
     const h = this.hf!;
-    const fx = THREE.MathUtils.clamp((x - h.minX) / h.sx, 0, h.n - 1.001);
-    const fz = THREE.MathUtils.clamp((z - h.minZ) / h.sz, 0, h.n - 1.001);
+    const fx = THREE.MathUtils.clamp((x - h.minX) / h.sx, 0, h.nx - 1.001);
+    const fz = THREE.MathUtils.clamp((z - h.minZ) / h.sz, 0, h.nz - 1.001);
     const ix = Math.floor(fx), iz = Math.floor(fz);
     const tx = fx - ix, tz = fz - iz;
-    const g = (u: number, v: number) => h.data[v * h.n + u] ?? 0;
+    const g = (u: number, v: number) => h.data[v * h.nx + u] ?? 0;
     const top = g(ix, iz) * (1 - tx) + g(ix + 1, iz) * tx;
     const bot = g(ix, iz + 1) * (1 - tx) + g(ix + 1, iz + 1) * tx;
     return top * (1 - tz) + bot * tz;
@@ -604,8 +641,8 @@ export class MarsWorldScene implements Scene {
     this.player.position.addScaledVector(this.velocity, dt);
     // world bounds
     const h = this.hf;
-    const bx0 = h ? h.minX + 15 : -WORLD / 2 + 10, bx1 = h ? h.minX + h.sx * (h.n - 1) - 15 : WORLD / 2 - 10;
-    const bz0 = h ? h.minZ + 15 : -WORLD / 2 + 10, bz1 = h ? h.minZ + h.sz * (h.n - 1) - 15 : WORLD / 2 - 10;
+    const bx0 = h ? h.minX + 15 : -WORLD / 2 + 10, bx1 = h ? h.minX + h.sx * (h.nx - 1) - 15 : WORLD / 2 - 10;
+    const bz0 = h ? h.minZ + 15 : -WORLD / 2 + 10, bz1 = h ? h.minZ + h.sz * (h.nz - 1) - 15 : WORLD / 2 - 10;
     this.player.position.x = THREE.MathUtils.clamp(this.player.position.x, bx0, bx1);
     this.player.position.z = THREE.MathUtils.clamp(this.player.position.z, bz0, bz1);
     this.player.position.y = this.groundHeight(this.player.position.x, this.player.position.z);
