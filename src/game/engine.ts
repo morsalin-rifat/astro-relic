@@ -119,9 +119,13 @@ export class Engine {
 
   transitionTo(phase: Phase) {
     store.set({ fading: true });
+    const showLoader = phase === "hub" || phase === "explore";
+    if (showLoader) store.set({ loading: true });
     window.setTimeout(() => {
       this.setPhase(phase);
       store.set({ phase, fading: false });
+      // explore clears the loader itself once the NASA terrain is ready
+      if (phase === "hub") window.setTimeout(() => store.set({ loading: false }), 1400);
     }, 650);
   }
 

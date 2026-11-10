@@ -49,6 +49,11 @@ interface GameState {
   orbitSpeed: number;
   showOrbits: boolean;
   showLabels: boolean;
+  badges: string[];
+  newBadge: string | null;
+  loading: boolean;
+  showEncounter: boolean;
+  bigMap: boolean;
 }
 
 const persisted = (() => {
@@ -87,6 +92,11 @@ class Store {
     orbitSpeed: 1,
     showOrbits: true,
     showLabels: true,
+    badges: Array.isArray(persisted.badges) ? persisted.badges : [],
+    newBadge: null,
+    loading: false,
+    showEncounter: false,
+    bigMap: false,
   };
 
   private listeners = new Set<() => void>();
@@ -105,7 +115,8 @@ class Store {
       "flags" in partial ||
       "lang" in partial ||
       "tutorialDone" in partial ||
-      "hasSeenHubIntro" in partial
+      "hasSeenHubIntro" in partial ||
+      "badges" in partial
     ) {
       try {
         localStorage.setItem(
@@ -114,6 +125,7 @@ class Store {
             flags: this.state.flags,
             lang: this.state.lang,
             tutorialDone: this.state.tutorialDone,
+            badges: this.state.badges,
           }),
         );
       } catch {
@@ -121,6 +133,11 @@ class Store {
       }
     }
     this.listeners.forEach((fn) => fn());
+  }
+
+  awardBadge(id: string) {
+    if (this.state.badges.includes(id)) return;
+    this.set({ badges: [...this.state.badges, id], newBadge: id });
   }
 
   // ---- dialogue helpers ----

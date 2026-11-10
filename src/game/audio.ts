@@ -65,8 +65,76 @@ class AmbientAudio {
       g.connect(out);
       src.start();
       this.nodes = [src, filt, g];
+      g.gain.value = 0.14;
     }
+    this.startMusic(mode);
     this.fadeTo(1, 2.5);
+  }
+
+  /** Slow cinematic pad + sparse twinkling chimes so the music evolves instead of droning. */
+  private chimeTimer: number | null = null;
+  private startMusic(mode: "space" | "mars") {
+    const ctx = this.ctx!;
+    const out = this.master!;
+    const bus = ctx.createGain();
+    bus.gain.value = 0.09;
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 900;
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = 0.05;
+    const lfoAmt = ctx.createGain();
+    lfoAmt.gain.value = 500;
+    lfo.connect(lfoAmt).connect(lp.frequency);
+    bus.connect(lp).connect(out);
+    lfo.start();
+    this.nodes.push(bus, lp, lfo, lfoAmt);
+    // chord progression (A minor -> F -> C -> G), hopeful + mysterious
+    const chords = mode === "mars"
+      ? [[220, 261.6, 329.6], [174.6, 220, 261.6], [196, 246.9, 293.7], [164.8, 196, 246.9]]
+      : [[110, 164.8, 220], [87.3, 130.8, 174.6], [98, 146.8, 196], [130.8, 164.8, 196]];
+    const voices = [0, 1, 2].map(() => {
+      const o = ctx.createOscillator();
+      o.type = "triangle";
+      const o2 = ctx.createOscillator();
+      o2.type = "sine";
+      o2.detune.value = 7;
+      o.connect(bus);
+      o2.connect(bus);
+      o.start();
+      o2.start();
+      this.nodes.push(o, o2);
+      return [o, o2];
+    });
+    let ci = 0;
+    const setChord = () => {
+      const ch = chords[ci % chords.length]!;
+      voices.forEach((pair, i) =>
+        pair.forEach((o) => o.frequency.setTargetAtTime(ch[i]!, ctx.currentTime, 1.5)),
+      );
+      ci++;
+    };
+    setChord();
+    const pent = [523.3, 587.3, 659.3, 784, 880, 1046.5];
+    let tick = 0;
+    if (this.chimeTimer) clearInterval(this.chimeTimer);
+    this.chimeTimer = window.setInterval(() => {
+      if (!this.ctx || this.mode !== mode) return;
+      tick++;
+      if (tick % 8 === 0) setChord();
+      if (Math.random() < 0.45) {
+        const o = ctx.createOscillator();
+        o.type = "sine";
+        o.frequency.value = pent[Math.floor(Math.random() * pent.length)]!;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.035, ctx.currentTime + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 2.6);
+        o.connect(g).connect(out);
+        o.start();
+        o.stop(ctx.currentTime + 2.7);
+      }
+    }, 1000);
   }
 
   private stopNodes() {
@@ -80,6 +148,8 @@ class AmbientAudio {
     });
     this.nodes = [];
     this.mode = null;
+    if (this.chimeTimer) clearInterval(this.chimeTimer);
+    this.chimeTimer = null;
   }
 
   private fadeTo(v: number, secs: number) {
