@@ -432,7 +432,53 @@ export class MarsWorldScene implements Scene {
     return ZONES[i]!.name;
   }
 
+  /** Full-screen tactical map (opened by tapping the minimap). */
+  private drawBigMap() {
+    const open = store.get().bigMap;
+    if (!open) { if (this.big) this.big.style.display = "none"; return; }
+    if (!this.big) {
+      const c = document.createElement("canvas");
+      c.style.cssText = "position:fixed;inset:0;width:100vw;height:100vh;z-index:45;background:rgba(10,5,3,.92)";
+      document.body.appendChild(c);
+      this.big = c;
+    }
+    const c = this.big; c.style.display = "block";
+    const W = (c.width = innerWidth), H = (c.height = innerHeight);
+    const g = c.getContext("2d")!;
+    const minX = -ZONE / 2, maxZ = ZONE / 2, depth = ZONE * ZONES.length;
+    const sc = Math.min((W * 0.8) / ZONE, (H * 0.86) / depth);
+    const ox = W / 2 - (ZONE * sc) / 2, oy = H * 0.07;
+    const toX = (x: number) => ox + (x - minX) * sc, toY = (z: number) => oy + (maxZ - z) * sc;
+    g.clearRect(0, 0, W, H);
+    if (this.miniBg && this.hf) {
+      const h = this.hf;
+      g.save(); g.translate(toX(h.minX), toY(h.minZ)); g.scale(1, -1);
+      g.drawImage(this.miniBg, 0, 0, h.sx * (h.nx - 1) * sc, h.sz * (h.nz - 1) * sc);
+      g.restore();
+    }
+    const badges = store.get().badges;
+    ZONES.forEach((zn, i) => {
+      const y0 = toY(ZONE / 2 - i * ZONE);
+      g.strokeStyle = "rgba(255,217,125,.5)"; g.setLineDash([6, 6]);
+      g.strokeRect(ox, y0, ZONE * sc, ZONE * sc); g.setLineDash([]);
+      const unlocked = i === 0 || badges.length >= i;
+      g.fillStyle = "rgba(0,0,0,.6)"; g.fillRect(ox + 6, y0 + 6, Math.min(ZONE * sc - 12, 330), 24);
+      g.fillStyle = unlocked ? "#ffd97d" : "#9a8a80"; g.font = "bold 12px sans-serif"; g.textAlign = "left";
+      g.fillText((unlocked ? "" : "🔒 ") + zn.name, ox + 12, y0 + 22);
+    });
+    const pin = (x: number, z: number, col: string, label: string) => {
+      g.fillStyle = col; g.strokeStyle = "#000"; g.lineWidth = 2;
+      g.beginPath(); g.arc(toX(x), toY(z), 7, 0, 6.29); g.fill(); g.stroke();
+      g.fillStyle = "#fff"; g.font = "bold 12px sans-serif"; g.textAlign = "center";
+      g.fillText(label, toX(x), toY(z) - 12);
+    };
+    pin(this.rover.position.x, this.rover.position.z, "#ffd97d", "SOJOURNER");
+    const p = this.player.position;
+    pin(p.x, p.z, "#4fd1ff", "YOU");
+  }
+
   private drawMinimap(dt: number) {
+    this.drawBigMap();
     const c = this.mini; if (!c) return;
     const g = c.getContext("2d")!;
     const W = c.width, R = W / 2, range = 120; // metres shown from centre
