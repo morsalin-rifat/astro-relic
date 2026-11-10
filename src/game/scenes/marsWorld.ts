@@ -5,7 +5,8 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import { makeStarfield, fbm, type Scene } from "../utils";
 import { buildExplorer, buildNova, buildSojourner } from "../models/builders";
-import { NOVA_WELCOME_MARS, NOVA_NEAR_SITE, SOJOURNER_WAKE, UI } from "../../data/content";
+import { voice } from "../voice";
+import { NOVA_WELCOME_MARS, NOVA_NEAR_SITE, UI } from "../../data/content";
 
 const SITE = new THREE.Vector3(42, 0, -30);
 const WORLD = 320;
@@ -51,12 +52,16 @@ export class MarsWorldScene implements Scene {
   private walkAction: THREE.AnimationAction | null = null;
   private mini!: HTMLCanvasElement;
   private miniBg: HTMLCanvasElement | null = null;
+  private big: HTMLCanvasElement | null = null;
   private sectorName = "";
   private sectorTimer = 0;
 
   constructor(renderer: THREE.WebGLRenderer) {
     this.renderer = renderer;
     this.metAtStart = store.get().metSojourner;
+    store.set({ loading: true, bigMap: false });
+    const loadGuard = window.setTimeout(() => store.set({ loading: false }), 20000);
+    this.disposers.push(() => window.clearTimeout(loadGuard));
     this.camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 1500);
     this.scene.background = this.makeSky();
     this.scene.fog = new THREE.Fog(0xc98a5e, 90, 480);
@@ -151,6 +156,19 @@ export class MarsWorldScene implements Scene {
       o.castShadow = true;
     });
     this.scene.add(this.rover);
+    loader().load("/models/sojourner.glb", (gltf) => {
+      if (this.disposed) return;
+      const m = gltf.scene;
+      const box = new THREE.Box3().setFromObject(m);
+      const size = box.getSize(new THREE.Vector3());
+      const k = 1.5 / Math.max(size.x, size.z, 0.001);
+      m.scale.setScalar(k);
+      const c = box.getCenter(new THREE.Vector3());
+      m.position.set(-c.x * k, -box.min.y * k, -c.z * k);
+      m.traverse((o) => { if ((o as THREE.Mesh).isMesh) o.castShadow = true; });
+      this.rover.children.forEach((ch) => (ch.visible = false));
+      this.rover.add(m);
+    });
 
     // beacon
     this.beacon = new THREE.Group();
@@ -312,6 +330,8 @@ export class MarsWorldScene implements Scene {
       this.terrain.geometry.dispose();
       this.resnap();
       this.bakeMinimap();
+      store.set({ loading: false });
+      window.setTimeout(() => { if (!this.disposed) voice.play("01_nova_landing"); }, 900);
     }));
     // real Mars rock model replaces the procedural dodecahedrons
     loader().load("/models/rock.glb", (gltf) => {
@@ -383,7 +403,9 @@ export class MarsWorldScene implements Scene {
   private buildMinimap() {
     const c = document.createElement("canvas");
     c.width = c.height = 180;
-    c.style.cssText = "position:fixed;top:72px;right:16px;width:150px;height:150px;border-radius:50%;border:2px solid rgba(255,210,150,.7);box-shadow:0 0 18px rgba(0,0,0,.5);z-index:40;pointer-events:none;background:#2a140a";
+    c.style.cssText = "position:fixed;top:72px;right:16px;width:150px;height:150px;border-radius:50%;border:2px solid rgba(255,210,150,.7);box-shadow:0 0 18px rgba(0,0,0,.5);z-index:40;pointer-events:auto;cursor:pointer;background:#2a140a";
+    c.title = "Open map";
+    c.addEventListener("click", () => store.set({ bigMap: true }));
     document.body.appendChild(c);
     this.mini = c;
   }
@@ -565,13 +587,8 @@ export class MarsWorldScene implements Scene {
     if (this.meeting) return;
     this.meeting = true;
     store.set({ objective: null, hint: null });
-    const storyDone = store.get().storyDone;
-    store.set({ metSojourner: true });
-    store.say(SOJOURNER_WAKE, [
-      storyDone
-        ? { en: UI.inspectBtn.en, bn: UI.inspectBtn.bn, action: "openInspect" }
-        : { en: UI.hearStory.en, bn: UI.hearStory.bn, action: "hearStory" },
-    ]);
+    store.set({ metSojourner: true, showEncounter: true });
+    store.clearDialogue();
     if (!skipCamera) {
       // gently pull camera toward the rover
       this.camDist = 5;
@@ -735,6 +752,9 @@ export class MarsWorldScene implements Scene {
   dispose() {
     this.disposed = true;
     this.mini?.remove();
+    this.big?.remove();
+    voice.stop();
+    store.set({ loading: false, bigMap: false, showEncounter: false });
     store.set({ objective: null, hint: null });
     this.disposers.forEach((d) => d());
     this.scene.traverse((o: THREE.Object3D) => {
