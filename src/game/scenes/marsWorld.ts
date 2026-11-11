@@ -40,6 +40,7 @@ export class MarsWorldScene implements Scene {
   private velocity = new THREE.Vector3();
   private nearSiteSaid = false;
   private meeting = false;
+  private needLeave = false;
   private disposers: (() => void)[] = [];
   private metAtStart: boolean;
   private hf: { data: Float32Array; nx: number; nz: number; minX: number; minZ: number; sx: number; sz: number } | null = null;
@@ -439,6 +440,7 @@ export class MarsWorldScene implements Scene {
     if (!this.big) {
       const c = document.createElement("canvas");
       c.style.cssText = "position:fixed;inset:0;width:100vw;height:100vh;z-index:45;background:rgba(10,5,3,.92)";
+      c.addEventListener("click", () => store.set({ bigMap: false }));
       document.body.appendChild(c);
       this.big = c;
     }
@@ -753,6 +755,12 @@ export class MarsWorldScene implements Scene {
     }
 
     // triggers
+    if (this.meeting && !store.get().showEncounter) {
+      this.meeting = false;
+      this.needLeave = true;
+      this.camDist = Math.max(this.camDist, 8);
+    }
+    if (this.needLeave && this.player.position.distanceTo(this.rover.position) > 8) this.needLeave = false;
     if (!this.meeting) {
       const distSite = this.player.position.distanceTo(this.beacon.position);
       if (!this.nearSiteSaid && distSite < 26) {
@@ -760,7 +768,7 @@ export class MarsWorldScene implements Scene {
         store.say(NOVA_NEAR_SITE);
         store.set({ objective: UI.walkToRover });
       }
-      if (this.player.position.distanceTo(this.rover.position) < 4.2) {
+      if (!this.needLeave && this.player.position.distanceTo(this.rover.position) < 4.2) {
         this.startMeeting();
       }
     } else {

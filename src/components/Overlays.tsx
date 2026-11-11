@@ -5,6 +5,7 @@ import { UI, MISSIONS, TELEMETRY, HUB, HOWTO, CHAPTERS } from "../data/content";
 import { STORY, HOTSPOTS, HOTSPOT_ORDER } from "../data/story";
 import { SolarHUD } from "./SolarHUD";
 import { NovaGuide } from "./NovaGuide";
+import { SojournerEncounter, Badges, BigMapClose, RoverLoader } from "./MissionUI";
 
 const POP = "cubic-bezier(.785, .135, .15, .01)";
 
@@ -1021,6 +1022,10 @@ export function Overlays() {
       <TelemetryBar />
       <TopControls />
       <Joystick />
+      <SojournerEncounter />
+      <Badges />
+      <BigMapClose />
+      <RoverLoader />
       {/* backdrop fade overlay */}
       <div
         className="absolute inset-0 z-[60] bg-black pointer-events-none transition-opacity duration-500"
