@@ -9,9 +9,6 @@ import { SojournerEncounter, Badges, BigMapClose, RoverLoader, HoloBubble } from
 
 const POP = "cubic-bezier(.785, .135, .15, .01)";
 
-function speakerName(s: string) {
-  return s === "nova" ? "NOVA" : s === "sojourner" ? "SOJOURNER" : "";
-}
 
 /* ---------------- Dialogue box ---------------- */
 function Dialogue() {
