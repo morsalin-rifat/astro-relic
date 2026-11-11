@@ -32,7 +32,7 @@ export function SolarHUD() {
         {/* Left: Minimal Game Header with Nova AI Guide */}
         <div className="pointer-events-auto flex items-center gap-3 bg-black/70 backdrop-blur-md border border-white/15 px-3 py-2 rounded-xl shadow-2xl">
           <img
-            src="/images/nova_ai_guide_avatar_1791384201763.jpg"
+            src="/images/nova.png"
             alt="Nova AI Guide"
             className="w-10 h-10 rounded-full border border-[#00f0ff] object-cover shadow-[0_0_10px_rgba(0,240,255,0.5)]"
             referrerPolicy="no-referrer"

@@ -57,9 +57,9 @@ function Dialogue() {
         {current.speaker === "nova" && (
           <div className="relative flex-shrink-0">
             <img
-              src="/images/nova_ai_guide_avatar_1791384201763.jpg"
+              src="/images/nova.png"
               alt="Nova AI Guide"
-              className="w-16 h-16 rounded-full border-2 border-[#00f0ff] object-cover shadow-[0_0_15px_rgba(0,240,255,0.45)]"
+              className="w-16 h-16 rounded-full border-2 border-[#00f0ff] object-contain bg-[radial-gradient(circle,#00f0ff33,#000a)] p-1 shadow-[0_0_15px_rgba(0,240,255,0.45)]"
               referrerPolicy="no-referrer"
             />
             <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 bg-[#00f0ff] text-black text-[9px] font-bold rounded-full">

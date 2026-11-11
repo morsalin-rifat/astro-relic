@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { store, useGame } from "@/state/store";
 import { audio as ambient } from "@/game/audio";
-import novaImg from "@/assets/nova.png.asset.json";
 import voiceEn from "@/assets/hub_voice_en.mp3.asset.json";
 import voiceBn from "@/assets/hub_voice_bn.mp3.asset.json";
 
@@ -254,7 +253,7 @@ export function NovaGuide({ onComplete }: NovaGuideProps) {
 
           {/* Nova Sprite Image (Uploaded high-res transparent mascot) */}
           <img
-            src={novaImg.url}
+            src="/images/nova.png"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src = "/assets/aistudio/chact__2__4eb39933.png";
             }}

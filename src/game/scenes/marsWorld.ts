@@ -636,7 +636,7 @@ export class MarsWorldScene implements Scene {
     this.meeting = true;
     store.set({ objective: null, hint: null });
     store.set({ metSojourner: true, showEncounter: true });
-    store.clearDialogue();
+    if (store.get().current) window.setTimeout(() => store.clearDialogue(), 2500); else store.clearDialogue();
     if (!skipCamera) {
       // gently pull camera toward the rover
       this.camDist = 5;
