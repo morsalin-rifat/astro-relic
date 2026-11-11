@@ -33,6 +33,7 @@ const QUIZ = {
 /* ---------- 3D turntable inside the card ---------- */
 function RoverTurntable() {
   const ref = useRef<HTMLDivElement>(null);
+  const [ready, setReady] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -48,11 +49,12 @@ function RoverTurntable() {
     d.position.set(3, 4, 2);
     scene.add(d);
     const cam = new THREE.PerspectiveCamera(35, 1, 0.01, 50);
-    cam.position.set(0, 0.9, 2.6);
-    cam.lookAt(0, 0.25, 0);
+    cam.position.set(0, 1.1, 3.4);
+    cam.lookAt(0, 0.35, 0);
+    let dead = false;
     const pivot = new THREE.Group();
     scene.add(pivot);
-    new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load("/models/sojourner.glb", (g) => {
+    MeshoptDecoder.ready.then(() => { if (!dead) new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load("/models/sojourner.glb", (g) => {
       const m = g.scene;
       const box = new THREE.Box3().setFromObject(m);
       const s = box.getSize(new THREE.Vector3());
@@ -61,7 +63,8 @@ function RoverTurntable() {
       m.scale.setScalar(k);
       m.position.set(-c.x * k, -box.min.y * k, -c.z * k);
       pivot.add(m);
-    });
+      setReady(true);
+    }, undefined, () => setReady(true)); });
     let yaw = 0.6, vel = 0.4, drag = false, lx = 0, raf = 0, last = performance.now();
     const down = (e: PointerEvent) => { drag = true; lx = e.clientX; el.setPointerCapture(e.pointerId); };
     const move = (e: PointerEvent) => { if (!drag) return; vel = (e.clientX - lx) * 0.6; yaw += (e.clientX - lx) * 0.012; lx = e.clientX; };
@@ -79,12 +82,56 @@ function RoverTurntable() {
     };
     raf = requestAnimationFrame(loop);
     return () => {
+      dead = true;
       cancelAnimationFrame(raf);
       r.dispose();
       r.domElement.remove();
     };
   }, []);
-  return <div ref={ref} className="w-full aspect-square cursor-grab active:cursor-grabbing touch-none" />;
+  return (
+    <div className="relative w-full aspect-square">
+      <div ref={ref} className="w-full h-full cursor-grab active:cursor-grabbing touch-none" />
+      {!ready && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <div className="w-14 h-14 rounded-full border-4 border-[#ffd97d]/20 border-t-[#ffd97d] animate-spin" />
+          <div className="mt-2 text-[10px] tracking-[0.3em] text-[#ffd97d]/80">WAKING UP…</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const PHOTOS: { src: string; title: L; text: L }[] = [
+  { src: "/images/sojourner/PIA00766.jpg", title: { en: "Me & Yogi Rock", bn: "আমি ও যোগী পাথর" }, text: { en: "I touched this big rock with my APXS 'nose' to learn what it was made of.", bn: "এই বড় পাথরটা আমার APXS 'নাক' দিয়ে ছুঁয়ে বুঝেছিলাম এটা কী দিয়ে তৈরি।" } },
+  { src: "/images/sojourner/PIA00627.jpg", title: { en: "Down the ramp!", bn: "র‍্যাম্প বেয়ে নামা!" }, text: { en: "I rolled down this ramp from the lander — my first wheel tracks on Mars!", bn: "ল্যান্ডারের এই র‍্যাম্প বেয়ে নেমেছিলাম — মঙ্গলে আমার প্রথম চাকার দাগ!" } },
+  { src: "/images/sojourner/PIA00621.jpg", title: { en: "Ares Vallis", bn: "অ্যারিস ভ্যালিস" }, text: { en: "An ancient flood once rushed through this valley and left rocks everywhere.", bn: "একসময় বিশাল বন্যা এই উপত্যকা দিয়ে বয়ে গিয়ে চারদিকে পাথর ছড়িয়ে গেছে।" } },
+  { src: "/images/sojourner/PIA00611.jpg", title: { en: "Bouncy landing", bn: "লাফিয়ে নামা" }, text: { en: "Giant airbags bounced us onto Mars. You can see them around the lander!", bn: "বিশাল এয়ারব্যাগে লাফিয়ে আমরা মঙ্গলে নেমেছিলাম। ল্যান্ডারের চারপাশে দেখো!" } },
+];
+
+function PhotoGallery({ lang, onClose }: { lang: "en" | "bn"; onClose: () => void }) {
+  const [i, setI] = useState(0);
+  const p = PHOTOS[i];
+  const go = (d: number) => { audio.beep(900); setI((x) => (x + d + PHOTOS.length) % PHOTOS.length); };
+  return (
+    <div className="absolute inset-0 z-[3] rounded-[28px] bg-[#0c0806]/97 p-4 flex flex-col">
+      <div className="flex items-center justify-between">
+        <div className="text-xs tracking-[0.3em] text-[#ffd97d]">📸 NASA · 1997</div>
+        <button onClick={onClose} className="text-xl opacity-70 hover:opacity-100" aria-label="Close photos">✕</button>
+      </div>
+      <div className="relative mt-2 rounded-2xl overflow-hidden border border-[#ffd97d]/40 bg-black aspect-[4/3]">
+        <img key={p.src} src={p.src} alt={t(p.title, lang)} className="w-full h-full object-contain animate-[hubrise_0.4s_ease]" />
+        <button onClick={() => go(-1)} aria-label="Previous" className="absolute left-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 border border-[#ffd97d] text-[#ffd97d] text-xl">‹</button>
+        <button onClick={() => go(1)} aria-label="Next" className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 border border-[#ffd97d] text-[#ffd97d] text-xl">›</button>
+        <div className="absolute bottom-2 right-3 text-[10px] bg-black/60 px-2 py-0.5 rounded-full">{i + 1}/{PHOTOS.length}</div>
+      </div>
+      <div className="mt-3 text-lg font-bold text-[#ffd97d]">{t(p.title, lang)}</div>
+      <div className="text-sm leading-relaxed">{t(p.text, lang)}</div>
+      <div className="flex justify-center gap-2 mt-3">
+        {PHOTOS.map((_, k) => <button key={k} onClick={() => setI(k)} aria-label={`Photo ${k + 1}`} className={`h-2 rounded-full transition-all ${k === i ? "w-6 bg-[#ffd97d]" : "w-2 bg-white/30"}`} />)}
+      </div>
+      <div className="mt-auto pt-2 text-[9px] opacity-50 text-center">Images: NASA/JPL</div>
+    </div>
+  );
 }
 
 /* ---------- Sojourner encounter card ---------- */
@@ -96,6 +143,7 @@ export function SojournerEncounter() {
   const [active, setActive] = useState<string | null>(null);
   const [speaking, setSpeaking] = useState(false);
   const [wrong, setWrong] = useState<string | null>(null);
+  const [gallery, setGallery] = useState(false);
 
   const say = (clip: string, then?: () => void) => {
     setSpeaking(true);
@@ -104,7 +152,7 @@ export function SojournerEncounter() {
 
   useEffect(() => {
     if (!show) return;
-    setStep("welcome"); setSeen([]); setActive(null); setWrong(null);
+    setStep("welcome"); setSeen([]); setActive(null); setWrong(null); setGallery(false);
     say("02_sojourner_welcome");
     return () => voice.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -139,9 +187,13 @@ export function SojournerEncounter() {
           <div className="absolute inset-4 rounded-full bg-[radial-gradient(circle,rgba(255,200,120,.25),transparent_70%)]" />
           <RoverTurntable />
         </div>
-        <div className="min-h-[64px] rounded-2xl bg-black/50 border border-white/10 px-4 py-3 text-sm leading-relaxed flex gap-2">
-          <span className={speaking ? "animate-pulse" : "opacity-40"}>🔊</span>
-          <span>{t(caption, lang)}</span>
+        {gallery && <PhotoGallery lang={lang} onClose={() => setGallery(false)} />}
+        <div className="flex gap-3 items-start mt-1">
+          <div className={`relative flex-shrink-0 w-12 h-12 rounded-full bg-[radial-gradient(circle,#ffd97d55,#2a1a10)] border-2 border-[#ffd97d] flex items-center justify-center text-2xl ${speaking ? "shadow-[0_0_18px_#ffd97d] animate-pulse" : ""}`}>🤖</div>
+          <div className="relative flex-1 min-h-[64px] rounded-2xl rounded-tl-sm bg-black/55 border border-[#ffd97d]/40 px-4 py-2 text-sm leading-relaxed">
+            <div className="text-[10px] font-bold tracking-[0.3em] text-[#ffd97d] flex items-center gap-2">SOJOURNER {speaking && <span className="nova-wave" aria-hidden><i /><i /><i /></span>}</div>
+            <span>{t(caption, lang)}</span>
+          </div>
         </div>
 
         {step === "welcome" && (
@@ -154,7 +206,7 @@ export function SojournerEncounter() {
           <>
             <div className="grid grid-cols-2 gap-2 mt-3">
               {TOPICS.map((tp) => (
-                <button key={tp.id} onClick={() => { setActive(tp.id); setSeen((s) => (s.includes(tp.id) ? s : [...s, tp.id])); say(tp.id); }}
+                <button key={tp.id} onClick={() => { setActive(tp.id); setSeen((s) => (s.includes(tp.id) ? s : [...s, tp.id])); say(tp.id); if (tp.id === "04_photo_gallery") setGallery(true); }}
                   className={`text-left text-xs rounded-2xl px-3 py-2 border transition-all ${active === tp.id ? "bg-[#ffd97d] text-black border-[#ffd97d]" : "bg-white/5 border-white/15 hover:border-[#ffd97d]/70"}`}>
                   <span className="text-lg mr-1">{tp.icon}</span>{t(tp.label, lang)}{seen.includes(tp.id) && active !== tp.id ? " ✓" : ""}
                 </button>
@@ -271,7 +323,15 @@ const FACTS: L[] = [
 ];
 
 export function RoverLoader() {
-  const loading = useGame((s) => s.loading);
+  const realLoading = useGame((s) => s.loading);
+  const fading = useGame((s) => s.fading);
+  const [longFade, setLongFade] = useState(false);
+  useEffect(() => {
+    if (!fading) { setLongFade(false); return; }
+    const id = setTimeout(() => setLongFade(true), 600);
+    return () => clearTimeout(id);
+  }, [fading]);
+  const loading = realLoading || longFade;
   const lang = useGame((s) => s.lang);
   const [fi, setFi] = useState(0);
   const [visible, setVisible] = useState(false);
@@ -287,7 +347,7 @@ export function RoverLoader() {
   }, [loading]);
   if (!visible) return null;
   return (
-    <div className="absolute inset-0 z-[58] flex flex-col items-center justify-center bg-[linear-gradient(#1a0c07,#3a170b_70%,#5a2412)] transition-opacity duration-700" style={{ opacity: loading ? 1 : 0 }}>
+    <div className="absolute inset-0 z-[65] flex flex-col items-center justify-center bg-[linear-gradient(#1a0c07,#3a170b_70%,#5a2412)] transition-opacity duration-700" style={{ opacity: loading ? 1 : 0 }}>
       <div className="relative w-[min(420px,90vw)] h-40 overflow-hidden">
         <div className="absolute bottom-6 left-0 w-[200%] h-10 rover-dunes" />
         <div className="absolute bottom-[38px] left-1/2 -translate-x-1/2 rover-bob">
