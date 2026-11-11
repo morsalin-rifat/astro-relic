@@ -5,7 +5,7 @@ import { UI, MISSIONS, TELEMETRY, HUB, HOWTO, CHAPTERS } from "../data/content";
 import { STORY, HOTSPOTS, HOTSPOT_ORDER } from "../data/story";
 import { SolarHUD } from "./SolarHUD";
 import { NovaGuide } from "./NovaGuide";
-import { SojournerEncounter, Badges, BigMapClose, RoverLoader } from "./MissionUI";
+import { SojournerEncounter, Badges, BigMapClose, RoverLoader, HoloBubble } from "./MissionUI";
 
 const POP = "cubic-bezier(.785, .135, .15, .01)";
 
@@ -43,56 +43,8 @@ function Dialogue() {
   }
 
   if (!current) return null;
-  const name = speakerName(current.speaker);
-  return (
-    <button
-      onClick={() => store.advanceDialogue()}
-      className="absolute bottom-10 left-1/2 -translate-x-1/2 z-30 w-[min(650px,92vw)] text-left cursor-pointer group"
-    >
-      <div className="relative bg-black/75 backdrop-blur-md border border-white/15 px-5 py-4 rounded-xl flex items-center gap-4 shadow-2xl">
-        <div className="absolute -top-px -left-px w-4 h-4 border-t border-l border-[#ffd97d]" />
-        <div className="absolute -bottom-px -right-px w-4 h-4 border-b border-r border-[#ffd97d]" />
-
-        {/* 2D Character Avatar */}
-        {current.speaker === "nova" && (
-          <div className="relative flex-shrink-0">
-            <img
-              src="/images/nova.png"
-              alt="Nova AI Guide"
-              className="w-16 h-16 rounded-full border-2 border-[#00f0ff] object-contain bg-[radial-gradient(circle,#00f0ff33,#000a)] p-1 shadow-[0_0_15px_rgba(0,240,255,0.45)]"
-              referrerPolicy="no-referrer"
-            />
-            <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 bg-[#00f0ff] text-black text-[9px] font-bold rounded-full">
-              AI
-            </span>
-          </div>
-        )}
-        {current.speaker === "sojourner" && (
-          <div className="relative flex-shrink-0 w-16 h-16 rounded-full border-2 border-[#ffd97d] bg-[#221a14] flex items-center justify-center text-2xl shadow-[0_0_15px_rgba(255,217,125,0.3)]">
-            🤖
-          </div>
-        )}
-
-        <div className="flex-1">
-          {name && (
-            <div
-              className={`text-[11px] font-bold tracking-[0.35em] mb-1 ${
-                current.speaker === "nova" ? "text-[#00f0ff]" : "text-[#ffd97d]"
-              }`}
-            >
-              {name}
-            </div>
-          )}
-          <div className="text-[15px] leading-relaxed text-[#ece7db] font-sans">
-            {t(current, lang)}
-          </div>
-          <div className="text-[10px] tracking-[0.3em] text-white/40 mt-1.5 group-hover:text-white/70 transition-colors">
-            {t(UI.clickContinue, lang)} ▸
-          </div>
-        </div>
-      </div>
-    </button>
-  );
+  const sp = current.speaker === "sojourner" ? "sojourner" : "nova";
+  return <HoloBubble key={t(current, lang)} speaker={sp} text={t(current, lang)} onClick={() => store.advanceDialogue()} hint={t(UI.clickContinue, lang)} />;
 }
 
 /* ---------------- Home overlay ---------------- */

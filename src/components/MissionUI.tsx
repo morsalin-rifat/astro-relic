@@ -134,6 +134,43 @@ function PhotoGallery({ lang, onClose }: { lang: "en" | "bn"; onClose: () => voi
   );
 }
 
+
+/* ---------- Hub-style left holo bubble with typewriter ---------- */
+export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker: "nova" | "sojourner"; text: string; speaking?: boolean; onClick?: () => void; hint?: string }) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    setN(0);
+    const step = Math.max(28, Math.min(60, Math.floor(9000 / Math.max(text.length, 1))));
+    const id = window.setInterval(() => setN((x) => { if (x >= text.length) { window.clearInterval(id); return x; } return x + 1; }), step);
+    return () => window.clearInterval(id);
+  }, [text]);
+  const done = n >= text.length;
+  const nova = speaker === "nova";
+  return (
+    <div className="fixed z-[56] left-2 right-2 bottom-2 md:right-auto md:bottom-auto md:top-[18%] md:left-6 flex items-end gap-2 sm:gap-3 pointer-events-auto select-none animate-[hubrise_0.45s_ease]"
+      onClick={() => { if (!done) setN(text.length); else onClick?.(); }}>
+      <div className={`relative flex-shrink-0 ${speaking ? "animate-talking-glow" : "animate-float-gentle"}`}>
+        {nova ? (
+          <img src="/images/nova.png" alt="Nova" className="w-[72px] sm:w-[110px] md:w-[140px] h-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.65)]" draggable={false} />
+        ) : (
+          <div className={`w-[72px] h-[72px] sm:w-[104px] sm:h-[104px] rounded-full border-2 border-[#ffd97d] bg-[radial-gradient(circle,#ffd97d33,#221a14)] flex items-center justify-center text-4xl sm:text-6xl ${speaking ? "shadow-[0_0_26px_#ffd97d]" : "shadow-[0_0_14px_rgba(255,217,125,.35)]"}`}>🤖</div>
+        )}
+      </div>
+      <div className="nova-bubble relative flex-1 md:flex-none md:w-[min(360px,calc(50vw-260px))] md:min-w-[260px] mb-3 cursor-pointer">
+        <span className="nova-bubble-tail" aria-hidden />
+        <div className={`nova-bubble-inner ${speaking ? "is-speaking" : ""}`} style={nova ? undefined : { borderColor: "#ffd97d" }}>
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <div className="nova-nameplate" style={nova ? undefined : { color: "#ffd97d" }}><span className="nova-dot" />{nova ? "NOVA" : "SOJOURNER · 1997"}</div>
+            {speaking && <div className="nova-wave" aria-hidden><i /><i /><i /><i /></div>}
+          </div>
+          <p className="nova-text min-h-[3.2rem]">{text.slice(0, n)}{!done && <span className="nova-caret" />}</p>
+          {hint && done && <div className="text-[10px] tracking-[0.25em] text-white/50 mt-1">{hint} ▸</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ---------- Sojourner encounter card ---------- */
 export function SojournerEncounter() {
   const show = useGame((s) => s.showEncounter);
@@ -177,7 +214,7 @@ export function SojournerEncounter() {
     : topic?.text ?? { en: "Tap a question to learn about me. Drag me to spin!", bn: "আমার সম্পর্কে জানতে একটি প্রশ্নে ট্যাপ করো। ঘোরাতে আমাকে টেনে দেখো!" };
 
   return (
-    <div className="absolute inset-0 z-50 flex items-start justify-center p-3 pb-40 bg-black/40 backdrop-blur-[2px]">
+    <div className="absolute inset-0 z-50 flex items-start justify-center md:justify-end lg:justify-center p-3 pb-40 md:pr-8 bg-black/40 backdrop-blur-[2px]">
       <div className="relative w-[min(440px,96vw)] max-h-[calc(100vh-180px)] overflow-y-auto rounded-[28px] border border-[#ffd97d]/50 bg-[radial-gradient(circle_at_50%_20%,rgba(255,170,90,.18),rgba(12,8,6,.92)_65%)] shadow-[0_0_40px_rgba(255,180,90,.25)] p-4 text-[#ffe9c8]">
         <button onClick={() => { voice.stop(); store.set({ showEncounter: false }); }} className="absolute top-3 right-4 text-xl opacity-70 hover:opacity-100" aria-label="Close">✕</button>
         <div className="text-[10px] tracking-[0.35em] text-[#ffd97d]/80">ARES VALLIS · 1997</div>
@@ -188,17 +225,7 @@ export function SojournerEncounter() {
           <RoverTurntable />
         </div>
         {gallery && <PhotoGallery lang={lang} onClose={() => setGallery(false)} />}
-        {!gallery && <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[52] w-[min(650px,94vw)]">
-          <div className="relative bg-black/80 backdrop-blur-md border border-white/15 px-5 py-4 rounded-xl flex items-center gap-4 shadow-2xl">
-            <div className="absolute -top-px -left-px w-4 h-4 border-t border-l border-[#ffd97d]" />
-            <div className="absolute -bottom-px -right-px w-4 h-4 border-b border-r border-[#ffd97d]" />
-            <div className={`flex-shrink-0 w-16 h-16 rounded-full border-2 border-[#ffd97d] bg-[#221a14] flex items-center justify-center text-2xl ${speaking ? "shadow-[0_0_18px_#ffd97d] animate-pulse" : "shadow-[0_0_15px_rgba(255,217,125,0.3)]"}`}>🤖</div>
-            <div className="flex-1">
-              <div className="text-[11px] font-bold tracking-[0.35em] mb-1 text-[#ffd97d] flex items-center gap-2">SOJOURNER {speaking && <span className="nova-wave" aria-hidden><i /><i /><i /></span>}</div>
-              <div className="text-[15px] leading-relaxed text-[#ece7db]">{t(caption, lang)}</div>
-            </div>
-          </div>
-        </div>}
+        <HoloBubble speaker="sojourner" text={t(caption, lang)} speaking={speaking} />
 
         {step === "welcome" && (
           <button onClick={() => { voice.stop(); setStep("explore"); }} className="mt-3 w-full py-3 rounded-full bg-[#ffd97d] text-black font-bold tracking-widest">
@@ -210,7 +237,7 @@ export function SojournerEncounter() {
           <>
             <div className="grid grid-cols-2 gap-2 mt-3">
               {TOPICS.map((tp) => (
-                <button key={tp.id} onClick={() => { setActive(tp.id); setSeen((s) => (s.includes(tp.id) ? s : [...s, tp.id])); say(tp.id); if (tp.id === "04_photo_gallery") { voice.stop(); setSpeaking(false); setGallery(true); } }}
+                <button key={tp.id} onClick={() => { setActive(tp.id); setSeen((s) => (s.includes(tp.id) ? s : [...s, tp.id])); say(tp.id); if (tp.id === "04_photo_gallery") setGallery(true); }}
                   className={`text-left text-xs rounded-2xl px-3 py-2 border transition-all ${active === tp.id ? "bg-[#ffd97d] text-black border-[#ffd97d]" : "bg-white/5 border-white/15 hover:border-[#ffd97d]/70"}`}>
                   <span className="text-lg mr-1">{tp.icon}</span>{t(tp.label, lang)}{seen.includes(tp.id) && active !== tp.id ? " ✓" : ""}
                 </button>
