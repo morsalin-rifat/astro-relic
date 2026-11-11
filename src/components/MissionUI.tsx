@@ -111,7 +111,7 @@ const PHOTOS: { src: string; title: L; text: L }[] = [
 function PhotoGallery({ lang, onClose }: { lang: "en" | "bn"; onClose: () => void }) {
   const [i, setI] = useState(0);
   const p = PHOTOS[i] ?? PHOTOS[0]!;
-  const go = (d: number) => { audio.beep(900); setI((x) => (x + d + PHOTOS.length) % PHOTOS.length); };
+  const go = (d: number) => { voice.stop(); audio.beep(900); setI((x) => (x + d + PHOTOS.length) % PHOTOS.length); };
   return (
     <div className="absolute inset-0 z-[3] rounded-[28px] bg-[#0c0806]/97 p-4 flex flex-col">
       <div className="flex items-center justify-between">
@@ -125,9 +125,9 @@ function PhotoGallery({ lang, onClose }: { lang: "en" | "bn"; onClose: () => voi
         <div className="absolute bottom-2 right-3 text-[10px] bg-black/60 px-2 py-0.5 rounded-full">{i + 1}/{PHOTOS.length}</div>
       </div>
       <div className="mt-3 text-lg font-bold text-[#ffd97d]">{t(p.title, lang)}</div>
-      <div className="text-sm leading-relaxed">{t(p.text, lang)}</div>
+      <div className="mt-1 flex gap-2 items-start"><div className="w-9 h-9 flex-shrink-0 rounded-full border-2 border-[#ffd97d] bg-[#221a14] flex items-center justify-center">🤖</div><div className="flex-1 rounded-2xl rounded-tl-sm bg-black/55 border border-[#ffd97d]/40 px-3 py-2 text-sm leading-relaxed"><div className="text-[9px] font-bold tracking-[0.3em] text-[#ffd97d]">SOJOURNER</div>{t(p.text, lang)}</div></div>
       <div className="flex justify-center gap-2 mt-3">
-        {PHOTOS.map((_, k) => <button key={k} onClick={() => setI(k)} aria-label={`Photo ${k + 1}`} className={`h-2 rounded-full transition-all ${k === i ? "w-6 bg-[#ffd97d]" : "w-2 bg-white/30"}`} />)}
+        {PHOTOS.map((_, k) => <button key={k} onClick={() => { voice.stop(); setI(k); }} aria-label={`Photo ${k + 1}`} className={`h-2 rounded-full transition-all ${k === i ? "w-6 bg-[#ffd97d]" : "w-2 bg-white/30"}`} />)}
       </div>
       <div className="mt-auto pt-2 text-[9px] opacity-50 text-center">Images: NASA/JPL</div>
     </div>
@@ -177,8 +177,8 @@ export function SojournerEncounter() {
     : topic?.text ?? { en: "Tap a question to learn about me. Drag me to spin!", bn: "আমার সম্পর্কে জানতে একটি প্রশ্নে ট্যাপ করো। ঘোরাতে আমাকে টেনে দেখো!" };
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center p-3 bg-black/40 backdrop-blur-[2px]">
-      <div className="relative w-[min(440px,96vw)] max-h-[94vh] overflow-y-auto rounded-[28px] border border-[#ffd97d]/50 bg-[radial-gradient(circle_at_50%_20%,rgba(255,170,90,.18),rgba(12,8,6,.92)_65%)] shadow-[0_0_40px_rgba(255,180,90,.25)] p-4 text-[#ffe9c8]">
+    <div className="absolute inset-0 z-50 flex items-start justify-center p-3 pb-40 bg-black/40 backdrop-blur-[2px]">
+      <div className="relative w-[min(440px,96vw)] max-h-[calc(100vh-180px)] overflow-y-auto rounded-[28px] border border-[#ffd97d]/50 bg-[radial-gradient(circle_at_50%_20%,rgba(255,170,90,.18),rgba(12,8,6,.92)_65%)] shadow-[0_0_40px_rgba(255,180,90,.25)] p-4 text-[#ffe9c8]">
         <button onClick={() => { voice.stop(); store.set({ showEncounter: false }); }} className="absolute top-3 right-4 text-xl opacity-70 hover:opacity-100" aria-label="Close">✕</button>
         <div className="text-[10px] tracking-[0.35em] text-[#ffd97d]/80">ARES VALLIS · 1997</div>
         <div className="text-2xl font-bold tracking-wide">SOJOURNER</div>
@@ -188,13 +188,17 @@ export function SojournerEncounter() {
           <RoverTurntable />
         </div>
         {gallery && <PhotoGallery lang={lang} onClose={() => setGallery(false)} />}
-        <div className="flex gap-3 items-start mt-1">
-          <div className={`relative flex-shrink-0 w-12 h-12 rounded-full bg-[radial-gradient(circle,#ffd97d55,#2a1a10)] border-2 border-[#ffd97d] flex items-center justify-center text-2xl ${speaking ? "shadow-[0_0_18px_#ffd97d] animate-pulse" : ""}`}>🤖</div>
-          <div className="relative flex-1 min-h-[64px] rounded-2xl rounded-tl-sm bg-black/55 border border-[#ffd97d]/40 px-4 py-2 text-sm leading-relaxed">
-            <div className="text-[10px] font-bold tracking-[0.3em] text-[#ffd97d] flex items-center gap-2">SOJOURNER {speaking && <span className="nova-wave" aria-hidden><i /><i /><i /></span>}</div>
-            <span>{t(caption, lang)}</span>
+        {!gallery && <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[52] w-[min(650px,94vw)]">
+          <div className="relative bg-black/80 backdrop-blur-md border border-white/15 px-5 py-4 rounded-xl flex items-center gap-4 shadow-2xl">
+            <div className="absolute -top-px -left-px w-4 h-4 border-t border-l border-[#ffd97d]" />
+            <div className="absolute -bottom-px -right-px w-4 h-4 border-b border-r border-[#ffd97d]" />
+            <div className={`flex-shrink-0 w-16 h-16 rounded-full border-2 border-[#ffd97d] bg-[#221a14] flex items-center justify-center text-2xl ${speaking ? "shadow-[0_0_18px_#ffd97d] animate-pulse" : "shadow-[0_0_15px_rgba(255,217,125,0.3)]"}`}>🤖</div>
+            <div className="flex-1">
+              <div className="text-[11px] font-bold tracking-[0.35em] mb-1 text-[#ffd97d] flex items-center gap-2">SOJOURNER {speaking && <span className="nova-wave" aria-hidden><i /><i /><i /></span>}</div>
+              <div className="text-[15px] leading-relaxed text-[#ece7db]">{t(caption, lang)}</div>
+            </div>
           </div>
-        </div>
+        </div>}
 
         {step === "welcome" && (
           <button onClick={() => { voice.stop(); setStep("explore"); }} className="mt-3 w-full py-3 rounded-full bg-[#ffd97d] text-black font-bold tracking-widest">
@@ -206,7 +210,7 @@ export function SojournerEncounter() {
           <>
             <div className="grid grid-cols-2 gap-2 mt-3">
               {TOPICS.map((tp) => (
-                <button key={tp.id} onClick={() => { setActive(tp.id); setSeen((s) => (s.includes(tp.id) ? s : [...s, tp.id])); say(tp.id); if (tp.id === "04_photo_gallery") setGallery(true); }}
+                <button key={tp.id} onClick={() => { setActive(tp.id); setSeen((s) => (s.includes(tp.id) ? s : [...s, tp.id])); say(tp.id); if (tp.id === "04_photo_gallery") { voice.stop(); setSpeaking(false); setGallery(true); } }}
                   className={`text-left text-xs rounded-2xl px-3 py-2 border transition-all ${active === tp.id ? "bg-[#ffd97d] text-black border-[#ffd97d]" : "bg-white/5 border-white/15 hover:border-[#ffd97d]/70"}`}>
                   <span className="text-lg mr-1">{tp.icon}</span>{t(tp.label, lang)}{seen.includes(tp.id) && active !== tp.id ? " ✓" : ""}
                 </button>
@@ -307,8 +311,8 @@ export function BigMapClose() {
   }, []);
   if (!open) return null;
   return (
-    <button onClick={() => store.set({ bigMap: false })} className="absolute top-4 right-4 z-[47] px-4 py-2 rounded-full bg-[#ffd97d] text-black font-bold text-sm">
-      ✕ {lang === "bn" ? "ম্যাপ বন্ধ" : "CLOSE MAP"}
+    <button onClick={() => store.set({ bigMap: false })} className="absolute top-5 left-5 z-[47] px-4 py-2 rounded-full bg-[#ffd97d] text-black font-bold text-sm shadow-lg">
+      ← {lang === "bn" ? "ম্যাপ বন্ধ" : "BACK TO MARS"}
     </button>
   );
 }
