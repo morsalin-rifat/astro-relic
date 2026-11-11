@@ -188,7 +188,7 @@ export function SojournerEncounter() {
           <RoverTurntable />
         </div>
         {gallery && <PhotoGallery lang={lang} onClose={() => setGallery(false)} />}
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[52] w-[min(650px,94vw)]">
+        {!gallery && <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[52] w-[min(650px,94vw)]">
           <div className="relative bg-black/80 backdrop-blur-md border border-white/15 px-5 py-4 rounded-xl flex items-center gap-4 shadow-2xl">
             <div className="absolute -top-px -left-px w-4 h-4 border-t border-l border-[#ffd97d]" />
             <div className="absolute -bottom-px -right-px w-4 h-4 border-b border-r border-[#ffd97d]" />
@@ -198,7 +198,7 @@ export function SojournerEncounter() {
               <div className="text-[15px] leading-relaxed text-[#ece7db]">{t(caption, lang)}</div>
             </div>
           </div>
-        </div>
+        </div>}
 
         {step === "welcome" && (
           <button onClick={() => { voice.stop(); setStep("explore"); }} className="mt-3 w-full py-3 rounded-full bg-[#ffd97d] text-black font-bold tracking-widest">
@@ -210,7 +210,7 @@ export function SojournerEncounter() {
           <>
             <div className="grid grid-cols-2 gap-2 mt-3">
               {TOPICS.map((tp) => (
-                <button key={tp.id} onClick={() => { setActive(tp.id); setSeen((s) => (s.includes(tp.id) ? s : [...s, tp.id])); say(tp.id); if (tp.id === "04_photo_gallery") setGallery(true); }}
+                <button key={tp.id} onClick={() => { setActive(tp.id); setSeen((s) => (s.includes(tp.id) ? s : [...s, tp.id])); say(tp.id); if (tp.id === "04_photo_gallery") { voice.stop(); setSpeaking(false); setGallery(true); } }}
                   className={`text-left text-xs rounded-2xl px-3 py-2 border transition-all ${active === tp.id ? "bg-[#ffd97d] text-black border-[#ffd97d]" : "bg-white/5 border-white/15 hover:border-[#ffd97d]/70"}`}>
                   <span className="text-lg mr-1">{tp.icon}</span>{t(tp.label, lang)}{seen.includes(tp.id) && active !== tp.id ? " ✓" : ""}
                 </button>
