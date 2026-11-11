@@ -110,7 +110,7 @@ const PHOTOS: { src: string; title: L; text: L }[] = [
 
 function PhotoGallery({ lang, onClose }: { lang: "en" | "bn"; onClose: () => void }) {
   const [i, setI] = useState(0);
-  const p = PHOTOS[i];
+  const p = PHOTOS[i] ?? PHOTOS[0]!;
   const go = (d: number) => { audio.beep(900); setI((x) => (x + d + PHOTOS.length) % PHOTOS.length); };
   return (
     <div className="absolute inset-0 z-[3] rounded-[28px] bg-[#0c0806]/97 p-4 flex flex-col">
