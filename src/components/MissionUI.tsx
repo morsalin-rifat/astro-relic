@@ -249,13 +249,13 @@ export function BigMapClose() {
   const open = useGame((s) => s.bigMap);
   const lang = useGame((s) => s.lang);
   useEffect(() => {
-    const k = (e: KeyboardEvent) => { if (e.key.toLowerCase() === "m" && store.get().phase === "explore") store.set({ bigMap: !store.get().bigMap }); };
+    const k = (e: KeyboardEvent) => { if (e.key === "Escape" && store.get().bigMap) { store.set({ bigMap: false }); return; } if (e.key.toLowerCase() === "m" && store.get().phase === "explore") store.set({ bigMap: !store.get().bigMap }); };
     addEventListener("keydown", k);
     return () => removeEventListener("keydown", k);
   }, []);
   if (!open) return null;
   return (
-    <button onClick={() => store.set({ bigMap: false })} className="absolute top-4 right-4 z-[46] px-4 py-2 rounded-full bg-[#ffd97d] text-black font-bold text-sm">
+    <button onClick={() => store.set({ bigMap: false })} className="absolute top-4 right-4 z-[47] px-4 py-2 rounded-full bg-[#ffd97d] text-black font-bold text-sm">
       ✕ {lang === "bn" ? "ম্যাপ বন্ধ" : "CLOSE MAP"}
     </button>
   );

@@ -777,3 +777,14 @@ body {
   animation: nova-line-flow .8s linear infinite;
 }
 @keyframes nova-line-flow { to { stroke-dashoffset: -18; } }
+
+/* rover loader + badge */
+.rover-dunes{background:radial-gradient(ellipse 60px 14px at 30px 14px,#7a3418 98%,transparent) repeat-x;background-size:120px 20px;animation:dunes 2.4s linear infinite}
+@keyframes dunes{to{transform:translateX(-50%)}}
+.rover-bob{animation:roverbob .5s ease-in-out infinite alternate}
+@keyframes roverbob{to{transform:translate(-50%,-3px)}}
+.rover-wheel{animation:wheelspin .6s linear infinite}
+@keyframes wheelspin{to{transform:rotate(360deg)}}
+.rover-dust{position:absolute;left:4px;bottom:4px;width:12px;height:12px;border-radius:50%;background:rgba(210,140,90,.6);animation:dustpuff 1s ease-out infinite}
+@keyframes dustpuff{from{opacity:.8;transform:scale(.4)}to{opacity:0;transform:translate(-40px,-14px) scale(2.2)}}
+@keyframes badgepop{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
