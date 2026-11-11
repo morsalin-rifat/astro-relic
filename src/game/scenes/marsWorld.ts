@@ -57,6 +57,7 @@ export class MarsWorldScene implements Scene {
   private sectorName = "";
   private sectorTimer = 0;
 
+  private welcomeT = 0;
   constructor(renderer: THREE.WebGLRenderer) {
     this.renderer = renderer;
     this.metAtStart = store.get().metSojourner;
@@ -242,14 +243,17 @@ export class MarsWorldScene implements Scene {
     );
 
     // welcome dialogue
-    setTimeout(() => {
+    const welcome = () => {
+      if (store.get().loading || store.get().fading) { this.welcomeT = window.setTimeout(welcome, 300); return; }
       if (this.metAtStart) {
         this.startMeeting(true);
       } else {
         store.say(NOVA_WELCOME_MARS);
         store.set({ objective: UI.objectiveExplore });
       }
-    }, 900);
+    };
+    this.welcomeT = window.setTimeout(welcome, 900);
+    this.disposers.push(() => window.clearTimeout(this.welcomeT));
   }
 
   /** 4 real NASA sites laid end-to-end along -Z, 350 m each, tall relief. */
