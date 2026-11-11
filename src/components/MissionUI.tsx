@@ -214,7 +214,7 @@ export function SojournerEncounter() {
     : topic?.text ?? { en: "Tap a question to learn about me. Drag me to spin!", bn: "আমার সম্পর্কে জানতে একটি প্রশ্নে ট্যাপ করো। ঘোরাতে আমাকে টেনে দেখো!" };
 
   return (
-    <div className="absolute inset-0 z-50 flex items-start justify-center md:justify-end lg:justify-center p-3 pb-40 md:pr-8 bg-black/40 backdrop-blur-[2px]">
+    <div className="absolute inset-0 z-50 flex items-start justify-center md:justify-end 2xl:justify-center p-3 pb-40 md:pr-8 bg-black/40 backdrop-blur-[2px]">
       <div className="relative w-[min(440px,96vw)] max-h-[calc(100vh-180px)] overflow-y-auto rounded-[28px] border border-[#ffd97d]/50 bg-[radial-gradient(circle_at_50%_20%,rgba(255,170,90,.18),rgba(12,8,6,.92)_65%)] shadow-[0_0_40px_rgba(255,180,90,.25)] p-4 text-[#ffe9c8]">
         <button onClick={() => { voice.stop(); store.set({ showEncounter: false }); }} className="absolute top-3 right-4 text-xl opacity-70 hover:opacity-100" aria-label="Close">✕</button>
         <div className="text-[10px] tracking-[0.35em] text-[#ffd97d]/80">ARES VALLIS · 1997</div>
