@@ -26,6 +26,13 @@ class VoicePlayer {
     el.play().catch(done);
   }
 
+  /** 0..1 playback progress of the current clip, or null when unknown. */
+  progress(): number | null {
+    const el = this.el;
+    if (!el || !isFinite(el.duration) || el.duration <= 0) return null;
+    return Math.min(1, el.currentTime / el.duration);
+  }
+
   stop() {
     if (this.el) {
       this.el.onended = null;
