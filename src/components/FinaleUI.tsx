@@ -73,6 +73,7 @@ export function FinaleUI() {
       const id = window.setTimeout(() => setStep("ready"), 2500);
       return () => clearTimeout(id);
     }
+    return undefined;
   }, [phase, all, done, showInsight, step]);
 
   useEffect(() => {
