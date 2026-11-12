@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
@@ -16,12 +17,12 @@ export const BADGES: { id: string; icon: string; name: L; rover: L }[] = [
 ];
 
 const TOPICS: { id: string; icon: string; label: L; text: L }[] = [
-  { id: "03_part_wheels", icon: "🛞", label: { en: "How did I move?", bn: "আমি কীভাবে চলতাম?" }, text: { en: "Six wheels on a rocker-bogie suspension let me climb over rocks without tipping.", bn: "রকার-বগি সাসপেনশনে ছয়টি চাকা আমাকে না উল্টে পাথরের ওপর দিয়ে চলতে দিত।" } },
-  { id: "03_part_eyes", icon: "👀", label: { en: "What are my eyes?", bn: "আমার চোখ কোনগুলো?" }, text: { en: "Two front cameras and one rear camera helped me see and avoid hazards.", bn: "সামনের দুটি ও পেছনের একটি ক্যামেরা দিয়ে আমি দেখতাম ও বিপদ এড়াতাম।" } },
-  { id: "03_part_antenna", icon: "📡", label: { en: "How did I talk to Earth?", bn: "পৃথিবীর সাথে কীভাবে কথা বলতাম?" }, text: { en: "I radioed the Pathfinder lander, and the lander sent my messages to Earth.", bn: "আমি পাথফাইন্ডার ল্যান্ডারকে রেডিও করতাম, আর ল্যান্ডার পৃথিবীতে বার্তা পাঠাত।" } },
-  { id: "03_part_solar", icon: "☀️", label: { en: "Where did my power come from?", bn: "আমার শক্তি কোথা থেকে আসত?" }, text: { en: "A small solar panel on my back turned sunlight into electricity.", bn: "পিঠের ছোট সোলার প্যানেল সূর্যের আলোকে বিদ্যুতে পরিণত করত।" } },
-  { id: "03_part_nose_apxs", icon: "🔬", label: { en: "My rock-sniffing nose", bn: "আমার পাথর-শোঁকা নাক" }, text: { en: "My APXS tool touched rocks like Yogi and Barnacle Bill to learn what they're made of.", bn: "আমার APXS যন্ত্র যোগী ও বার্নাকল বিল পাথর ছুঁয়ে বুঝত সেগুলো কী দিয়ে তৈরি।" } },
-  { id: "04_photo_gallery", icon: "📸", label: { en: "Want to see my photos?", bn: "আমার তোলা ছবি দেখবে?" }, text: { en: "Together with the lander we sent back over 16,500 pictures of Mars!", bn: "ল্যান্ডারের সাথে মিলে আমরা মঙ্গলের ১৬,৫০০-এর বেশি ছবি পাঠিয়েছিলাম!" } },
+  { id: "03_part_wheels", icon: "🛞", label: { en: "How did I move?", bn: "আমি কীভাবে চলতাম?" }, text: { en: "Have you seen the magic of my six wheels? NASA called it the \"rocker-bogie\" system. I had no springs, yet I could rock over big stones and I never tipped over! I moved slowly — about one centimetre every second.", bn: "আমার এই ৬টি চাকার জাদু দেখেছো? নাসা এটার নাম দিয়েছিল 'রকার-বগি' সিস্টেম। আমার কোনো স্প্রিং ছিল না, তবুও বড় বড় পাথরের ওপর দিয়ে আমি হেলেদুলে পার হতে পারতাম, কখনও উল্টে যাইনি! আমি খুব ধীরে চলতাম — প্রতি সেকেন্ডে মাত্র ১ সেন্টিমিটার।" } },
+  { id: "03_part_eyes", icon: "👀", label: { en: "What are my eyes?", bn: "আমার চোখ কোনগুলো?" }, text: { en: "See my two eyes? They\"re not ordinary cameras — they\"re NASA\"s special stereo cameras! With them I could see in 3D and steer around dangerous rocks, and a camera at the back watched my tracks.", bn: "আমার এই দুটো চোখ দেখেছো? এগুলো সাধারণ ক্যামেরা নয়, নাসার স্পেশাল 'স্টেরিও ক্যামেরা'! এগুলো দিয়ে আমি থ্রিডি-তে দেখতে পেতাম আর বিপজ্জনক পাথর এড়িয়ে চলতাম, আর পেছনের ক্যামেরা আমার চাকার দাগ দেখত।" } },
+  { id: "03_part_antenna", icon: "📡", label: { en: "How did I talk to Earth?", bn: "পৃথিবীর সাথে কীভাবে কথা বলতাম?" }, text: { en: "Did you know? I didn\"t have an antenna big enough to talk to Earth, millions of miles away! So I radioed my friend, the Pathfinder lander, and the lander sent my messages home to Earth.", bn: "তুমি কি জানো? একা একা কোটি মাইল দূরের পৃথিবীতে কথা বলার মতো বড় অ্যান্টেনা আমার শরীরে ছিল না! তাই আমি আমার বন্ধু পাথফাইন্ডার ল্যান্ডারকে রেডিওতে বার্তা পাঠাতাম, আর ল্যান্ডার সেটা পৃথিবীতে পৌঁছে দিত।" } },
+  { id: "03_part_solar", icon: "☀️", label: { en: "Where did my power come from?", bn: "আমার শক্তি কোথা থেকে আসত?" }, text: { en: "This glassy roof on my back was my power source! It made only about 16 watts of electricity each day — less than a small light bulb — but that was enough for me to explore Mars.", bn: "আমার পিঠের এই কাঁচের মতো ছাদটিই ছিল আমার শক্তির উৎস! দিনে মাত্র ১৬ ওয়াট বিদ্যুৎ তৈরি করত — একটা ছোট বাল্বের চেয়েও কম — কিন্তু মঙ্গল ঘুরে দেখার জন্য সেটাই যথেষ্ট ছিল।" } },
+  { id: "03_part_nose_apxs", icon: "🔬", label: { en: "My rock-sniffing nose", bn: "আমার পাথর-শোঁকা নাক" }, text: { en: "This long rod at my back is called the APXS spectrometer! You can call it my science nose. I pressed it against rocks like Yogi and Barnacle Bill to find out what they were made of.", bn: "আমার পেছনের এই লম্বা রডটির নাম 'APXS স্পেকট্রোমিটার'! এটাকে আমার বৈজ্ঞানিক নাক বলতে পারো। এটা দিয়ে আমি যোগী আর বার্নাকল বিলের মতো পাথর ছুঁয়ে বুঝতাম সেগুলো কী দিয়ে তৈরি।" } },
+  { id: "04_photo_gallery", icon: "📸", label: { en: "Want to see my photos?", bn: "আমার তোলা ছবি দেখবে?" }, text: { en: "Look at some of my famous photos! See that big rock? We named it \"Yogi\" — NASA scientists named it after the cartoon Yogi Bear! And far away are the \"Twin Peaks\". Together with the lander we sent over 16,500 pictures of Mars!", bn: "আমার তোলা কিছু বিখ্যাত ছবি দেখো! ওই যে মস্ত বড় পাথরটা দেখছো, ওটার নাম দিয়েছিলাম 'যোগী পাথর' — নাসার বিজ্ঞানীরা কার্টুনের যোগী বেয়ারের নামে নাম রেখেছিল! আর ওই দূরে 'যমজ পাহাড়'। ল্যান্ডারের সাথে মিলে আমরা মঙ্গলের ১৬,৫০০-এর বেশি ছবি পাঠিয়েছিলাম!" } },
 ];
 
 const QUIZ = {
@@ -111,7 +112,7 @@ const PHOTOS: { src: string; title: L; text: L }[] = [
 function PhotoGallery({ lang, onClose }: { lang: "en" | "bn"; onClose: () => void }) {
   const [i, setI] = useState(0);
   const p = PHOTOS[i] ?? PHOTOS[0]!;
-  const go = (d: number) => { voice.stop(); audio.beep(900); setI((x) => (x + d + PHOTOS.length) % PHOTOS.length); };
+  const go = (d: number) => { audio.beep(900); setI((x) => (x + d + PHOTOS.length) % PHOTOS.length); };
   return (
     <div className="absolute inset-0 z-[3] rounded-[28px] bg-[#0c0806]/97 p-4 flex flex-col">
       <div className="flex items-center justify-between">
@@ -127,7 +128,7 @@ function PhotoGallery({ lang, onClose }: { lang: "en" | "bn"; onClose: () => voi
       <div className="mt-3 text-lg font-bold text-[#ffd97d]">{t(p.title, lang)}</div>
       <div className="mt-1 flex gap-2 items-start"><div className="w-9 h-9 flex-shrink-0 rounded-full border-2 border-[#ffd97d] bg-[#221a14] flex items-center justify-center">🤖</div><div className="flex-1 rounded-2xl rounded-tl-sm bg-black/55 border border-[#ffd97d]/40 px-3 py-2 text-sm leading-relaxed"><div className="text-[9px] font-bold tracking-[0.3em] text-[#ffd97d]">SOJOURNER</div>{t(p.text, lang)}</div></div>
       <div className="flex justify-center gap-2 mt-3">
-        {PHOTOS.map((_, k) => <button key={k} onClick={() => { voice.stop(); setI(k); }} aria-label={`Photo ${k + 1}`} className={`h-2 rounded-full transition-all ${k === i ? "w-6 bg-[#ffd97d]" : "w-2 bg-white/30"}`} />)}
+        {PHOTOS.map((_, k) => <button key={k} onClick={() => setI(k)} aria-label={`Photo ${k + 1}`} className={`h-2 rounded-full transition-all ${k === i ? "w-6 bg-[#ffd97d]" : "w-2 bg-white/30"}`} />)}
       </div>
       <div className="mt-auto pt-2 text-[9px] opacity-50 text-center">Images: NASA/JPL</div>
     </div>
@@ -140,10 +141,18 @@ export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker
   const [n, setN] = useState(0);
   useEffect(() => {
     setN(0);
+    if (speaking) {
+      const id = window.setInterval(() => {
+        const r = voice.progress();
+        setN((x) => (r == null ? Math.min(text.length, x + 1) : Math.max(x, Math.ceil(r * text.length))));
+      }, 40);
+      return () => window.clearInterval(id);
+    }
     const step = Math.max(28, Math.min(60, Math.floor(9000 / Math.max(text.length, 1))));
     const id = window.setInterval(() => setN((x) => { if (x >= text.length) { window.clearInterval(id); return x; } return x + 1; }), step);
     return () => window.clearInterval(id);
-  }, [text]);
+  }, [text, speaking]);
+  useEffect(() => { if (!speaking) setN((x) => (x > 0 ? text.length : x)); }, [speaking, text]);
   const done = n >= text.length;
   const nova = speaker === "nova";
   return (
@@ -208,7 +217,7 @@ export function SojournerEncounter() {
 
   const topic = TOPICS.find((x) => x.id === active);
   const caption =
-    step === "welcome" ? { en: "Hi! I'm Sojourner — the first rover ever to drive on another planet. I landed here on July 4, 1997!", bn: "হাই! আমি সোজার্নার — অন্য গ্রহে চলা প্রথম রোভার। ১৯৯৭ সালের ৪ জুলাই আমি এখানে নেমেছিলাম!" }
+    step === "welcome" ? { en: "Hello, new friend! I'm Sojourner. In 1997 I was sent from Earth to this red planet. I'm small, like your study table — only 10.5 kilograms! I was the first rover ever to drive on another planet.", bn: "হ্যালো নতুন বন্ধু! আমি সোজার্নার। ১৯৯৭ সালে পৃথিবী থেকে আমাকে এই লাল গ্রহে পাঠানো হয়েছিল। দেখতে তোমার পড়ার টেবিলের মতো ছোট্ট — মাত্র ১০.৫ কেজি! আমিই প্রথম রোভার, যে অন্য গ্রহে চলেছিল।" }
     : step === "quiz" ? QUIZ.q
     : step === "farewell" ? { en: "Planned for 7 days, I worked for 83! My last signal came on Sept 27, 1997. Keep exploring for me!", bn: "৭ দিনের জন্য পরিকল্পনা ছিল, আমি কাজ করেছি ৮৩ দিন! শেষ সিগন্যাল ২৭ সেপ্টেম্বর ১৯৯৭। আমার হয়ে খোঁজ চালিয়ে যেও!" }
     : topic?.text ?? { en: "Tap a question to learn about me. Drag me to spin!", bn: "আমার সম্পর্কে জানতে একটি প্রশ্নে ট্যাপ করো। ঘোরাতে আমাকে টেনে দেখো!" };
@@ -225,7 +234,7 @@ export function SojournerEncounter() {
           <RoverTurntable />
         </div>
         {gallery && <PhotoGallery lang={lang} onClose={() => setGallery(false)} />}
-        <HoloBubble speaker="sojourner" text={t(caption, lang)} speaking={speaking} />
+        {createPortal(<HoloBubble key={t(caption, lang)} speaker="sojourner" text={t(caption, lang)} speaking={speaking} />, document.body)}
 
         {step === "welcome" && (
           <button onClick={() => { voice.stop(); setStep("explore"); }} className="mt-3 w-full py-3 rounded-full bg-[#ffd97d] text-black font-bold tracking-widest">
