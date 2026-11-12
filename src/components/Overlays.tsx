@@ -1,3 +1,4 @@
+import { voice } from "../game/voice";
 import { useEffect, useRef, useState } from "react";
 import { store, useGame, t } from "../state/store";
 import { audio } from "../game/audio";
@@ -598,7 +599,10 @@ function HubUI() {
     if (u === universe) return;
     audio.beep(u === "moon" ? 640 : 500);
     store.set({ universe: u });
-    if (u === "moon") showToast(t(HUB.moonSoon, lang));
+    if (u === "moon") {
+      voice.play("moon/welcome");
+      showToast(lang === "bn" ? "🌙 চাঁদের কক্ষপথে স্বাগতম!" : "🌙 Welcome to lunar orbit!");
+    } else voice.stop();
   };
 
   const chapters = CHAPTERS.filter((c) => c.universe === universe);
