@@ -448,15 +448,8 @@ const MOON_FACTS: L[] = [
 function MoonLoader({ loading, lang, fi }: { loading: boolean; lang: "en" | "bn"; fi: number }) {
   return (
     <div className="absolute inset-0 z-[65] flex flex-col items-center justify-center bg-[radial-gradient(ellipse_at_center,#1a2233,#05070c_70%)] transition-opacity duration-700" style={{ opacity: loading ? 1 : 0 }}>
-      <div className="relative w-56 h-56">
-        {Array.from({ length: 40 }).map((_, i) => (
-          <span key={i} className="absolute w-[2px] h-[2px] rounded-full bg-white animate-pulse" style={{ left: `${(i * 37) % 100}%`, top: `${(i * 53) % 100}%`, opacity: 0.3 + ((i * 7) % 10) / 15, animationDelay: `${(i % 5) * 0.4}s` }} />
-        ))}
-        <div className="absolute inset-6 rounded-full moon-spin shadow-[0_0_60px_rgba(200,215,255,.25),inset_-30px_-20px_50px_rgba(0,0,0,.75)]"
-          style={{ background: "radial-gradient(circle at 30% 30%, #8a8d93 0 6%, transparent 7%), radial-gradient(circle at 65% 55%, #6f7278 0 10%, transparent 11%), radial-gradient(circle at 45% 75%, #7a7d83 0 5%, transparent 6%), radial-gradient(circle at 75% 25%, #85888e 0 4%, transparent 5%), radial-gradient(circle at 40% 40%, #d4d6da, #9a9da3 60%, #5d6066)", backgroundSize: "200% 100%" }} />
-        <div className="absolute w-12 h-12 rounded-full earth-rise shadow-[0_0_24px_rgba(90,150,255,.6)]" style={{ background: "radial-gradient(circle at 35% 35%, #9fd0ff, #2a6fd6 45%, #1d4f2a 60%, #0b1e44 85%)" }} />
-        <div className="absolute left-1/2 bottom-2 -translate-x-1/2 text-2xl astro-hop">👨‍🚀</div>
-      </div>
+      <div className="relative w-56 h-56 rounded-full moon-spin shadow-[0_0_80px_rgba(200,215,255,.3),inset_-40px_-25px_60px_rgba(0,0,0,.8)]"
+        style={{ background: "radial-gradient(circle at 30% 30%, #8a8d93 0 6%, transparent 7%), radial-gradient(circle at 65% 55%, #6f7278 0 10%, transparent 11%), radial-gradient(circle at 45% 75%, #7a7d83 0 5%, transparent 6%), radial-gradient(circle at 75% 25%, #85888e 0 4%, transparent 5%), radial-gradient(circle at 40% 40%, #d4d6da, #9a9da3 60%, #5d6066)", backgroundSize: "200% 100%" }} />
       <div className="mt-3 h-1 w-56 rounded-full bg-white/10 overflow-hidden"><div className="h-full w-1/3 moon-bar rounded-full bg-gradient-to-r from-[#cfd8e8] to-[#ffd97d]" /></div>
       <div className="text-[#dfe7f5] tracking-[0.4em] text-xs mt-3 animate-pulse">{lang === "bn" ? "চাঁদে অবতরণ করছি…" : "DESCENDING TO THE MOON…"}</div>
       <div className="text-[#cfe0ff] text-sm mt-4 max-w-[340px] text-center px-4 min-h-[40px]">🌕 {t(MOON_FACTS[fi % MOON_FACTS.length]!, lang)}</div>
