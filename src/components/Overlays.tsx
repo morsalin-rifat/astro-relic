@@ -861,7 +861,10 @@ function HubUI() {
                   <button
                     key={c.id}
                     onClick={() => {
-                      if (c.ready) {
+                      if (c.ready && c.universe === "moon") {
+                        audio.beep(640);
+                        showToast(lang === "bn" ? "🚀 অ্যাপোলো ১১ অবতরণ স্থল তৈরি হচ্ছে — শীঘ্রই নামবে!" : "🚀 Apollo 11 landing site is being built — touchdown soon!");
+                      } else if (c.ready) {
                         audio.beep();
                         store.emit("hub:newgame");
                       } else {
@@ -879,6 +882,14 @@ function HubUI() {
                       <span className="block font-display text-[13px] tracking-[0.12em] text-[#f3ede0]">
                         {t(c.name, lang)}
                       </span>
+                      {c.universe === "moon" && (() => {
+                        const y = ({ ch4: 1969, ch5: 1969, ch6: 1971, ch7: 1972 } as Record<string, number>)[c.id];
+                        return y ? (
+                          <span className="block text-[9px] tracking-[0.2em] text-[#9fd8ff] mt-0.5">
+                            ⏱️ {lang === "bn" ? `${new Date().getFullYear() - y} বছর ধরে নীরব` : `SILENT FOR ${new Date().getFullYear() - y} YEARS`}
+                          </span>
+                        ) : null;
+                      })()}
                     </span>
                     <span className={`hub-badge ${c.ready ? "hub-badge-gold" : ""}`}>
                       {done ? t(HUB.done, lang) : c.ready ? t(HUB.launch, lang) : t(HUB.soon, lang)}
@@ -892,11 +903,6 @@ function HubUI() {
                 </div>
               )}
             </div>
-            {universe === "moon" && chapters.length > 0 && (
-              <div className="mt-4 text-center text-[10px] tracking-[0.25em] text-white/45">
-                🌙 {t(HUB.moonSoon, lang)}
-              </div>
-            )}
           </div>
         </div>
       )}

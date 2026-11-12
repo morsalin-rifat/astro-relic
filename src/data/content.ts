@@ -316,7 +316,7 @@ export const CHAPTERS = [
   {
     universe: "moon" as const,
     id: "ch4",
-    ready: false,
+    ready: true,
     name: { en: "TRANQUILITY BASE", bn: "ট্রানকুইলিটি বেস" },
     tag: { en: "1969 · APOLLO 11", bn: "১৯৬৯ · অ্যাপোলো ১১" },
   },
