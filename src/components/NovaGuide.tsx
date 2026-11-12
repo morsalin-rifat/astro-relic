@@ -30,6 +30,11 @@ const DIALOGUES = {
   },
 } as const;
 
+const MOON = {
+  en: { audio: "/audio/moon/welcome_en.mp3", text: "Bip-boop! Welcome to lunar orbit, Explorer! Look back, our Earth glows like a blue marble. Humans walked this grey dust over fifty years ago, then everything went silent. Let's discover the relics they left behind!" },
+  bn: { audio: "/audio/moon/welcome_bn.mp3", text: "বিপ-বুপ! চাঁদের কক্ষপথে স্বাগতম, এক্সপ্লোরার! পেছনে তাকাও, আমাদের পৃথিবী নীল মার্বেলের মতো জ্বলছে! পঞ্চাশ বছরেরও আগে মানুষ এই ধূসর মাটিতে নেমেছিল, তারপর সব চুপচাপ। চলো, ফেলে যাওয়া স্মৃতিগুলো খুঁজে দেখি!" },
+} as const;
+
 export function NovaGuide({ onComplete }: NovaGuideProps) {
   const lang = useGame((s) => s.lang);
   const muted = useGame((s) => s.muted);
@@ -48,7 +53,10 @@ export function NovaGuide({ onComplete }: NovaGuideProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const typingTimerRef = useRef<number | null>(null);
 
-  const currentDialogue = DIALOGUES[lang] ?? DIALOGUES.en;
+  const universe = useGame((s) => s.universe);
+  const base = DIALOGUES[lang] ?? DIALOGUES.en;
+  const moon = MOON[lang] ?? MOON.en;
+  const currentDialogue = universe === "moon" ? { ...base, audio: moon.audio, fallbackAudio: moon.audio, text: moon.text } : base;
   const fullText = currentDialogue.text;
 
   // Stop audio helper
@@ -130,7 +138,7 @@ export function NovaGuide({ onComplete }: NovaGuideProps) {
           setAutoplayBlocked(true);
         });
     }
-  }, [currentDialogue, muted, stopAudio]);
+  }, [currentDialogue.audio, currentDialogue.fallbackAudio, muted, stopAudio]);
 
   // Trigger typewriter effect synced to audio length (~12.5 seconds total)
   useEffect(() => {
