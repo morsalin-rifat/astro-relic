@@ -54,6 +54,7 @@ interface GameState {
   loading: boolean;
   showEncounter: boolean;
   showSpirit: boolean;
+  showOppy: boolean;
   bigMap: boolean;
 }
 
@@ -98,6 +99,7 @@ class Store {
     loading: false,
     showEncounter: false,
     showSpirit: false,
+    showOppy: false,
     bigMap: false,
   };
 

@@ -10,6 +10,7 @@ import { NOVA_WELCOME_MARS, NOVA_NEAR_SITE, UI } from "../../data/content";
 
 const SITE = new THREE.Vector3(42, 0, -30);
 const SPIRIT = new THREE.Vector3(-20, 0, -340);
+const OPPY = new THREE.Vector3(12, 0, -690);
 const WORLD = 320;
 const ZONE = 350; // metres per real NASA site
 const ZONES = [
@@ -47,6 +48,13 @@ export class MarsWorldScene implements Scene {
   private spiritNear = false;
   private spiritLeave = false;
   private spiritLockSaid = false;
+  private zoneWraps: THREE.Group[] = [];
+  private oppy = new THREE.Group();
+  private oppyBeacon = new THREE.Group();
+  private oppyMeeting = false;
+  private oppyNear = false;
+  private oppyLeave = false;
+  private oppyLockSaid = false;
   private needLeave = false;
   private disposers: (() => void)[] = [];
   private metAtStart: boolean;
@@ -210,6 +218,37 @@ export class MarsWorldScene implements Scene {
       this.scene.add(this.spiritBeacon);
     }
 
+    // Opportunity in Meridiani Planum (zone 3)
+    this.oppy.position.set(OPPY.x, this.groundHeight(OPPY.x, OPPY.z), OPPY.z);
+    this.oppy.rotation.y = -0.9;
+    this.scene.add(this.oppy);
+    loader().load("/models/spirit.glb", (gltf) => {
+      if (this.disposed) return;
+      const m = gltf.scene;
+      const box = new THREE.Box3().setFromObject(m);
+      const size = box.getSize(new THREE.Vector3());
+      const k = 1.9 / Math.max(size.x, size.z, 0.001);
+      m.scale.setScalar(k);
+      const c = box.getCenter(new THREE.Vector3());
+      m.position.set(-c.x * k, -box.min.y * k, -c.z * k);
+      m.traverse((o) => { if ((o as THREE.Mesh).isMesh) o.castShadow = true; });
+      this.oppy.add(m);
+    });
+    {
+      const sb = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.6, 30, 12, 1, true),
+        new THREE.MeshBasicMaterial({ color: 0x6cc6ff, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }));
+      sb.position.y = 15;
+      this.oppyBeacon.add(sb);
+      const sr = new THREE.Mesh(new THREE.RingGeometry(1.6, 2, 40),
+        new THREE.MeshBasicMaterial({ color: 0x6cc6ff, transparent: true, opacity: 0.7, side: THREE.DoubleSide }));
+      sr.rotation.x = -Math.PI / 2; sr.position.y = 0.15; sr.name = "beaconRing";
+      this.oppyBeacon.add(sr);
+      const sl = new THREE.PointLight(0x6cc6ff, 12, 25); sl.position.y = 3;
+      this.oppyBeacon.add(sl);
+      this.oppyBeacon.position.copy(this.oppy.position);
+      this.scene.add(this.oppyBeacon);
+    }
+
     // beacon
     this.beacon = new THREE.Group();
     const beam = new THREE.Mesh(
@@ -358,6 +397,7 @@ export class MarsWorldScene implements Scene {
         }
       });
       this.scene.add(wrap);
+      this.zoneWraps.push(wrap);
       if (--left > 0) return;
       // fill holes, then smooth seams between sites so walking is continuous
       for (let i = 0; i < data.length; i++) if ((data[i] ?? 0) < -1e8) data[i] = 0;
@@ -369,6 +409,25 @@ export class MarsWorldScene implements Scene {
         }
       }
       this.hf = { data, nx: NX, nz: NZ, minX, minZ, sx, sz };
+      // make the visible ground follow the blended seam so the player never floats or sinks
+      const band = 15 * sz, v = new THREE.Vector3(), inv = new THREE.Matrix4();
+      for (const w of this.zoneWraps) w.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (!m.isMesh) return;
+        const pos = m.geometry.attributes["position"] as THREE.BufferAttribute;
+        inv.copy(m.matrixWorld).invert();
+        let touched = false;
+        for (let i = 0; i < pos.count; i++) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld);
+          let near = Infinity;
+          for (let s2 = 1; s2 < ZONES.length; s2++) near = Math.min(near, Math.abs(v.z - (-s2 * ZONE + ZONE / 2)));
+          if (near > band) continue;
+          const f = THREE.MathUtils.smoothstep(near, band * 0.6, band);
+          v.y = THREE.MathUtils.lerp(this.sampleHf(v.x, v.z), v.y, f);
+          v.applyMatrix4(inv); pos.setXYZ(i, v.x, v.y, v.z); touched = true;
+        }
+        if (touched) { pos.needsUpdate = true; m.geometry.computeVertexNormals(); m.geometry.computeBoundingSphere(); }
+      });
       this.scene.remove(this.terrain);
       this.terrain.geometry.dispose();
       this.resnap();
@@ -518,6 +577,7 @@ export class MarsWorldScene implements Scene {
     };
     pin(this.rover.position.x, this.rover.position.z, "#ffd97d", "SOJOURNER");
     pin(this.spirit.position.x, this.spirit.position.z, "#ff8a5c", "SPIRIT");
+    pin(this.oppy.position.x, this.oppy.position.z, "#6cc6ff", "OPPY");
     const p = this.player.position;
     pin(p.x, p.z, "#4fd1ff", "YOU");
   }
@@ -540,11 +600,12 @@ export class MarsWorldScene implements Scene {
     } else { g.fillStyle = "#5a2e18"; g.fillRect(-R * 2, -R * 2, W * 2, W * 2); }
     // rover pin
     const sojDone = store.get().flags.includes("sojourner");
-    const tgt = sojDone ? this.spirit.position : this.rover.position;
+    const spDone = store.get().flags.includes("spirit");
+    const tgt = spDone ? this.oppy.position : sojDone ? this.spirit.position : this.rover.position;
     const rx = (tgt.x - p.x) * sc, rz = (tgt.z - p.z) * sc;
     const rd = Math.hypot(rx, rz), lim = R - 10;
     const k = rd > lim ? lim / rd : 1;
-    g.fillStyle = sojDone ? "#ff8a5c" : "#ffd97d"; g.strokeStyle = "#000"; g.lineWidth = 2;
+    g.fillStyle = spDone ? "#6cc6ff" : sojDone ? "#ff8a5c" : "#ffd97d"; g.strokeStyle = "#000"; g.lineWidth = 2;
     g.beginPath(); g.arc(rx * k, rz * k, 7, 0, Math.PI * 2); g.fill(); g.stroke();
     g.restore();
     // player arrow (camera-forward = up)
@@ -554,7 +615,7 @@ export class MarsWorldScene implements Scene {
     g.restore();
     g.fillStyle = "rgba(0,0,0,.55)"; g.fillRect(0, W - 30, W, 30);
     g.fillStyle = "#ffe2b8"; g.font = "bold 15px sans-serif"; g.textAlign = "center";
-    g.fillText(`${sojDone ? "SPIRIT" : "SOJOURNER"} · ${Math.round(p.distanceTo(tgt))}m`, R, W - 10);
+    g.fillText(`${spDone ? "OPPY" : sojDone ? "SPIRIT" : "SOJOURNER"} · ${Math.round(p.distanceTo(tgt))}m`, R, W - 10);
     // sector banner
     this.sectorTimer -= dt;
     const name = this.sectorAt(p.x, p.z);
@@ -574,7 +635,7 @@ export class MarsWorldScene implements Scene {
       this.rocks.setMatrixAt(i, dummy.matrix);
     });
     this.rocks.instanceMatrix.needsUpdate = true;
-    for (const o of [this.lander, this.rover, this.beacon, this.player, this.spirit, this.spiritBeacon]) {
+    for (const o of [this.lander, this.rover, this.beacon, this.player, this.spirit, this.spiritBeacon, this.oppy, this.oppyBeacon]) {
       o.position.y = this.groundHeight(o.position.x, o.position.z);
     }
   }
@@ -598,6 +659,8 @@ export class MarsWorldScene implements Scene {
       for (const [fx, fz, fr] of [
         [SITE.x, SITE.z, 14],
         [SPIRIT.x, SPIRIT.z, 12],
+      [OPPY.x, OPPY.z, 12],
+        [OPPY.x, OPPY.z, 12],
         [0, 0, 10],
       ] as const) {
         const dd = Math.hypot(x - fx, z - fz);
@@ -627,6 +690,7 @@ export class MarsWorldScene implements Scene {
     for (const [fx, fz, fr] of [
       [SITE.x, SITE.z, 14],
       [SPIRIT.x, SPIRIT.z, 12],
+      [OPPY.x, OPPY.z, 12],
       [0, 0, 10],
     ] as const) {
       const d = Math.hypot(x - fx, z - fz);
@@ -734,7 +798,7 @@ export class MarsWorldScene implements Scene {
         (this.keys.has("KeyS") || this.keys.has("ArrowDown") ? 1 : 0) +
         this.joy.y,
     );
-    const moving = !this.meeting && !this.spiritMeeting && input.lengthSq() > 0.001;
+    const moving = !this.meeting && !this.spiritMeeting && !this.oppyMeeting && input.lengthSq() > 0.001;
     if (moving) {
       input.normalize();
       const speed = 6.5;
@@ -863,6 +927,45 @@ export class MarsWorldScene implements Scene {
       }
       if (this.spiritMeeting) {
         const to = this.spirit.position.clone().sub(this.player.position);
+        this.camYaw = THREE.MathUtils.lerp(this.camYaw, Math.atan2(-to.x, -to.z) + Math.PI, dt * 1.5);
+      }
+    }
+
+    // Opportunity (zone 3) triggers — open only after Spirit's mission
+    {
+      const st = store.get();
+      const sojDone = st.flags.includes("spirit");
+      const dS = this.player.position.distanceTo(this.oppy.position);
+      const sr = this.oppyBeacon.getObjectByName("beaconRing") as THREE.Mesh | undefined;
+      if (sr) { const k = 1 + Math.sin(t * 2.4) * 0.25; sr.scale.set(k, k, 1); }
+      this.oppyBeacon.visible = !st.flags.includes("oppy");
+      if (this.oppyMeeting && !st.showOppy) {
+        this.oppyMeeting = false; this.oppyLeave = true; this.camDist = Math.max(this.camDist, 8);
+      }
+      if (this.oppyLeave && dS > 8) this.oppyLeave = false;
+      if (!sojDone) {
+        if (dS < 14 && !this.oppyLockSaid) {
+          this.oppyLockSaid = true;
+          store.say([{ speaker: "nova", en: "Oppy is sleeping here. First finish Spirit's mission in Gusev Crater!", bn: "ওপি এখানে ঘুমিয়ে আছে। আগে গুসেভ ক্রেটারে স্পিরিটের মিশন শেষ করো!" }]);
+        }
+        if (dS > 30) this.oppyLockSaid = false;
+      } else if (!this.oppyMeeting && !this.meeting && !this.spiritMeeting) {
+        if (!this.oppyNear && dS < 28) {
+          this.oppyNear = true;
+          voice.play("oppy/01_oppy_arrival");
+          store.say([{ speaker: "nova", en: "We've arrived at Meridiani Planum! Look ahead—it's the legendary Oppy, the rover that ran an Olympic marathon on Mars!", bn: "আমরা এখন মেরিডিয়ানি প্লেনামে! দেখো সামনে সেই কিংবদন্তি রোভার—আমাদের প্রিয় ওপি, যে মঙ্গলে ম্যারাথন দৌড়েছিল!" }]);
+          store.set({ objective: { en: "Walk up to Oppy", bn: "ওপির কাছে হেঁটে যাও" } });
+        }
+        if (!this.oppyLeave && dS < 4.6) {
+          this.oppyMeeting = true;
+          voice.stop();
+          store.clearDialogue();
+          store.set({ objective: null, hint: null, showOppy: true });
+          this.camDist = 5;
+        }
+      }
+      if (this.oppyMeeting) {
+        const to = this.oppy.position.clone().sub(this.player.position);
         this.camYaw = THREE.MathUtils.lerp(this.camYaw, Math.atan2(-to.x, -to.z) + Math.PI, dt * 1.5);
       }
     }
