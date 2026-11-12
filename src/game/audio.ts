@@ -67,7 +67,8 @@ class AmbientAudio {
       this.nodes = [src, filt, g];
       g.gain.value = 0.14;
     }
-    this.startMusic(mode);
+    if (mode === "mars") this.startTrack("/audio/music/mars_ambient.mp3");
+    else this.startMusic(mode);
     this.fadeTo(1, 2.5);
   }
 
@@ -137,7 +138,24 @@ class AmbientAudio {
     }, 1000);
   }
 
+  /** Looping cinematic organ track (Mars). Routed through master so mute/fade still work. */
+  private track: HTMLAudioElement | null = null;
+  private startTrack(url: string) {
+    const ctx = this.ctx!;
+    const el = new Audio(url);
+    el.loop = true;
+    el.crossOrigin = "anonymous";
+    const src = ctx.createMediaElementSource(el);
+    const g = ctx.createGain();
+    g.gain.value = 0.55;
+    src.connect(g).connect(this.master!);
+    el.play().catch(() => {});
+    this.track = el;
+    this.nodes.push(src, g);
+  }
+
   private stopNodes() {
+    if (this.track) { this.track.pause(); this.track.src = ""; this.track = null; }
     this.nodes.forEach((n) => {
       try {
         (n as any).stop?.();
