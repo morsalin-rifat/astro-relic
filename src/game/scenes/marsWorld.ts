@@ -6,7 +6,6 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import { makeStarfield, fbm, type Scene } from "../utils";
 import { buildExplorer, buildNova, buildSojourner } from "../models/builders";
-import { voice } from "../voice";
 import { NOVA_WELCOME_MARS, NOVA_NEAR_SITE, UI } from "../../data/content";
 
 const SITE = new THREE.Vector3(42, 0, -30);
