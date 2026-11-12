@@ -1000,6 +1000,7 @@ const TROPHIES = [
   { id: "gusev-fighter", rover: "Spirit", year: "2004–2010", icon: "💪", name: { en: "Gusev Fighter", bn: "গুসেভ যোদ্ধা" }, fact: { en: "Found silica with a broken wheel", bn: "ভাঙা চাকায় সিলিকা আবিষ্কার" } },
   { id: "meridiani-marathoner", rover: "Opportunity", year: "2004–2018", icon: "🏃", name: { en: "Meridiani Marathoner", bn: "মেরিডিয়ানি ম্যারাথনার" }, fact: { en: "45 km in 15 years", bn: "১৫ বছরে ৪৫ কিমি" } },
   { id: "silent-listener", rover: "InSight", year: "2018–2022", icon: "📡", name: { en: "Silent Listener", bn: "নীরব শ্রোতা" }, fact: { en: "Heard 1,300+ marsquakes", bn: "১৩০০+ মঙ্গলকম্পন শুনেছে" } },
+  { id: "master-explorer", rover: "Grand Finale", year: "★", icon: "👑", name: { en: "Master Mars Explorer", bn: "মাস্টার মার্স এক্সপ্লোরার" }, fact: { en: "Planted the flag after all 4 missions", bn: "৪ মিশন শেষে পতাকা উড়িয়েছে" } },
 ];
 
 function TrophyHall({ lang, onClose }: { lang: "en" | "bn"; onClose: () => void }) {
@@ -1018,9 +1019,9 @@ function TrophyHall({ lang, onClose }: { lang: "en" | "bn"; onClose: () => void 
           <div className={`font-display tracking-[0.2em] text-lg ${master ? "text-[#ffd97d]" : "text-white/50"}`}>
             {master ? "👑 " : "🔒 "}{lang === "bn" ? "মাস্টার মার্স এক্সপ্লোরার" : "MASTER MARS EXPLORER"}
           </div>
-          <div className="text-[11px] text-white/60 mt-1">{lang === "bn" ? `${got}/4 মেডেল পেয়েছো` : `${got}/4 medals earned`}</div>
+          <div className="text-[11px] text-white/60 mt-1">{lang === "bn" ? `${got}/${TROPHIES.length} মেডেল পেয়েছো` : `${got}/${TROPHIES.length} medals earned`}</div>
           <div className="mx-auto mt-2 h-1.5 w-48 rounded-full bg-white/10 overflow-hidden">
-            <div className="h-full bg-[#ffd97d] transition-all" style={{ width: `${(got / 4) * 100}%` }} />
+            <div className="h-full bg-[#ffd97d] transition-all" style={{ width: `${(got / TROPHIES.length) * 100}%` }} />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">

@@ -97,6 +97,7 @@ export function FinaleUI() {
 
   const finish = (hub: boolean | "home") => {
     store.set({ flags: Array.from(new Set([...store.get().flags, "finale"])) });
+    store.awardBadge("master-explorer");
     setStep("idle");
     if (hub) store.emit("engine:goto", hub === "home" ? "home" : "hub");
   };
