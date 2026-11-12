@@ -455,7 +455,7 @@ export class MarsWorldScene implements Scene {
         }
       }
       // 3) smooth sand ramp across each seam (visible mesh == walkable height)
-      const sandA = new THREE.Color(0x8a4a2c), sandB = new THREE.Color(0xa86240);
+      const sandA = new THREE.Color(0x8e5a3e), sandB = new THREE.Color(0xc08a66);
       for (let s = 1; s < N; s++) {
         const zr = rowOf(-s * ZONE + ZONE / 2);
         for (let gx = 0; gx < NX; gx++) {
@@ -472,8 +472,8 @@ export class MarsWorldScene implements Scene {
           const gz = zr - w + r, i = r * NX + gx;
           const px = minX + gx * sx, pz = minZ + gz * sz;
           verts[i * 3] = px; verts[i * 3 + 1] = data[gz * NX + gx]! + 0.05; verts[i * 3 + 2] = pz;
-          const col = sandA.clone().lerp(sandB, fbm(px * 0.08, pz * 0.08)).multiply(ga.clone().lerp(gb, r / (rows - 1)));
-          cols[i * 3] = col.r * 0.8; cols[i * 3 + 1] = col.g * 0.8; cols[i * 3 + 2] = col.b * 0.8;
+          const col = sandA.clone().lerp(sandB, fbm(px * 0.15, pz * 0.15, 4)).multiply(ga.clone().lerp(gb, r / (rows - 1)).multiplyScalar(0.85));
+          cols[i * 3] = col.r; cols[i * 3 + 1] = col.g; cols[i * 3 + 2] = col.b;
         }
         const ind: number[] = [];
         for (let r = 0; r < rows - 1; r++) for (let gx = 0; gx < NX - 1; gx++) {
@@ -712,7 +712,7 @@ export class MarsWorldScene implements Scene {
     for (let i = 0; i < h.data.length; i += 7) lo = Math.min(lo, h.data[i]!);
     const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0 });
     const W = 70, M = 10, step = 4;
-    const sandA = new THREE.Color(0x7a3c22), sandB = new THREE.Color(0xa45a36);
+    const sandA = new THREE.Color(0x8a5236), sandB = new THREE.Color(0xb27a58);
     const skirt = (x0: number, z0: number, x1: number, z1: number, ox: number, oz: number) => {
       const len = Math.hypot(x1 - x0, z1 - z0), n = Math.ceil(len / step) + 1;
       const verts: number[] = [], cols: number[] = [], ind: number[] = [];
