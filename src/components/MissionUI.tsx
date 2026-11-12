@@ -13,6 +13,7 @@ export const BADGES: { id: string; icon: string; name: L; rover: L }[] = [
   { id: "ares-pioneer", icon: "🎖️", name: { en: "Ares Vallis Pioneer", bn: "অ্যারিস ভ্যালিস অগ্রদূত" }, rover: { en: "Sojourner · 1997", bn: "সোজার্নার · ১৯৯৭" } },
   { id: "gusev-fighter", icon: "🛡️", name: { en: "Gusev Fighter", bn: "গুসেভ যোদ্ধা" }, rover: { en: "Spirit · 2004", bn: "স্পিরিট · ২০০৪" } },
   { id: "meridiani-marathoner", icon: "🏃", name: { en: "Meridiani Marathoner", bn: "মেরিডিয়ানি ম্যারাথনার" }, rover: { en: "Opportunity · 2004", bn: "অপরচুনিটি · ২০০৪" } },
+  { id: "silent-listener", icon: "🎧", name: { en: "Silent Listener", bn: "নীরব শ্রোতা" }, rover: { en: "InSight · 2018", bn: "ইনসাইট · ২০১৮" } },
   { id: "elysium-heartbeat", icon: "💓", name: { en: "Elysium Heartbeat", bn: "এলিসিয়াম হৃদস্পন্দন" }, rover: { en: "InSight · 2018", bn: "ইনসাইট · ২০১৮" } },
 ];
 
@@ -144,7 +145,7 @@ function PhotoGallery({ lang, onClose }: { lang: "en" | "bn"; onClose: () => voi
 
 
 /* ---------- Hub-style left holo bubble with typewriter ---------- */
-export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker: "nova" | "sojourner" | "spirit" | "oppy"; text: string; speaking?: boolean; onClick?: () => void; hint?: string }) {
+export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker: "nova" | "sojourner" | "spirit" | "oppy" | "insight"; text: string; speaking?: boolean; onClick?: () => void; hint?: string }) {
   const [n, setN] = useState(0);
   useEffect(() => {
     setN(0);
@@ -162,7 +163,7 @@ export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker
   useEffect(() => { if (!speaking) setN((x) => (x > 0 ? text.length : x)); }, [speaking, text]);
   const done = n >= text.length;
   const nova = speaker === "nova";
-  const acc = speaker === "spirit" ? "#ff8a5c" : speaker === "oppy" ? "#6cc6ff" : "#ffd97d";
+  const acc = speaker === "spirit" ? "#ff8a5c" : speaker === "oppy" ? "#6cc6ff" : speaker === "insight" ? "#b58cff" : "#ffd97d";
   return (
     <div className="fixed z-[56] left-2 right-2 bottom-2 md:right-auto md:bottom-auto md:top-[18%] md:left-6 flex items-end gap-2 sm:gap-3 pointer-events-auto select-none animate-[hubrise_0.45s_ease]"
       onClick={() => { if (!done) setN(text.length); else onClick?.(); }}>
@@ -177,7 +178,7 @@ export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker
         <span className="nova-bubble-tail" aria-hidden />
         <div className={`nova-bubble-inner ${speaking ? "is-speaking" : ""}`} style={nova ? undefined : { borderColor: acc }}>
           <div className="flex items-center justify-between gap-2 mb-1.5">
-            <div className="nova-nameplate" style={nova ? undefined : speaker === "oppy" ? { color: "#04121c", background: acc } : { color: acc }}><span className="nova-dot" />{nova ? "NOVA" : speaker === "spirit" ? "SPIRIT · 2004" : speaker === "oppy" ? "OPPY · 2004" : "SOJOURNER · 1997"}</div>
+            <div className="nova-nameplate" style={nova ? undefined : speaker === "oppy" || speaker === "insight" ? { color: "#04121c", background: acc } : { color: acc }}><span className="nova-dot" />{nova ? "NOVA" : speaker === "spirit" ? "SPIRIT · 2004" : speaker === "oppy" ? "OPPY · 2004" : speaker === "insight" ? "INSIGHT · 2018" : "SOJOURNER · 1997"}</div>
             {speaking && <div className="nova-wave" aria-hidden><i /><i /><i /><i /></div>}
           </div>
           <p className="nova-text min-h-[3.2rem]">{text.slice(0, n)}{!done && <span className="nova-caret" />}</p>

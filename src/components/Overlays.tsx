@@ -7,6 +7,7 @@ import { SolarHUD } from "./SolarHUD";
 import { NovaGuide } from "./NovaGuide";
 import { SpiritEncounter } from "./SpiritUI";
 import { OppyEncounter } from "./OppyUI";
+import { InsightEncounter } from "./InsightUI";
 import { SojournerEncounter, Badges, BigMapClose, RoverLoader, HoloBubble } from "./MissionUI";
 
 const POP = "cubic-bezier(.785, .135, .15, .01)";
@@ -976,6 +977,7 @@ export function Overlays() {
       <SojournerEncounter />
       <SpiritEncounter />
       <OppyEncounter />
+      <InsightEncounter />
       <Badges />
       <BigMapClose />
       <RoverLoader />
