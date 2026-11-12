@@ -598,11 +598,11 @@ function HubUI() {
   const switchUniverse = (u: "mars" | "moon") => {
     if (u === universe) return;
     audio.beep(u === "moon" ? 640 : 500);
-    store.set({ universe: u });
+    voice.stop();
+    store.set({ universe: u, hasSeenHubIntro: false });
     if (u === "moon") {
-      voice.play("moon/welcome");
       showToast(lang === "bn" ? "🌙 চাঁদের কক্ষপথে স্বাগতম!" : "🌙 Welcome to lunar orbit!");
-    } else voice.stop();
+    }
   };
 
   const chapters = CHAPTERS.filter((c) => c.universe === universe);
