@@ -207,6 +207,8 @@ export class MoonWorldScene implements Scene {
   private hud!: HTMLDivElement;
   private mini!: HTMLCanvasElement;
   private miniBg!: HTMLCanvasElement;
+  private big: HTMLCanvasElement | null = null;
+  private bigOpen = false;
   private nearSite = "";
   private disposers: (() => void)[] = [];
   private disposed = false;
@@ -481,8 +483,13 @@ export class MoonWorldScene implements Scene {
     back.onclick = () => store.emit("engine:goto", "hub");
     document.body.appendChild(back); this.disposers.push(() => back.remove());
     const c = document.createElement("canvas"); c.width = c.height = 220;
-    c.style.cssText = "position:fixed;top:72px;right:16px;width:180px;height:180px;border-radius:50%;border:2px solid rgba(200,220,255,.7);box-shadow:0 0 20px rgba(0,0,0,.6);z-index:40;background:#111";
+    c.style.cssText = "position:fixed;top:72px;right:16px;width:180px;height:180px;border-radius:50%;border:2px solid rgba(200,220,255,.7);box-shadow:0 0 20px rgba(0,0,0,.6);z-index:40;background:#111;cursor:pointer;pointer-events:auto";
+    c.title = "Open map";
+    const stop = (e: Event) => e.stopPropagation();
+    c.addEventListener("pointerdown", stop);
+    c.addEventListener("click", (e) => { e.stopPropagation(); this.bigOpen = true; });
     document.body.appendChild(c); this.mini = c;
+    this.disposers.push(() => { c.remove(); this.big?.remove(); });
   }
 
   private bakeMinimap(craters: { x: number; z: number; R: number }[]) {
@@ -501,7 +508,43 @@ export class MoonWorldScene implements Scene {
     this.miniBg = c;
   }
 
+  private drawBigMap() {
+    if (!this.bigOpen) { if (this.big) this.big.style.display = "none"; return; }
+    if (!this.big) {
+      const c = document.createElement("canvas");
+      c.style.cssText = "position:fixed;inset:0;width:100vw;height:100vh;z-index:45;background:rgba(4,6,12,.94);cursor:pointer";
+      c.addEventListener("pointerdown", (e) => e.stopPropagation());
+      c.addEventListener("click", (e) => { e.stopPropagation(); this.bigOpen = false; });
+      document.body.appendChild(c); this.big = c;
+    }
+    const c = this.big; c.style.display = "block";
+    const W = (c.width = innerWidth), H = (c.height = innerHeight), g = c.getContext("2d")!;
+    const R = 180; // metres shown around base
+    const sc = Math.min(W, H) * 0.86 / (2 * R), cx = W / 2, cy = H / 2 + 10;
+    const toX = (x: number) => cx + x * sc, toY = (z: number) => cy + z * sc;
+    g.save(); g.beginPath(); g.rect(cx - R * sc, cy - R * sc, 2 * R * sc, 2 * R * sc); g.clip();
+    g.drawImage(this.miniBg, toX(-WORLD / 2), toY(-WORLD / 2), WORLD * sc, WORLD * sc); g.restore();
+    g.strokeStyle = "rgba(200,220,255,.6)"; g.lineWidth = 2; g.strokeRect(cx - R * sc, cy - R * sc, 2 * R * sc, 2 * R * sc);
+    g.strokeStyle = "rgba(255,217,125,.8)"; g.setLineDash([5, 5]); g.beginPath();
+    [[0, 3], [-9, 6], [-22, 16], [-5, 13], [6, 26], [-4, 30], [0, 3]].forEach(([x, z], i) => (i ? g.lineTo(toX(x!), toY(z!)) : g.moveTo(toX(x!), toY(z!)))); g.stroke(); g.setLineDash([]);
+    g.textAlign = "center";
+    MOON_SITES.forEach((s, i) => {
+      const x = toX(s.x), y = toY(s.z);
+      g.fillStyle = s.id === "lm" ? "#ffd97d" : "#9fd0ff"; g.strokeStyle = "#000"; g.lineWidth = 2;
+      g.beginPath(); g.arc(x, y, s.id === "lm" ? 7 : 5, 0, 7); g.fill(); g.stroke();
+      const near = s.r < 10; const off = near ? (i % 2 ? 16 : -10) : -12;
+      g.font = `bold ${near ? 11 : 13}px system-ui`; g.fillStyle = "#fff";
+      g.fillText(s.en.split(" (")[0]!, x + (near ? (i % 2 ? 60 : -60) : 0), y + off);
+    });
+    const p = this.player.position;
+    g.fillStyle = "#4fd1ff"; g.beginPath(); g.arc(toX(p.x), toY(p.z), 7, 0, 7); g.fill(); g.stroke();
+    g.fillStyle = "#fff"; g.font = "bold 12px system-ui"; g.fillText("YOU", toX(p.x), toY(p.z) - 12);
+    g.fillStyle = "#ffd97d"; g.font = "bold 18px system-ui"; g.fillText("TRANQUILITY BASE · APOLLO 11", W / 2, 34);
+    g.fillStyle = "#cfe0ff"; g.font = "12px system-ui"; g.fillText("Tap anywhere to close · মানচিত্র বন্ধ করতে চাপো", W / 2, H - 16);
+  }
+
   private drawMinimap() {
+    this.drawBigMap();
     const g = this.mini.getContext("2d")!, S = 220, scale = 1.4; // px per metre
     const p = this.player.position;
     g.save(); g.clearRect(0, 0, S, S); g.beginPath(); g.arc(S / 2, S / 2, S / 2, 0, 7); g.clip();
