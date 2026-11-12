@@ -54,6 +54,8 @@ interface GameState {
   loading: boolean;
   /** which Moon landing site (0-3) to spawn at */
   moonZone: number;
+  moonNear: string | null;
+  moonFreeze: boolean;
   showEncounter: boolean;
   showSpirit: boolean;
   showOppy: boolean;
@@ -101,6 +103,8 @@ class Store {
     newBadge: null,
     loading: false,
     moonZone: 0,
+    moonNear: null,
+    moonFreeze: false,
     showEncounter: false,
     showSpirit: false,
     showOppy: false,

@@ -10,6 +10,7 @@ import { SpiritEncounter } from "./SpiritUI";
 import { OppyEncounter } from "./OppyUI";
 import { InsightEncounter } from "./InsightUI";
 import { FinaleUI } from "./FinaleUI";
+import { Apollo11Mission } from "./Apollo11UI";
 import { SojournerEncounter, Badges, BigMapClose, RoverLoader, HoloBubble } from "./MissionUI";
 
 const POP = "cubic-bezier(.785, .135, .15, .01)";
@@ -1046,6 +1047,7 @@ export function Overlays() {
       <OppyEncounter />
       <InsightEncounter />
       <FinaleUI />
+      <Apollo11Mission />
       <Badges />
       <BigMapClose />
       <RoverLoader />

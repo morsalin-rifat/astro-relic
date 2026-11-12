@@ -30,6 +30,7 @@ const zoneOf = (z: number) => THREE.MathUtils.clamp(Math.round(-z / 420), 0, 3);
 const win = (z: number, zc: number, half = 190) => { const d = Math.abs(z - zc) / half; return d >= 1 ? 0 : 1 - d * d * (3 - 2 * d); };
 const rilleX = (z: number) => -60 + Math.sin((z + 840) * 0.018) * 14;
 const LM_SPOTS: [number, number][] = [[0, 0], [30, -398], [0, -830], [0, -1255]];
+const A11_SPOTS = ["lm", "plaque", "flag", "boot", "lrrr", "psep", "memorial"];
 const GRAVITY = 2.6; // gentle "1/6 g" feel
 const JUMP_V = 3.4;
 const SPEED = 4.2;
@@ -43,6 +44,7 @@ export const MOON_SITES: Site[] = [
   { id: "boot", x: -5, z: 13, en: "Aldrin's Bootprint", bn: "অলড্রিনের পদচিহ্ন", info: "Photo AS11-40-5878", r: 3 },
   { id: "lrrr", x: 6, z: 26, en: "Laser Reflector (LRRR)", bn: "লেজার প্রতিফলক (LRRR)", info: "100 mirrors · still used today", r: 4 },
   { id: "psep", x: -4, z: 30, en: "Seismometer (PSEP)", bn: "ভূকম্পন যন্ত্র (PSEP)", info: "First moonquake listener", r: 4 },
+  { id: "memorial", x: 4.5, z: -4, en: "Memorial Bag · Goodwill Disc", bn: "স্মৃতির থলে · শুভেচ্ছা চাকতি", info: "Olive branch · 73 nations' messages", r: 2 },
   { id: "lwc", x: 96, z: 4, en: "Little West Crater", bn: "লিটল ওয়েস্ট ক্রেটার", info: "Armstrong's surprise run · 33 m wide", r: 22 },
   { id: "wc", x: -150, z: -40, en: "West Crater", bn: "ওয়েস্ট ক্রেটার", info: "Boulders Armstrong flew over to land", r: 55 },
   { id: "dbl", x: 40, z: -70, en: "Double Crater", bn: "ডাবল ক্রেটার", info: "Twin impact pits", r: 26 },
@@ -306,7 +308,7 @@ export class MoonWorldScene implements Scene {
     store.set({ objective: next
       ? { en: `Explore ${Z.en.split(" · ")[0]} — then walk south through the pass to ${next.en.split(" · ")[0]}`, bn: `${Z.bn.split(" · ")[0]} ঘুরে দেখো — তারপর দক্ষিণের গিরিপথ দিয়ে ${next.bn.split(" · ")[0]}-এ যাও` }
       : { en: `Explore ${Z.en.split(" · ")[0]} — the last place humans walked on the Moon`, bn: `${Z.bn.split(" · ")[0]} ঘুরে দেখো — চাঁদে মানুষের শেষ হাঁটার জায়গা` } });
-    store.say([{ speaker: "nova", ...Z.nova }]);
+    if (z === 0 && !store.get().flags.includes("apollo11")) store.emit("a11:arrive"); else store.say([{ speaker: "nova", ...Z.nova }]);
     if (this.hud) (this.hud.querySelector("[data-coord]") as HTMLElement).textContent = `${Z.coord} · ${Z.year}`;
     this.nearSite = "-";
   }
@@ -818,9 +820,9 @@ export class MoonWorldScene implements Scene {
   }
 
   update(dt: number, t: number) {
-    const k = this.keys;
-    const ix = (k.has("KeyD") || k.has("ArrowRight") ? 1 : 0) - (k.has("KeyA") || k.has("ArrowLeft") ? 1 : 0) + this.joy.x;
-    const iy = (k.has("KeyW") || k.has("ArrowUp") ? 1 : 0) - (k.has("KeyS") || k.has("ArrowDown") ? 1 : 0) + this.joy.y;
+    const k = store.get().moonFreeze ? new Set<string>() : this.keys;
+    const ix = (k.has("KeyD") || k.has("ArrowRight") ? 1 : 0) - (k.has("KeyA") || k.has("ArrowLeft") ? 1 : 0) + (store.get().moonFreeze ? 0 : this.joy.x);
+    const iy = (k.has("KeyW") || k.has("ArrowUp") ? 1 : 0) - (k.has("KeyS") || k.has("ArrowDown") ? 1 : 0) + (store.get().moonFreeze ? 0 : this.joy.y);
     const p = this.player.position;
     if (ix * ix + iy * iy > 0.001) {
       const l = Math.hypot(ix, iy), x = ix / l, y = iy / l, s = Math.sin(this.camYaw), c = Math.cos(this.camYaw);
@@ -856,12 +858,14 @@ export class MoonWorldScene implements Scene {
     if (this.mixer && this.walk) { this.walk.timeScale = this.grounded ? Math.min(this.vel.length() / SPEED, 1) * 0.8 : 0.1; this.mixer.update(dt); }
 
     // labels: fade by distance, nearest site name in HUD
-    let best = "", bestD = Infinity;
+    let best = "", bestD = Infinity, nearId: string | null = null, nearD = Infinity;
     for (const { s, site } of this.labels) {
       const d = Math.hypot(site.x - p.x, site.z - p.z);
       (s.material as THREE.SpriteMaterial).opacity = THREE.MathUtils.clamp(1.3 - d / (site.r > 15 ? 260 : 60), 0, 1);
+      if (this.zone === 0 && A11_SPOTS.includes(site.id) && d < site.r + 2.5 && d - site.r < nearD) { nearD = d - site.r; nearId = site.id; }
       if (d < site.r + 4 && d - site.r < bestD) { bestD = d - site.r; best = `${site.en} — ${site.bn}`; }
     }
+    if (nearId !== store.get().moonNear) store.set({ moonNear: nearId });
     if (best !== this.nearSite) { this.nearSite = best; (this.hud.querySelector("[data-site]") as HTMLElement).textContent = best || MOON_ZONES[this.zone]!.en; }
 
     // camera
@@ -882,7 +886,7 @@ export class MoonWorldScene implements Scene {
     this.disposed = true;
     this.hud?.remove(); this.mini?.remove(); this.big?.remove(); this.bannerEl?.remove(); window.clearTimeout(this.bannerT);
     voice.stop();
-    store.set({ objective: null, hint: null, loading: false });
+    store.set({ objective: null, hint: null, loading: false, moonNear: null, moonFreeze: false });
     this.disposers.forEach((d) => d());
     this.scene.traverse((o) => { const m = o as THREE.Mesh; m.geometry?.dispose(); const mat = (m as any).material; if (Array.isArray(mat)) mat.forEach((x) => x.dispose()); else mat?.dispose?.(); });
   }
