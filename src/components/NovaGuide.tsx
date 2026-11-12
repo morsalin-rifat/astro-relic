@@ -99,7 +99,7 @@ export function NovaGuide({ onComplete }: NovaGuideProps) {
 
     // Fallback if copied path has any issue
     audio.onerror = () => {
-      if (audio.src !== currentDialogue.fallbackAudio) {
+      if (!audio.src.endsWith(currentDialogue.fallbackAudio)) {
         audio.src = currentDialogue.fallbackAudio;
         audio.play().catch(() => setAutoplayBlocked(true));
       }
