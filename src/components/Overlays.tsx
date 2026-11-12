@@ -6,6 +6,7 @@ import { STORY, HOTSPOTS, HOTSPOT_ORDER } from "../data/story";
 import { SolarHUD } from "./SolarHUD";
 import { NovaGuide } from "./NovaGuide";
 import { SpiritEncounter } from "./SpiritUI";
+import { OppyEncounter } from "./OppyUI";
 import { SojournerEncounter, Badges, BigMapClose, RoverLoader, HoloBubble } from "./MissionUI";
 
 const POP = "cubic-bezier(.785, .135, .15, .01)";
@@ -974,6 +975,7 @@ export function Overlays() {
       <Joystick />
       <SojournerEncounter />
       <SpiritEncounter />
+      <OppyEncounter />
       <Badges />
       <BigMapClose />
       <RoverLoader />
