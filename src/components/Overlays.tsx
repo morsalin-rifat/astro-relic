@@ -1065,6 +1065,7 @@ const TROPHIES = [
   { id: "gusev-fighter", rover: "Spirit", year: "2004–2010", icon: "💪", name: { en: "Gusev Fighter", bn: "গুসেভ যোদ্ধা" }, fact: { en: "Found silica with a broken wheel", bn: "ভাঙা চাকায় সিলিকা আবিষ্কার" } },
   { id: "meridiani-marathoner", rover: "Opportunity", year: "2004–2018", icon: "🏃", name: { en: "Meridiani Marathoner", bn: "মেরিডিয়ানি ম্যারাথনার" }, fact: { en: "45 km in 15 years", bn: "১৫ বছরে ৪৫ কিমি" } },
   { id: "silent-listener", rover: "InSight", year: "2018–2022", icon: "📡", name: { en: "Silent Listener", bn: "নীরব শ্রোতা" }, fact: { en: "Heard 1,300+ marsquakes", bn: "১৩০০+ মঙ্গলকম্পন শুনেছে" } },
+  { id: "eagle-guardian", rover: "Apollo 11", year: "1969", icon: "🦅", name: { en: "Eagle Guardian", bn: "ঈগল গার্ডিয়ান" }, fact: { en: "Guardian of the first footsteps", bn: "প্রথম পায়ের ছাপের রক্ষী" } },
   { id: "master-explorer", rover: "Grand Finale", year: "★", icon: "👑", name: { en: "Master Mars Explorer", bn: "মাস্টার মার্স এক্সপ্লোরার" }, fact: { en: "Planted the flag after all 4 missions", bn: "৪ মিশন শেষে পতাকা উড়িয়েছে" } },
 ];
 
