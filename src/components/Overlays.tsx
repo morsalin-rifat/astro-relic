@@ -1028,7 +1028,7 @@ function TrophyHall({ lang, onClose }: { lang: "en" | "bn"; onClose: () => void 
           {TROPHIES.map((x) => {
             const on = badges.includes(x.id);
             return (
-              <div key={x.id} className={`rounded-xl p-4 text-center border transition ${on ? "border-[#ffd97d]/70 bg-gradient-to-b from-[#ffd97d]/15 to-transparent" : "border-white/10 bg-white/5 opacity-60"}`}>
+              <div key={x.id} className={`${x.id === "master-explorer" ? "col-span-2 " : ""}rounded-xl p-4 text-center border transition ${on ? "border-[#ffd97d]/70 bg-gradient-to-b from-[#ffd97d]/15 to-transparent" : "border-white/10 bg-white/5 opacity-60"}`}>
                 <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center text-3xl border-2 ${on ? "border-[#ffd97d] bg-[#3a2410] shadow-[0_0_18px_rgba(255,217,125,0.5)]" : "border-white/20 bg-black/40 grayscale"}`}>
                   {on ? x.icon : "🔒"}
                 </div>
