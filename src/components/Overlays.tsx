@@ -15,6 +15,50 @@ import { SojournerEncounter, Badges, BigMapClose, RoverLoader, HoloBubble } from
 const POP = "cubic-bezier(.785, .135, .15, .01)";
 
 
+/* ---------------- Mars intro video ---------------- */
+function MarsIntroVideo() {
+  const phase = useGame((s) => s.phase);
+  const [showSkip, setShowSkip] = useState(false);
+  const [fading, setFading] = useState(false);
+  useEffect(() => {
+    if (phase !== "cinematic") return;
+    setShowSkip(false);
+    setFading(false);
+    const id = setTimeout(() => setShowSkip(true), 2500);
+    return () => clearTimeout(id);
+  }, [phase]);
+  if (phase !== "cinematic") return null;
+  const finish = () => {
+    if (fading) return;
+    setFading(true);
+    setTimeout(() => store.emit("engine:goto", "explore"), 600);
+  };
+  return (
+    <div className="absolute inset-0 z-50 bg-black">
+      <video
+        src="/videos/mars/mars_intro.mp4"
+        autoPlay
+        playsInline
+        onEnded={finish}
+        onError={finish}
+        className="w-full h-full object-cover"
+      />
+      <div
+        className="absolute inset-0 bg-black pointer-events-none transition-opacity duration-500"
+        style={{ opacity: fading ? 1 : 0 }}
+      />
+      {showSkip && !fading && (
+        <button
+          onClick={finish}
+          className="absolute bottom-8 right-8 px-6 py-3 rounded-full border border-white/40 bg-white/10 backdrop-blur-md text-white tracking-[0.2em] text-sm hover:bg-white/25 transition"
+        >
+          ⏭️ SKIP INTRO
+        </button>
+      )}
+    </div>
+  );
+}
+
 /* ---------------- Dialogue box ---------------- */
 function Dialogue() {
   const current = useGame((s) => s.current);
@@ -971,6 +1015,7 @@ export function Overlays() {
       <HubUI />
       <NovaGuide />
       <Caption />
+      <MarsIntroVideo />
       <Dialogue />
       <JourneyChoice />
       <StoryOverlay />

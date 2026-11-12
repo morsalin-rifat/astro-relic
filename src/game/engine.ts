@@ -22,7 +22,8 @@ function makeScene(phase: Phase, renderer: THREE.WebGLRenderer): Scene | null {
     case "map":
       return new MarsScene(renderer, true);
     case "cinematic":
-      return new MarsCinematicScene(renderer);
+      return null; // replaced by Mars intro video overlay
+      void MarsCinematicScene;
     case "explore":
       return new MarsWorldScene(renderer);
     case "story":
