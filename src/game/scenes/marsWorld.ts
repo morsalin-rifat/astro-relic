@@ -49,6 +49,8 @@ export class MarsWorldScene implements Scene {
   private spiritLeave = false;
   private spiritLockSaid = false;
   private zoneWraps: THREE.Group[] = [];
+  private snapNext = false;
+  private fallV = 0;
   private oppy = new THREE.Group();
   private oppyBeacon = new THREE.Group();
   private oppyMeeting = false;
@@ -316,6 +318,7 @@ export class MarsWorldScene implements Scene {
     };
     (window as any).__marsTeleport = (x: number, z: number) => {
       this.player.position.set(x, this.groundHeight(x, z), z);
+      this.snapNext = true;
     };
 
     this.disposers.push(
@@ -378,6 +381,7 @@ export class MarsWorldScene implements Scene {
       wrap.traverse((o) => {
         const m = o as THREE.Mesh;
         if (!m.isMesh) return;
+        if (/comparison/i.test(m.name)) { m.visible = false; return; } // reference copy, not terrain
         m.receiveShadow = true;
         const mat = m.material as THREE.MeshStandardMaterial;
         mat.color = new THREE.Color(...(zone.grade as [number, number, number]));
@@ -980,6 +984,7 @@ export class MarsWorldScene implements Scene {
     } else {
       this.velocity.lerp(new THREE.Vector3(), dt * 10);
     }
+    const prevX = this.player.position.x, prevZ = this.player.position.z, prevY = this.player.position.y;
     this.player.position.addScaledVector(this.velocity, dt);
     // world bounds
     const h = this.hf;
@@ -987,7 +992,16 @@ export class MarsWorldScene implements Scene {
     const bz0 = h ? h.minZ + 15 : -WORLD / 2 + 10, bz1 = h ? h.minZ + h.sz * (h.nz - 1) - 15 : WORLD / 2 - 10;
     this.player.position.x = THREE.MathUtils.clamp(this.player.position.x, bx0, bx1);
     this.player.position.z = THREE.MathUtils.clamp(this.player.position.z, bz0, bz1);
-    this.player.position.y = this.groundHeight(this.player.position.x, this.player.position.z);
+    // no teleporting up cliffs: block steps steeper than ~55°, fall smoothly down drops
+    let gy = this.groundHeight(this.player.position.x, this.player.position.z);
+    const run = Math.hypot(this.player.position.x - prevX, this.player.position.z - prevZ);
+    if (run > 1e-4 && gy - prevY > Math.max(0.35, run * 1.5) && !this.snapNext) {
+      this.player.position.x = prevX; this.player.position.z = prevZ;
+      this.velocity.multiplyScalar(0.2);
+      gy = this.groundHeight(prevX, prevZ);
+    }
+    this.fallV = gy < prevY - 0.05 && !this.snapNext ? this.fallV + 25 * dt : 0;
+    this.player.position.y = this.fallV > 0 ? Math.max(gy, prevY - this.fallV * dt) : gy;
 
     // walk animation
     const limbs = this.player.userData["limbs"];
@@ -1145,7 +1159,8 @@ export class MarsWorldScene implements Scene {
     ).multiplyScalar(this.camDist);
     const camPos = target.clone().add(camOffset);
     camPos.y = Math.max(camPos.y, this.groundHeight(camPos.x, camPos.z) + 1.5);
-    this.camera.position.lerp(camPos, dt * 5);
+    if (this.snapNext) { this.camera.position.copy(camPos); this.snapNext = false; }
+    else this.camera.position.lerp(camPos, dt * 5);
     this.camera.lookAt(target);
 
     // sun follows player for tight shadows
