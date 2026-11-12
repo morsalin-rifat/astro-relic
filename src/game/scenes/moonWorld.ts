@@ -403,9 +403,8 @@ export class MoonWorldScene implements Scene {
   groundHeight(x: number, z: number) {
     const sx = WORLD / SEGX, sz = LEN / SEGZ, n = SEGX + 1;
     const fx = THREE.MathUtils.clamp((x + WORLD / 2) / sx, 0, SEGX - 0.001), fz = THREE.MathUtils.clamp((z - ZMIN) / sz, 0, SEGZ - 0.001);
-    // PlaneGeometry rows run from +Z (row 0) to -Z after rotateX(-PI/2)
-    const rz = SEGZ - fz; const iz = Math.min(Math.floor(rz), SEGZ - 1), tz = rz - iz;
-    const ix = Math.floor(fx), tx = fx - ix;
+    // after rotateX(-PI/2) PlaneGeometry row 0 sits at the most negative Z
+    const ix = Math.floor(fx), tx = fx - ix, iz = Math.floor(fz), tz = fz - iz;
     const h = this.heights;
     const a = h[iz * n + ix]!, b = h[iz * n + ix + 1]!, c = h[(iz + 1) * n + ix]!, d = h[(iz + 1) * n + ix + 1]!;
     return (a * (1 - tx) + b * tx) * (1 - tz) + (c * (1 - tx) + d * tx) * tz;
