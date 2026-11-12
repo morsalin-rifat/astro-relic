@@ -455,7 +455,7 @@ function HUD() {
           SKIP GUIDE ▸▸
         </button>
       )}
-      {objective && phase === "explore" && (
+      {objective && (phase === "explore" || phase === "moon") && (
         <div className="absolute top-6 left-6 z-20 border-l-2 border-[#ffd97d] pl-3">
           <div className="text-[9px] tracking-[0.45em] text-white/40 mb-1">OBJECTIVE</div>
           <div className="text-xs tracking-[0.15em] text-[#ece7db]">{t(objective, lang)}</div>
@@ -504,7 +504,7 @@ function Joystick() {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const active = useRef(false);
-  if (phase !== "explore") return null;
+  if (phase !== "explore" && phase !== "moon") return null;
   return (
     <div
       ref={ref}
@@ -863,7 +863,8 @@ function HubUI() {
                     onClick={() => {
                       if (c.ready && c.universe === "moon") {
                         audio.beep(640);
-                        showToast(lang === "bn" ? "🚀 অ্যাপোলো ১১ অবতরণ স্থল তৈরি হচ্ছে — শীঘ্রই নামবে!" : "🚀 Apollo 11 landing site is being built — touchdown soon!");
+                        voice.stop();
+                        store.emit("engine:goto", "moon");
                       } else if (c.ready) {
                         audio.beep();
                         store.emit("hub:newgame");

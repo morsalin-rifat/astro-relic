@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 
 export type Lang = "en" | "bn";
 export type Phase =
-  "home" | "hub" | "solar" | "cinematic" | "explore" | "story" | "inspect" | "complete" | "map";
+  "home" | "hub" | "solar" | "cinematic" | "explore" | "story" | "inspect" | "complete" | "map" | "moon";
 
 export type Speaker = "nova" | "sojourner" | "narrator";
 
