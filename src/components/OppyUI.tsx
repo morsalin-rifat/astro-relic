@@ -254,7 +254,7 @@ export function OppyEncounter() {
         {step === "farewell" && (
           <>
             <div className="mt-3 text-center text-sm italic opacity-90">🔋 “My battery is low and it's getting dark.”</div>
-            <button onClick={holdHand} className="mt-3 w-full py-3 rounded-full text-black font-bold tracking-widest animate-pulse" style={{ background: GOLD }}>
+            <button onClick={holdHand} disabled={speaking} className="mt-3 w-full py-3 rounded-full text-black font-bold tracking-widest animate-pulse disabled:opacity-30 disabled:animate-none" style={{ background: GOLD }}>
               🤝 {lang === "bn" ? "ওপির হাত ধরো" : "HOLD OPPY'S HAND"}
             </button>
           </>
