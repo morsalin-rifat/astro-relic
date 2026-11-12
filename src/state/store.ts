@@ -52,6 +52,8 @@ interface GameState {
   badges: string[];
   newBadge: string | null;
   loading: boolean;
+  /** which Moon landing site (0-3) to spawn at */
+  moonZone: number;
   showEncounter: boolean;
   showSpirit: boolean;
   showOppy: boolean;
@@ -98,6 +100,7 @@ class Store {
     badges: Array.isArray(persisted.badges) ? persisted.badges : [],
     newBadge: null,
     loading: false,
+    moonZone: 0,
     showEncounter: false,
     showSpirit: false,
     showOppy: false,
