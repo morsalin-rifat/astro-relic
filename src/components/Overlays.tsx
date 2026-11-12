@@ -538,9 +538,9 @@ const HUB_ACTIONS: {
   { id: "newgame", icon: "▶", label: HUB.newGame, desc: HUB.newGameSub, num: "01", primary: true },
   { id: "chapters", icon: "🚩", label: HUB.chapters, desc: HUB.chaptersSub, num: "02" },
   { id: "trophy", icon: "🎖️", label: { en: "HALL OF FAME", bn: "হল অফ ফেম" }, desc: { en: "Your rover medals", bn: "তোমার রোভার মেডেল" }, num: "03" },
-  { id: "howto", icon: "🤖", label: HUB.howToPlay, desc: HUB.howtoSub, num: "03" },
-  { id: "reset", icon: "🔄", label: HUB.resetGame, desc: HUB.resetSub, num: "04" },
-  { id: "home", icon: "⌂", label: HUB.home, desc: HUB.homeSub, num: "05" },
+  { id: "howto", icon: "🤖", label: HUB.howToPlay, desc: HUB.howtoSub, num: "04" },
+  { id: "reset", icon: "🔄", label: HUB.resetGame, desc: HUB.resetSub, num: "05" },
+  { id: "home", icon: "⌂", label: HUB.home, desc: HUB.homeSub, num: "06" },
 ];
 
 function FlagMark({ tone }: { tone: "gold" | "locked" }) {
