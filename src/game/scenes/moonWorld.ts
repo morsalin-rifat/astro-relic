@@ -78,8 +78,8 @@ function makeRegolithMaps() {
   const h = new Float32Array(N * N);
   const rnd = mulberry(7);
   const micro: { x: number; y: number; r: number; d: number }[] = [];
-  for (let i = 0; i < 260; i++) {
-    const r = 3 + Math.pow(rnd(), 3) * 46;
+  for (let i = 0; i < 420; i++) {
+    const r = 2 + Math.pow(rnd(), 4) * 22;
     micro.push({ x: rnd() * N, y: rnd() * N, r, d: 0.25 + rnd() * 0.5 });
   }
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
@@ -275,7 +275,7 @@ export class MoonWorldScene implements Scene {
     let h = (pfbm(x * 0.006 + 50, z * 0.006 + 50, 1e6, 4) - 0.5) * 9; // gentle mare swells
     h += (pfbm(x * 0.05, z * 0.05, 1e6, 3) - 0.5) * 0.9;
     const edge = Math.max(Math.abs(x), Math.abs(z)) / (WORLD / 2);
-    h += Math.max(0, edge - 0.72) ** 2 * 260; // distant highland ridge hides world edge
+    h += Math.max(0, edge - 0.78) ** 2 * (180 + pfbm(x * 0.02, z * 0.02, 1e6, 4) * 520); // distant highland ridge hides world edge
     for (const c of craters) { const d = Math.hypot(x - c.x, z - c.z) / c.R; if (d < 2.2) h += crater(d, c.D); }
     return h;
   }
@@ -305,7 +305,7 @@ export class MoonWorldScene implements Scene {
     geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
     geo.computeVertexNormals();
     const { map, nmap } = makeRegolithMaps();
-    map.repeat.set(WORLD / 9, WORLD / 9); nmap.repeat.copy(map.repeat);
+    map.repeat.set(WORLD / 6, WORLD / 6); nmap.repeat.copy(map.repeat);
     const mat = new THREE.MeshStandardMaterial({ map, normalMap: nmap, normalScale: new THREE.Vector2(1.4, 1.4), vertexColors: true, roughness: 0.97, metalness: 0 });
     const m = new THREE.Mesh(geo, mat); m.receiveShadow = true; this.scene.add(m);
     this.bakeMinimap(craters);
@@ -472,7 +472,7 @@ export class MoonWorldScene implements Scene {
   // ---------- HUD + minimap ----------
   private buildHud() {
     const hud = document.createElement("div");
-    hud.style.cssText = "position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:40;pointer-events:none;text-align:center;font-family:system-ui,sans-serif;color:#dfe7f5;text-shadow:0 1px 4px #000";
+    hud.style.cssText = "position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:40;pointer-events:none;text-align:center;font-family:system-ui,sans-serif;color:#dfe7f5;text-shadow:0 1px 4px #000";
     hud.innerHTML = `<div style="font-size:10px;letter-spacing:.4em;opacity:.6">MARE TRANQUILLITATIS · 0.674°N 23.473°E</div><div data-site style="font-size:15px;letter-spacing:.18em;color:#ffd97d;margin-top:4px">TRANQUILITY BASE · APOLLO 11</div>`;
     document.body.appendChild(hud); this.hud = hud;
     const back = document.createElement("button");
@@ -518,7 +518,8 @@ export class MoonWorldScene implements Scene {
       let [x, y] = toScreen(site.x, site.z); const d = Math.hypot(x - S / 2, y - S / 2); const edge = d > S / 2 - 12;
       if (edge) { x = S / 2 + ((x - S / 2) / d) * (S / 2 - 12); y = S / 2 + ((y - S / 2) / d) * (S / 2 - 12); }
       g.fillStyle = site.id === "lm" ? "#ffd97d" : "#9fd0ff"; g.beginPath(); g.arc(x, y, site.id === "lm" ? 5 : 3.5, 0, 7); g.fill();
-      if (!edge) { g.fillStyle = "rgba(0,0,0,.6)"; const w = g.measureText(site.en.split(" ·")[0]!).width; g.fillRect(x - w / 2 - 2, y - 17, w + 4, 12); g.fillStyle = "#fff"; g.fillText(site.en.split(" ·")[0]!.split(" (")[0]!, x, y - 8); }
+      const near = Math.hypot(site.x - p.x, site.z - p.z) < 18 || site.r > 15;
+      if (!edge && near) { g.fillStyle = "rgba(0,0,0,.6)"; const w = g.measureText(site.en.split(" ·")[0]!).width; g.fillRect(x - w / 2 - 2, y - 17, w + 4, 12); g.fillStyle = "#fff"; g.fillText(site.en.split(" ·")[0]!.split(" (")[0]!, x, y - 8); }
     }
     // player arrow
     g.fillStyle = "#ffffff"; g.beginPath(); g.moveTo(S / 2, S / 2 - 8); g.lineTo(S / 2 - 5, S / 2 + 6); g.lineTo(S / 2 + 5, S / 2 + 6); g.fill();
