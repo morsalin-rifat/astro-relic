@@ -12,7 +12,7 @@ const IMG = (n: string) => `/images/apollo11/${n}.jpg`;
 const V = (c: string) => `apollo11/${c}`;
 
 /* ---------- lines (match the recorded clips word for word) ---------- */
-const LINE: Record<string, L> = {
+const LINE = {
   arrival: { en: "Bip-boop! We're at the Sea of Tranquility! It's called a sea, but there's not a drop of water, just flat dark ground. See that golden thing far away? Let's go closer!", bn: "বিপ-বুপ! আমরা এখন সি অব ট্র্যাংকুইলিটিতে, মানে শান্তির সাগরে! নাম সাগর হলেও এখানে একফোঁটা পানি নেই, আছে শুধু সমতল কালচে মাটি। দূরে ওই সোনালি জিনিসটা দেখছ? চলো, কাছে যাই!" },
   welcome: { en: "Hello, friend! I'm Eagle, Apollo 11's lunar lander. In 1969, I brought two astronauts to the Moon. Neil and Buzz took their first steps here with my help. Now I stand here alone. Would you like to hear my story?", bn: "হ্যালো বন্ধু! আমি ঈগল, অ্যাপোলো ১১-এর চাঁদের ল্যান্ডার। ১৯৬৯ সালে আমি দুই নভোচারীকে নিয়ে এসেছিলাম এই চাঁদে। নিল আর বাজ আমার সাহায্যেই চাঁদের মাটিতে প্রথম পা রেখেছিলেন। এখন আমি এখানেই একা দাঁড়িয়ে আছি। তুমি কি আমার গল্প জানতে চাও?" },
   reactivate: { en: "Shhh... can you hear it? For fifty-five years, Eagle has stood here alone. No visitors, no sound. But today, you came. It's like Eagle is saying: 'Finally, someone remembered me!'", bn: "শশশ... শুনতে পাচ্ছ? পঞ্চান্ন বছর ধরে এই ঈগল এখানে একা দাঁড়িয়ে আছে। কেউ আসেনি, কোনো শব্দ নেই। কিন্তু আজ তুমি এসেছ। মনে হচ্ছে ঈগল বলছে: 'অবশেষে কেউ আমাকে মনে রেখেছে!'" },
@@ -95,19 +95,19 @@ export function Apollo11Mission() {
     setSeen([]); setSlide(0); setQi(0); setSpot(null); setTech(null); setLaser("ready");
     setStage("go");
     objective({ en: "🦅 Walk to the shiny golden lander — Eagle!", bn: "🦅 চকচকে সোনালি ল্যান্ডার — ঈগলের কাছে হেঁটে যাও!" });
-    window.setTimeout(() => say("arrival", LINE.arrival!), 600);
+    window.setTimeout(() => say("arrival", LINE.arrival), 600);
   }), []);
   useEffect(() => { if (phase !== "moon") { setStage("idle"); setLine(null); hush(); freeze(false); } }, [phase]);
 
   // what the [E] button would do right now
   const action: { label: L; run: () => void } | null = (() => {
     if (phase !== "moon" || !near) return null;
-    if (stage === "go" && (near === "lm" || near === "plaque")) return { label: { en: "Meet Eagle", bn: "ঈগলের সাথে কথা বলো" }, run: () => { freeze(true); setStage("welcome"); say("welcome", LINE.welcome!, "eagle"); } };
+    if (stage === "go" && (near === "lm" || near === "plaque")) return { label: { en: "Meet Eagle", bn: "ঈগলের সাথে কথা বলো" }, run: () => { freeze(true); setStage("welcome"); say("welcome", LINE.welcome, "eagle"); } };
     if (stage === "hunt" && !seen.includes(near)) {
       const s = SPOTS.find((x) => x.id === near); if (!s) return null;
       return { label: { en: `Inspect: ${s.name.en}`, bn: `দেখো: ${s.name.bn}` }, run: () => openSpot(s) };
     }
-    if (stage === "return" && (near === "lm" || near === "plaque")) return { label: { en: "Touch the plaque", bn: "ফলকটা ছুঁয়ে দেখো" }, run: () => { freeze(true); setStage("memory"); audio.beep(520); say("reactivate", LINE.reactivate!, "nova", () => setStage((s) => (s === "memory" ? "log" : s))); } };
+    if (stage === "return" && (near === "lm" || near === "plaque")) return { label: { en: "Touch the plaque", bn: "ফলকটা ছুঁয়ে দেখো" }, run: () => { freeze(true); setStage("memory"); audio.beep(520); say("reactivate", LINE.reactivate, "nova", () => setStage((s) => (s === "memory" ? "log" : s))); } };
     return null;
   })();
   const actRef = useRef(action); actRef.current = action;
@@ -146,19 +146,19 @@ export function Apollo11Mission() {
   const answer = (i: number) => {
     const q = QUIZ[qi]!; if (right) return;
     if (q.opts[i]!.ok) {
-      audio.beep(1320); setRight(true); setWrong(null); say(null, LINE.correct!);
+      audio.beep(1320); setRight(true); setWrong(null); say(null, LINE.correct);
       window.setTimeout(() => {
         setRight(false);
         if (qi + 1 < QUIZ.length) { setQi(qi + 1); say(QUIZ[qi + 1]!.clip, QUIZ[qi + 1]!.q); }
         else win();
       }, 1600);
-    } else { audio.beep(260); setWrong(i); say(null, LINE.wrong!); }
+    } else { audio.beep(260); setWrong(i); say(null, LINE.wrong); }
   };
   const win = () => {
     setStage("badge"); audio.beep(1500);
     store.set({ flags: Array.from(new Set([...store.get().flags, "apollo11"])) });
     store.awardBadge("eagle-guardian");
-    say("badge", LINE.badge!, "nova", () => say("outro", LINE.outro!));
+    say("badge", LINE.badge, "nova", () => say("outro", LINE.outro));
   };
   const finish = (hub: boolean) => {
     hush(); setStage("done"); setLine(null); freeze(false);
@@ -245,9 +245,9 @@ export function Apollo11Mission() {
         {head("FINAL TRANSMISSION · 21 JUL 1969", B("Waking up Eagle's memory", "ঈগলের স্মৃতি জাগানো"))}
         {photo(IMG(stage === "log" ? "landing" : "plaque"), "", <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,217,125,.45),transparent_60%)] animate-pulse mix-blend-screen" />)}
         {stage === "log"
-          ? <div className="mt-3 rounded-xl bg-black/70 border border-[#7dffb0]/40 p-3 font-mono text-[12px] leading-relaxed text-[#9dffc4]"><TypeLog key={lang} text={t(LINE.final_log!, lang)} onStart={() => say("final_log", LINE.final_log!)} /></div>
+          ? <div className="mt-3 rounded-xl bg-black/70 border border-[#7dffb0]/40 p-3 font-mono text-[12px] leading-relaxed text-[#9dffc4]"><TypeLog key={lang} text={t(LINE.final_log, lang)} onStart={() => say("final_log", LINE.final_log)} /></div>
           : <div className="mt-3 text-center text-xs tracking-[0.3em] animate-pulse" style={{ color: ACC }}>📻 ··· KSHHH ··· 📻</div>}
-        {stage === "log" && <button className={`${btn} mt-3`} style={{ background: ACC }} onClick={() => { setStage("pledge"); say(null, LINE.heritage!); }}>🛡️ {B("NEXT", "পরেরটা")} →</button>}
+        {stage === "log" && <button className={`${btn} mt-3`} style={{ background: ACC }} onClick={() => { setStage("pledge"); say(null, LINE.heritage); }}>🛡️ {B("NEXT", "পরেরটা")} →</button>}
       </>)}
 
       {stage === "pledge" && card(<>
