@@ -525,7 +525,7 @@ function TelemetryBar() {
 
 /* ---------------- Mission Command Hub ---------------- */
 
-type HubPanel = "chapters" | "howto" | "reset" | null;
+type HubPanel = "chapters" | "howto" | "reset" | "trophy" | null;
 
 const HUB_ACTIONS: {
   id: string;
@@ -537,9 +537,10 @@ const HUB_ACTIONS: {
 }[] = [
   { id: "newgame", icon: "▶", label: HUB.newGame, desc: HUB.newGameSub, num: "01", primary: true },
   { id: "chapters", icon: "🚩", label: HUB.chapters, desc: HUB.chaptersSub, num: "02" },
-  { id: "howto", icon: "🤖", label: HUB.howToPlay, desc: HUB.howtoSub, num: "03" },
-  { id: "reset", icon: "🔄", label: HUB.resetGame, desc: HUB.resetSub, num: "04" },
-  { id: "home", icon: "⌂", label: HUB.home, desc: HUB.homeSub, num: "05" },
+  { id: "trophy", icon: "🎖️", label: { en: "HALL OF FAME", bn: "হল অফ ফেম" }, desc: { en: "Your rover medals", bn: "তোমার রোভার মেডেল" }, num: "03" },
+  { id: "howto", icon: "🤖", label: HUB.howToPlay, desc: HUB.howtoSub, num: "04" },
+  { id: "reset", icon: "🔄", label: HUB.resetGame, desc: HUB.resetSub, num: "05" },
+  { id: "home", icon: "⌂", label: HUB.home, desc: HUB.homeSub, num: "06" },
 ];
 
 function FlagMark({ tone }: { tone: "gold" | "locked" }) {
@@ -589,7 +590,7 @@ function HubUI() {
     } else if (id === "home") {
       store.emit("engine:goto", "home");
     } else {
-      setPanel((p) => (p === id ? null : (id as "chapters" | "howto" | "reset")));
+      setPanel((p) => (p === id ? null : (id as HubPanel)));
     }
   };
 
@@ -904,6 +905,8 @@ function HubUI() {
         </div>
       )}
 
+      {panel === "trophy" && <TrophyHall lang={lang} onClose={() => setPanel(null)} />}
+
       {/* reset confirmation */}
       {panel === "reset" && (
         <div
@@ -989,5 +992,53 @@ export function Overlays() {
         style={{ opacity: fading ? 1 : 0 }}
       />
     </>
+  );
+}
+
+const TROPHIES = [
+  { id: "ares-pioneer", rover: "Sojourner", year: "1997", icon: "🛞", name: { en: "Ares Pioneer", bn: "অ্যারেস পথিকৃৎ" }, fact: { en: "First wheels on Mars", bn: "মঙ্গলে প্রথম চাকা" } },
+  { id: "gusev-fighter", rover: "Spirit", year: "2004–2010", icon: "💪", name: { en: "Gusev Fighter", bn: "গুসেভ যোদ্ধা" }, fact: { en: "Found silica with a broken wheel", bn: "ভাঙা চাকায় সিলিকা আবিষ্কার" } },
+  { id: "meridiani-marathoner", rover: "Opportunity", year: "2004–2018", icon: "🏃", name: { en: "Meridiani Marathoner", bn: "মেরিডিয়ানি ম্যারাথনার" }, fact: { en: "45 km in 15 years", bn: "১৫ বছরে ৪৫ কিমি" } },
+  { id: "silent-listener", rover: "InSight", year: "2018–2022", icon: "📡", name: { en: "Silent Listener", bn: "নীরব শ্রোতা" }, fact: { en: "Heard 1,300+ marsquakes", bn: "১৩০০+ মঙ্গলকম্পন শুনেছে" } },
+];
+
+function TrophyHall({ lang, onClose }: { lang: "en" | "bn"; onClose: () => void }) {
+  const badges = useGame((s) => s.badges);
+  const got = TROPHIES.filter((x) => badges.includes(x.id)).length;
+  const master = got === TROPHIES.length;
+  const L = (o: { en: string; bn: string }) => o[lang];
+  return (
+    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/65 backdrop-blur-md pointer-events-auto p-4" onClick={onClose}>
+      <div className="hub-console-panel w-[min(640px,95vw)] max-h-[90vh] overflow-y-auto p-6 sm:p-7 animate-[hubrise_0.45s_ease]" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+          <div className="text-[10px] tracking-[0.4em] text-[#ffd97d] font-mono">🎖️ RELIC HALL OF FAME</div>
+          <button onClick={onClose} className="text-white/60 hover:text-white text-lg">✕</button>
+        </div>
+        <div className={`text-center rounded-xl py-3 mb-5 border ${master ? "border-[#ffd97d] bg-[#ffd97d]/10 shadow-[0_0_30px_rgba(255,217,125,0.35)]" : "border-white/10 bg-white/5"}`}>
+          <div className={`font-display tracking-[0.2em] text-lg ${master ? "text-[#ffd97d]" : "text-white/50"}`}>
+            {master ? "👑 " : "🔒 "}{lang === "bn" ? "মাস্টার মার্স এক্সপ্লোরার" : "MASTER MARS EXPLORER"}
+          </div>
+          <div className="text-[11px] text-white/60 mt-1">{lang === "bn" ? `${got}/4 মেডেল পেয়েছো` : `${got}/4 medals earned`}</div>
+          <div className="mx-auto mt-2 h-1.5 w-48 rounded-full bg-white/10 overflow-hidden">
+            <div className="h-full bg-[#ffd97d] transition-all" style={{ width: `${(got / 4) * 100}%` }} />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {TROPHIES.map((x) => {
+            const on = badges.includes(x.id);
+            return (
+              <div key={x.id} className={`rounded-xl p-4 text-center border transition ${on ? "border-[#ffd97d]/70 bg-gradient-to-b from-[#ffd97d]/15 to-transparent" : "border-white/10 bg-white/5 opacity-60"}`}>
+                <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center text-3xl border-2 ${on ? "border-[#ffd97d] bg-[#3a2410] shadow-[0_0_18px_rgba(255,217,125,0.5)]" : "border-white/20 bg-black/40 grayscale"}`}>
+                  {on ? x.icon : "🔒"}
+                </div>
+                <div className={`mt-2 text-sm font-bold ${on ? "text-[#ffd97d]" : "text-white/60"}`}>{L(x.name)}</div>
+                <div className="text-[10px] tracking-[0.2em] text-white/50 mt-0.5">{x.rover.toUpperCase()} · {x.year}</div>
+                <div className="text-[11px] text-white/70 mt-1.5">{on ? L(x.fact) : lang === "bn" ? "মিশন শেষ করে আনলক করো" : "Finish the mission to unlock"}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }
