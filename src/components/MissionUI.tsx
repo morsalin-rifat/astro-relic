@@ -17,19 +17,26 @@ export const BADGES: { id: string; icon: string; name: L; rover: L }[] = [
 ];
 
 const TOPICS: { id: string; icon: string; label: L; text: L }[] = [
-  { id: "03_part_wheels", icon: "🛞", label: { en: "How did I move?", bn: "আমি কীভাবে চলতাম?" }, text: { en: "Have you seen the magic of my six wheels? NASA called it the \"rocker-bogie\" system. I had no springs, yet I could rock over big stones and I never tipped over! I moved slowly — about one centimetre every second.", bn: "আমার এই ৬টি চাকার জাদু দেখেছো? নাসা এটার নাম দিয়েছিল 'রকার-বগি' সিস্টেম। আমার কোনো স্প্রিং ছিল না, তবুও বড় বড় পাথরের ওপর দিয়ে আমি হেলেদুলে পার হতে পারতাম, কখনও উল্টে যাইনি! আমি খুব ধীরে চলতাম — প্রতি সেকেন্ডে মাত্র ১ সেন্টিমিটার।" } },
-  { id: "03_part_eyes", icon: "👀", label: { en: "What are my eyes?", bn: "আমার চোখ কোনগুলো?" }, text: { en: "See my two eyes? They\"re not ordinary cameras — they\"re NASA\"s special stereo cameras! With them I could see in 3D and steer around dangerous rocks, and a camera at the back watched my tracks.", bn: "আমার এই দুটো চোখ দেখেছো? এগুলো সাধারণ ক্যামেরা নয়, নাসার স্পেশাল 'স্টেরিও ক্যামেরা'! এগুলো দিয়ে আমি থ্রিডি-তে দেখতে পেতাম আর বিপজ্জনক পাথর এড়িয়ে চলতাম, আর পেছনের ক্যামেরা আমার চাকার দাগ দেখত।" } },
-  { id: "03_part_antenna", icon: "📡", label: { en: "How did I talk to Earth?", bn: "পৃথিবীর সাথে কীভাবে কথা বলতাম?" }, text: { en: "Did you know? I didn\"t have an antenna big enough to talk to Earth, millions of miles away! So I radioed my friend, the Pathfinder lander, and the lander sent my messages home to Earth.", bn: "তুমি কি জানো? একা একা কোটি মাইল দূরের পৃথিবীতে কথা বলার মতো বড় অ্যান্টেনা আমার শরীরে ছিল না! তাই আমি আমার বন্ধু পাথফাইন্ডার ল্যান্ডারকে রেডিওতে বার্তা পাঠাতাম, আর ল্যান্ডার সেটা পৃথিবীতে পৌঁছে দিত।" } },
-  { id: "03_part_solar", icon: "☀️", label: { en: "Where did my power come from?", bn: "আমার শক্তি কোথা থেকে আসত?" }, text: { en: "This glassy roof on my back was my power source! It made only about 16 watts of electricity each day — less than a small light bulb — but that was enough for me to explore Mars.", bn: "আমার পিঠের এই কাঁচের মতো ছাদটিই ছিল আমার শক্তির উৎস! দিনে মাত্র ১৬ ওয়াট বিদ্যুৎ তৈরি করত — একটা ছোট বাল্বের চেয়েও কম — কিন্তু মঙ্গল ঘুরে দেখার জন্য সেটাই যথেষ্ট ছিল।" } },
-  { id: "03_part_nose_apxs", icon: "🔬", label: { en: "My rock-sniffing nose", bn: "আমার পাথর-শোঁকা নাক" }, text: { en: "This long rod at my back is called the APXS spectrometer! You can call it my science nose. I pressed it against rocks like Yogi and Barnacle Bill to find out what they were made of.", bn: "আমার পেছনের এই লম্বা রডটির নাম 'APXS স্পেকট্রোমিটার'! এটাকে আমার বৈজ্ঞানিক নাক বলতে পারো। এটা দিয়ে আমি যোগী আর বার্নাকল বিলের মতো পাথর ছুঁয়ে বুঝতাম সেগুলো কী দিয়ে তৈরি।" } },
-  { id: "04_photo_gallery", icon: "📸", label: { en: "Want to see my photos?", bn: "আমার তোলা ছবি দেখবে?" }, text: { en: "Look at some of my famous photos! See that big rock? We named it \"Yogi\" — NASA scientists named it after the cartoon Yogi Bear! And far away are the \"Twin Peaks\". Together with the lander we sent over 16,500 pictures of Mars!", bn: "আমার তোলা কিছু বিখ্যাত ছবি দেখো! ওই যে মস্ত বড় পাথরটা দেখছো, ওটার নাম দিয়েছিলাম 'যোগী পাথর' — নাসার বিজ্ঞানীরা কার্টুনের যোগী বেয়ারের নামে নাম রেখেছিল! আর ওই দূরে 'যমজ পাহাড়'। ল্যান্ডারের সাথে মিলে আমরা মঙ্গলের ১৬,৫০০-এর বেশি ছবি পাঠিয়েছিলাম!" } },
+  { id: "03_part_wheels", icon: "\ud83d\udede", label: { en: "How did I move?", bn: "আমি কীভাবে চলতাম?" }, text: { en: "Check out my six magic wheels! NASA called this the 'Rocker-Bogie' system. With no springs at all, I could climb over rocks bigger than myself without ever flipping over! My top speed was just one centimeter per second\u2014slow and steady wins the race!", bn: "আমার এই ৬টি চাকার জাদু দেখেছো? নাসা এটার নাম দিয়েছিল 'রকার-বগি' সিস্টেম। আমার কোনো স্প্রিং ছিল না, তবুও বড় বড় পাথরের ওপর দিয়ে আমি হেলেদুলে পার হতে পারতাম, কখনও উল্টে যাইনি! তবে আমি চলতাম খুব ধীরে—সেকেন্ডে মাত্র ১ সেন্টিমিটার!" } },
+  { id: "03_part_eyes", icon: "\ud83d\udc40", label: { en: "What are my eyes?", bn: "আমার চোখ কোনগুলো?" }, text: { en: "See my two front eyes? These are NASA's stereo cameras! Just like human eyes, they allowed me to see in 3D and judge rock distances so I wouldn't crash! Through these lenses, I sent over 550 real color photos back to Earth!", bn: "আমার এই দুটো চোখ দেখেছো? এগুলো সাধারণ ক্যামেরা নয়, নাসার স্পেশাল 'Stereo Cameras'! মানুষের মতো দুই চোখ দিয়ে আমি সামনে থাকা পাথরের সঠিক দূরত্ব মাপতাম, যাতে কোনো পাথরে ধাক্কা না খাই! এগুলো দিয়ে আমি পৃথিবীতে ৫৫০টি আসল রঙিন ছবি পাঠিয়েছিলাম!" } },
+  { id: "03_part_antenna", icon: "\ud83d\udce1", label: { en: "How did I talk to Earth?", bn: "পৃথিবীর সাথে কীভাবে কথা বলতাম?" }, text: { en: "Did you know? I couldn't talk to Earth all alone! This short antenna acted like a walkie-talkie to beam my findings to the Pathfinder lander behind me. Pathfinder had the giant dish to relay everything to NASA!", bn: "তুমি কি জানো? একা একা কোটি মাইল দূরের পৃথিবীতে কথা বলার মতো বড় অ্যান্টেনা আমার শরীরে ছিল না! এই ছোট অ্যান্টেনা দিয়ে আমি ওয়াকি-টকির মতো বার্তা পাঠাতাম পেছনে থাকা পাথফাইন্ডার ল্যান্ডারে। আর ল্যান্ডার সেটা পৃথিবীতে রিলে করত!" } },
+  { id: "03_part_solar", icon: "\u2600\ufe0f", label: { en: "Where did my power come from?", bn: "আমার শক্তি কোথা থেকে আসত?" }, text: { en: "My shiny flat roof is my solar panel! It soaked up Martian sunlight to generate just 16 watts of power\u2014barely enough for a small night light! But when Martian dust blew over my roof, my power dropped fast.", bn: "আমার পিঠের এই কাঁচের মতো ছাদটিই ছিল আমার শক্তির উৎস! এটা সূর্যের আলো থেকে বিদ্যুৎ তৈরি করত—দিনে মাত্র ১৬ ওয়াট, যা তোমার টেবিল ল্যাম্পের সমান! কিন্তু মঙ্গলের লাল ধুলো জমে গেলে আমার সোলার প্যানেল ঢেকে যেত, আর তখনই আমার শক্তি কমে যেত।" } },
+  { id: "03_part_nose_apxs", icon: "\ud83d\udd2c", label: { en: "My rock-sniffing nose", bn: "আমার পাথর-শোঁকা নাক" }, text: { en: "Look at this metal probe on my back\u2014it's my APXS Spectrometer! Think of it as my scientific nose. I pressed it against Martian rocks to shoot X-rays and instantly analyze what minerals and secrets they were hiding!", bn: "আমার পেছনের এই লম্বা রডটির নাম 'APXS স্পেকট্রোমিটার'! এটাকে আমার বৈজ্ঞানিক নাক বলতে পারো। আমি পাথরের গায়ে এই নাক ছুঁইয়ে এক্স-রে রশ্মি ফেলতাম, আর এক নিমেষেই বলে দিতাম ওই পাথরে কী কী খনিজ বা মার্সিয়ান কেমিক্যাল আছে!" } },
+  { id: "04_photo_gallery", icon: "\ud83d\udcf8", label: { en: "Want to see my photos?", bn: "আমার তোলা ছবি দেখবে?" }, text: { en: "Take a look at my favorite Martian snapshots! That big rock is 'Yogi Rock'\u2014named after Yogi Bear! And see those distant 'Twin Peaks'? Those two hills proved to scientists that a vast river once rushed through this valley billions of years ago!", bn: "আমার তোলা কিছু বিখ্যাত ছবি দেখো! ওই যে মস্ত বড় পাথরটা দেখছো, ওটার নাম দিয়েছিলাম 'যোগী পাথর'—নাসার বিজ্ঞানীরা কার্টুনের যোগী বেয়ারের নামে নাম রেখেছিল! আর ওই দূরে 'যমজ পাহাড়'—ওগুলো দেখে আমরা নিশ্চিত হয়েছিলাম, কোটি কোটি বছর আগে মঙ্গলে বিশাল নদী বয়ে যেত!" } },
+  { id: "07_sojourner_sources", icon: "\ud83d\ude80", label: { en: "Learn more about me", bn: "আমাকে নিয়ে আরও জানো" }, text: { en: "Want to see how humans built me and sent me soaring to Mars in a giant rocket? Look down below\u2014I've saved real NASA videos and mission archives just for you! Tap on them to see the magic from 1997!", bn: "জানতে চাও মানুষ কীভাবে আমাকে বানিয়েছিল? আর সেই ঐতিহাসিক দিনটিতে কীভাবে রকেটে করে মঙ্গলে পাঠিয়েছিল? নিচে দেখো নাসার আসল ভিডিও আর দারুণ সব ছবি রেখে দিয়েছি! তোমার চোখের সামনেই দেখতে পাবে ১৯৯৭ সালের সেই অবিস্মরণীয় মুহূর্তগুলো!" } },
 ];
 
 const QUIZ = {
-  q: { en: "How many wheels did I have?", bn: "আমার কয়টি চাকা ছিল?" },
-  options: ["4", "6", "8"],
-  answer: "6",
+  q: { en: "You heard all my stories! Now let's see if you know my buddy. What was the name of that famous rock I spotted with my camera eyes? One—Yogi Rock, or Two—Dragon Rock?", bn: "তুমি তো আমার সব গল্প শুনলে! এবার দেখি আমার এই বন্ধুটিকে চেনো কি না? আমার ক্যামেরা চোখ দিয়ে খুঁজে পাওয়া ওই বিখ্যাত পাথরটির নাম কী ছিল? এক—যোগী পাথর, নাকি দুই—ড্রাগন পাথর?" },
+  options: [{ id: "yogi", icon: "🪨", en: "Yogi Rock", bn: "যোগী পাথর" }, { id: "dragon", icon: "🐉", en: "Dragon Rock", bn: "ড্রাগন পাথর" }],
+  answer: "yogi",
 };
+
+const SOURCES = [
+  { icon: "🎬", en: "Pathfinder launch & landing (NASA video)", bn: "পাথফাইন্ডার লঞ্চ ও অবতরণ (নাসার ভিডিও)", url: "https://www.youtube.com/results?search_query=NASA+Mars+Pathfinder+Sojourner+1997" },
+  { icon: "🛰️", en: "NASA Mars Pathfinder mission page", bn: "নাসার মার্স পাথফাইন্ডার মিশন পেজ", url: "https://science.nasa.gov/mission/mars-pathfinder/" },
+  { icon: "🖼️", en: "Real Sojourner photos (NASA Photojournal)", bn: "সোজার্নারের আসল ছবি (নাসা ফটোজার্নাল)", url: "https://photojournal.jpl.nasa.gov/mission/Mars%20Pathfinder" },
+];
 
 /* ---------- 3D turntable inside the card ---------- */
 function RoverTurntable() {
@@ -217,9 +224,9 @@ export function SojournerEncounter() {
 
   const topic = TOPICS.find((x) => x.id === active);
   const caption =
-    step === "welcome" ? { en: "Hello, new friend! I'm Sojourner. In 1997 I was sent from Earth to this red planet. I'm small, like your study table — only 10.5 kilograms! I was the first rover ever to drive on another planet.", bn: "হ্যালো নতুন বন্ধু! আমি সোজার্নার। ১৯৯৭ সালে পৃথিবী থেকে আমাকে এই লাল গ্রহে পাঠানো হয়েছিল। দেখতে তোমার পড়ার টেবিলের মতো ছোট্ট — মাত্র ১০.৫ কেজি! আমিই প্রথম রোভার, যে অন্য গ্রহে চলেছিল।" }
+    step === "welcome" ? { en: "Hello, new friend! I'm Sojourner! Back in 1997, Earth sent me across the dark space to this red world. I'm only as small as a microwave oven—just 10.5 kilograms! But I was the very first rover to leave tire tracks on Mars. Spin my 3D body around and touch any part to uncover my secrets!", bn: "হ্যালো নতুন বন্ধু! আমি সোজার্নার। ১৯৯৭ সালে পৃথিবী থেকে আমাকে এই লাল গ্রহে পাঠানো হয়েছিল। দেখতে আমি তোমার পড়ার টেবিলের মতো ছোট্ট—মাত্র ১০.৫ কেজি! কিন্তু আমিই প্রথম রোভার যে মঙ্গলে চাকা ফেলেছিল। আমার ৩D শরীরটা ঘুরিয়ে দেখো, আর যেকোনো পার্টসে ছুঁয়ে আমার গোপন ইতিহাস জানো!" }
     : step === "quiz" ? QUIZ.q
-    : step === "farewell" ? { en: "Planned for 7 days, I worked for 83! My last signal came on Sept 27, 1997. Keep exploring for me!", bn: "৭ দিনের জন্য পরিকল্পনা ছিল, আমি কাজ করেছি ৮৩ দিন! শেষ সিগন্যাল ২৭ সেপ্টেম্বর ১৯৯৭। আমার হয়ে খোঁজ চালিয়ে যেও!" }
+    : step === "farewell" ? { en: "Scientists only expected me to survive seven days. But I worked for eighty-three heroic sols! On September 27, 1997, the extreme cold froze our batteries, and silence fell over Ares Vallis. I went to sleep, but I paved the way for every explorer that followed!", bn: "পৃথিবীর বিজ্ঞানীরা ভেবেছিলেন আমি মাত্র ৭ দিন টিকব। কিন্তু আমি বীরের মতো ৮৩ দিন কাজ করেছিলাম! ১৯৯৭ সালের ২৭ সেপ্টেম্বর আমার মাদার-শিপের ব্যাটারি মার্সিয়ান ঠান্ডায় জমে যায়... পৃথিবী থেকে আমার সিগন্যাল থেমে যায়। আমি ঘুমিয়ে গেলেও মানুষকে মঙ্গলের নতুন পথ দেখিয়ে গিয়েছি!" }
     : topic?.text ?? { en: "Tap a question to learn about me. Drag me to spin!", bn: "আমার সম্পর্কে জানতে একটি প্রশ্নে ট্যাপ করো। ঘোরাতে আমাকে টেনে দেখো!" };
 
   return (
@@ -252,6 +259,15 @@ export function SojournerEncounter() {
                 </button>
               ))}
             </div>
+            {active === "07_sojourner_sources" && (
+              <div className="mt-3 space-y-2">
+                {SOURCES.map((x) => (
+                  <a key={x.url} href={x.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-2xl px-3 py-2 text-xs bg-white/5 border border-[#ffd97d]/40 hover:bg-[#ffd97d]/15">
+                    <span className="text-lg">{x.icon}</span><span className="flex-1">{lang === "bn" ? x.bn : x.en}</span><span>↗</span>
+                  </a>
+                ))}
+              </div>
+            )}
             <div className="mt-3 flex items-center gap-2">
               <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden"><div className="h-full bg-[#ffd97d] transition-all" style={{ width: `${(Math.min(seen.length, 4) / 4) * 100}%` }} /></div>
               <button disabled={seen.length < 4} onClick={() => { setStep("quiz"); say("06_sojourner_quiz"); }}
@@ -266,14 +282,16 @@ export function SojournerEncounter() {
         {step === "quiz" && (
           <div className="flex gap-3 mt-3 justify-center">
             {QUIZ.options.map((o) => (
-              <button key={o} onClick={() => {
-                if (o === QUIZ.answer) { audio.beep(1200); setStep("farewell"); say("05_sojourner_farewell"); }
-                else { audio.beep(300); setWrong(o); }
-              }} className={`w-16 h-16 rounded-full text-2xl font-bold border-2 ${wrong === o ? "border-red-400 text-red-300 animate-pulse" : "border-[#ffd97d] text-[#ffd97d] hover:bg-[#ffd97d] hover:text-black"}`}>{o}</button>
+              <button key={o.id} onClick={() => {
+                if (o.id === QUIZ.answer) { audio.beep(1200); setStep("farewell"); say("05_sojourner_farewell"); }
+                else { audio.beep(300); setWrong(o.id); }
+              }} className={`flex-1 rounded-2xl py-3 px-2 font-bold border-2 transition-all ${wrong === o.id ? "border-red-400 text-red-300 animate-pulse" : "border-[#ffd97d] text-[#ffd97d] hover:bg-[#ffd97d] hover:text-black"}`}>
+                <div className="text-3xl">{o.icon}</div><div className="text-sm mt-1">{lang === "bn" ? o.bn : o.en}</div>
+              </button>
             ))}
           </div>
         )}
-        {step === "quiz" && wrong && <div className="text-xs text-center mt-2 opacity-80">{lang === "bn" ? "প্রায় হয়েছে! আমার চাকাগুলো আবার গুনে দেখো 🛞" : "Close! Spin me and count my wheels again 🛞"}</div>}
+        {step === "quiz" && wrong && <div className="text-xs text-center mt-2 opacity-80">{lang === "bn" ? "প্রায় হয়েছে! আমার ছবিগুলোর কথা আবার মনে করো 📸" : "Close! Think about my famous photos again 📸"}</div>}
 
         {step === "farewell" && (
           <button onClick={finish} className="mt-3 w-full py-3 rounded-full bg-[#ffd97d] text-black font-bold tracking-widest">
