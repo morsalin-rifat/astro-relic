@@ -442,7 +442,7 @@ export class MarsWorldScene implements Scene {
         const ra = Math.max(0, rowOf(zc2 - ZONE / 2)), rb = Math.min(NZ - 1, rowOf(zc2 + ZONE / 2));
         for (let gz = ra; gz <= rb; gz++) {
           const zr = minZ + gz * sz; if (Math.abs(zr - zc2) > ZONE / 2 + 1e-3) continue;
-          for (let gx = 0; gx < NX; gx++) data[gz * NX + gx]! += off[zi2];
+          for (let gx = 0; gx < NX; gx++) data[gz * NX + gx] = data[gz * NX + gx]! + off[zi2];
         }
       }
       // 3) smooth sand ramp across each seam (visible mesh == walkable height)
