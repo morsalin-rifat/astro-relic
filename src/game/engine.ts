@@ -10,6 +10,7 @@ import { MarsWorldScene } from "./scenes/marsWorld";
 import { StoryScene } from "./scenes/story";
 import { InspectScene } from "./scenes/inspect";
 import { CompleteScene } from "./scenes/complete";
+import { MoonWorldScene } from "./scenes/moonWorld";
 
 function makeScene(phase: Phase, renderer: THREE.WebGLRenderer): Scene | null {
   switch (phase) {
@@ -32,6 +33,8 @@ function makeScene(phase: Phase, renderer: THREE.WebGLRenderer): Scene | null {
       return new InspectScene(renderer);
     case "complete":
       return new CompleteScene(renderer);
+    case "moon":
+      return new MoonWorldScene(renderer);
     default:
       return null;
   }
@@ -106,6 +109,7 @@ export class Engine {
         "inspect",
         "complete",
         "map",
+        "moon",
       ].includes(forced)
         ? forced
         : "home";
@@ -120,7 +124,7 @@ export class Engine {
 
   transitionTo(phase: Phase) {
     store.set({ fading: true });
-    const showLoader = phase === "hub" || phase === "explore";
+    const showLoader = phase === "hub" || phase === "explore" || phase === "moon";
     if (showLoader) store.set({ loading: true });
     window.setTimeout(() => {
       this.setPhase(phase);
