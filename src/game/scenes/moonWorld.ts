@@ -262,7 +262,45 @@ export class MoonWorldScene implements Scene {
   private earth!: THREE.Mesh;
   private zone = 0;
 
+  private bannerEl?: HTMLDivElement; private bannerT = 0; private beacons: THREE.Object3D[] = [];
+  private buildPassBeacons() {
+    const passes = [-210, -630, -1050];
+    passes.forEach((zb, i) => {
+      for (const sx of [-18, 18]) {
+        const g = new THREE.Group();
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 4.5, 8), new THREE.MeshStandardMaterial({ color: 0xc8ccd4, metalness: 0.6, roughness: 0.4 }));
+        pole.position.y = 2.25; pole.castShadow = true; g.add(pole);
+        const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffd97d }));
+        lamp.position.y = 4.7; lamp.name = "lamp"; g.add(lamp);
+        const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(64, 64, (c) => { const r = c.createRadialGradient(32, 32, 2, 32, 32, 32); r.addColorStop(0, "rgba(255,217,125,.9)"); r.addColorStop(1, "rgba(255,217,125,0)"); c.fillStyle = r; c.fillRect(0, 0, 64, 64); }), transparent: true, depthWrite: false }));
+        glow.scale.setScalar(4); glow.position.y = 4.7; glow.name = "glow"; g.add(glow);
+        g.position.set(sx, this.groundHeight(sx, zb + 14), zb + 14);
+        this.scene.add(g); this.beacons.push(g);
+      }
+      void i;
+    });
+  }
+  private showBanner(z: number) {
+    const Z = MOON_ZONES[z]!;
+    if (!this.bannerEl) {
+      const d = document.createElement("div");
+      d.style.cssText = "position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:40;pointer-events:none;text-align:center;padding:14px 28px;border-radius:14px;background:linear-gradient(180deg,rgba(10,14,28,.85),rgba(10,14,28,.6));border:1px solid rgba(255,217,125,.6);box-shadow:0 0 30px rgba(120,170,255,.25);color:#e8eeff;font-family:system-ui;transition:opacity .8s,transform .8s;opacity:0";
+      document.body.appendChild(d); this.bannerEl = d;
+    }
+    const d = this.bannerEl;
+    d.innerHTML = `<div style="font-size:12px;letter-spacing:.3em;color:#9fd0ff">ENTERING ZONE ${z + 1} OF 4</div><div style="font-size:24px;font-weight:800;color:#ffd97d;margin:4px 0">${Z.en}</div><div style="font-size:14px">${Z.bn} · ${Z.year}</div>`;
+    d.style.opacity = "1"; d.style.transform = "translateX(-50%) translateY(0)";
+    window.clearTimeout(this.bannerT);
+    this.bannerT = window.setTimeout(() => { d.style.opacity = "0"; d.style.transform = "translateX(-50%) translateY(-10px)"; }, 4000);
+    try { // Apollo-style Quindar beep
+      const ac = new AudioContext(); const o = ac.createOscillator(), gn = ac.createGain();
+      o.frequency.value = 2525; gn.gain.value = 0.08; o.connect(gn).connect(ac.destination); o.start(); o.stop(ac.currentTime + 0.25);
+      o.onended = () => ac.close();
+    } catch { /* audio blocked */ }
+  }
+
   private enterZone(z: number) {
+    this.showBanner(z);
     this.zone = z; const Z = MOON_ZONES[z]!;
     const next = z < 3 ? MOON_ZONES[z + 1]! : null;
     store.set({ objective: next
@@ -292,6 +330,8 @@ export class MoonWorldScene implements Scene {
     this.zone = THREE.MathUtils.clamp(store.get().moonZone ?? 0, 0, 3);
     const sp = LM_SPOTS[this.zone]!; const sx = sp[0] + 7, sz = sp[1] + 10;
     this.player.position.set(sx, this.groundHeight(sx, sz), sz);
+    this.camYaw = 0; this.player.rotation.y = Math.PI; // face south, toward the next site
+    this.buildPassBeacons();
     this.disposers.push(store.on("joystick", (d) => { this.joy = d as { x: number; y: number }; }));
     const onKey = (e: KeyboardEvent) => { if (e.code === "Escape") store.emit("engine:goto", "hub"); };
     window.addEventListener("keydown", onKey);
@@ -692,30 +732,32 @@ export class MoonWorldScene implements Scene {
     }
     const c = this.big; c.style.display = "block";
     const W = (c.width = innerWidth), H = (c.height = innerHeight), g = c.getContext("2d")!;
-    const R = 200; // metres shown around the current landing site
-    const zc = ZONE_Z[this.zone]!;
-    const sc = Math.min(W, H) * 0.86 / (2 * R), cx = W / 2, cy = H / 2 + 10;
-    const toX = (x: number) => cx + x * sc, toY = (z: number) => cy + (z - zc) * sc;
-    g.save(); g.beginPath(); g.rect(cx - R * sc, cy - R * sc, 2 * R * sc, 2 * R * sc); g.clip();
-    g.drawImage(this.miniBg, toX(-WORLD / 2), toY(ZMIN), WORLD * sc, LEN * sc); g.restore();
-    g.strokeStyle = "rgba(200,220,255,.6)"; g.lineWidth = 2; g.strokeRect(cx - R * sc, cy - R * sc, 2 * R * sc, 2 * R * sc);
-    g.strokeStyle = "rgba(255,217,125,.8)"; g.setLineDash([5, 5]); g.beginPath();
-    [[0, 3], [-9, 6], [-22, 16], [-5, 13], [6, 26], [-4, 30], [0, 3]].forEach(([x, z], i) => (i ? g.lineTo(toX(x!), toY(z!)) : g.moveTo(toX(x!), toY(z!)))); g.stroke(); g.setLineDash([]);
-    g.textAlign = "center";
-    MOON_SITES.forEach((s, i) => {
-      if (Math.abs(s.z - zc) > R + 20) return;
-      const x = toX(s.x), y = toY(s.z);
-      g.fillStyle = s.r === 9 ? "#ffd97d" : "#9fd0ff"; g.strokeStyle = "#000"; g.lineWidth = 2;
-      g.beginPath(); g.arc(x, y, s.id === "lm" ? 7 : 5, 0, 7); g.fill(); g.stroke();
-      const near = s.r < 10; const off = near ? (i % 2 ? 16 : -10) : -12;
-      g.font = `bold ${near ? 11 : 13}px system-ui`; g.fillStyle = "#fff";
-      g.fillText(s.en.split(" (")[0]!, x + (near ? (i % 2 ? 60 : -60) : 0), y + off);
+    // whole corridor, zone 1 at top -> zone 4 at bottom (like Mars)
+    const top = ZONE_Z[0]! + 210, bot = ZONE_Z[3]! - 210, depth = top - bot, wid = 300;
+    const sc = Math.min((W * 0.8) / wid, (H * 0.84) / depth), ox = W / 2, oy = H * 0.08;
+    const toX = (x: number) => ox + x * sc, toY = (z: number) => oy + (top - z) * sc;
+    g.save(); g.beginPath(); g.rect(toX(-wid / 2), oy, wid * sc, depth * sc); g.clip();
+    g.translate(toX(-WORLD / 2), toY(ZMIN)); g.scale(1, -1); g.drawImage(this.miniBg, 0, 0, WORLD * sc, LEN * sc); g.restore();
+    g.textAlign = "left";
+    MOON_ZONES.forEach((zn, i) => {
+      const y0 = toY(ZONE_Z[i]! + 210), h = 420 * sc;
+      g.strokeStyle = i === this.zone ? "rgba(255,217,125,.95)" : "rgba(200,220,255,.45)"; g.lineWidth = i === this.zone ? 3 : 1.5; g.setLineDash([6, 6]);
+      g.strokeRect(toX(-wid / 2), y0, wid * sc, h); g.setLineDash([]);
+      g.fillStyle = "rgba(0,0,0,.65)"; g.fillRect(toX(-wid / 2) + 6, y0 + 6, Math.min(wid * sc - 12, 340), 22);
+      g.fillStyle = i === this.zone ? "#ffd97d" : "#cfe0ff"; g.font = "bold 12px system-ui";
+      g.fillText(`${i + 1}. ${zn.en} · ${zn.year}`, toX(-wid / 2) + 12, y0 + 21);
     });
+    // passes between zones
+    g.fillStyle = "#ffd97d"; g.textAlign = "center"; g.font = "bold 11px system-ui";
+    for (const zb of [-210, -630, -1050]) { g.beginPath(); g.arc(toX(0), toY(zb), 5, 0, 7); g.fill(); g.fillText("▼ PASS", toX(0) + 34, toY(zb) + 4); }
+    // landers only (keeps it readable)
+    MOON_SITES.forEach((s) => { if (s.r !== 9) return; const x = toX(s.x), y = toY(s.z);
+      g.fillStyle = "#ffd97d"; g.strokeStyle = "#000"; g.lineWidth = 2; g.beginPath(); g.arc(x, y, 6, 0, 7); g.fill(); g.stroke();
+      g.fillStyle = "#fff"; g.font = "bold 11px system-ui"; g.fillText(s.en.split(" (")[0]!.split(" ·")[0]!, x, y - 10); });
     const p = this.player.position;
-    g.fillStyle = "#4fd1ff"; g.beginPath(); g.arc(toX(p.x), toY(p.z), 7, 0, 7); g.fill(); g.stroke();
+    g.fillStyle = "#4fd1ff"; g.strokeStyle = "#000"; g.beginPath(); g.arc(toX(p.x), toY(p.z), 7, 0, 7); g.fill(); g.stroke();
     g.fillStyle = "#fff"; g.font = "bold 12px system-ui"; g.fillText("YOU", toX(p.x), toY(p.z) - 12);
-    g.fillStyle = "#ffd97d"; g.font = "bold 18px system-ui"; g.fillText(MOON_ZONES[this.zone]!.en, W / 2, 34);
-    g.fillStyle = "#cfe0ff"; g.font = "12px system-ui"; g.fillText(`Site ${this.zone + 1} of 4 · walk south (down) through the pass to reach the next site`, W / 2, 54);
+    g.fillStyle = "#ffd97d"; g.font = "bold 18px system-ui"; g.fillText("LUNAR HERITAGE CORRIDOR", W / 2, 30);
     g.fillStyle = "#cfe0ff"; g.font = "12px system-ui"; g.fillText("Tap anywhere to close · মানচিত্র বন্ধ করতে চাপো", W / 2, H - 16);
   }
 
@@ -741,6 +783,9 @@ export class MoonWorldScene implements Scene {
       const near = Math.hypot(site.x - p.x, site.z - p.z) < 18 || site.r > 15;
       if (!edge && near) { g.fillStyle = "rgba(0,0,0,.6)"; const w = g.measureText(site.en.split(" ·")[0]!).width; g.fillRect(x - w / 2 - 2, y - 17, w + 4, 12); g.fillStyle = "#fff"; g.fillText(site.en.split(" ·")[0]!.split(" (")[0]!, x, y - 8); }
     }
+    if (this.zone < 3) { const pz = [-210, -630, -1050][this.zone]!; const [ax, ay] = toScreen(0, pz); const d = Math.hypot(ax - S / 2, ay - S / 2) || 1, k2 = Math.min(1, (S / 2 - 14) / d);
+      g.fillStyle = "#ffd97d"; g.beginPath(); g.arc(S / 2 + (ax - S / 2) * k2, S / 2 + (ay - S / 2) * k2, 5, 0, 7); g.fill();
+      g.fillStyle = "rgba(0,0,0,.6)"; g.fillRect(40, S - 30, S - 80, 16); g.fillStyle = "#ffd97d"; g.fillText(`NEXT ZONE · ${Math.round(Math.abs(p.z - pz))}m`, S / 2, S - 18); }
     // player arrow
     g.fillStyle = "#ffffff"; g.beginPath(); g.moveTo(S / 2, S / 2 - 8); g.lineTo(S / 2 - 5, S / 2 + 6); g.lineTo(S / 2 + 5, S / 2 + 6); g.fill();
     g.fillStyle = "#cfe0ff"; g.font = "bold 11px system-ui"; g.fillText("N", S / 2 + Math.sin(-this.camYaw + Math.PI) * -95, S / 2 + Math.cos(-this.camYaw + Math.PI) * 95);
@@ -828,13 +873,14 @@ export class MoonWorldScene implements Scene {
     const sx = Math.round(p.x / 8) * 8, sz = Math.round(p.z / 8) * 8;
     this.sun.target.position.set(sx, p.y, sz); this.sun.position.set(sx + 110, p.y + 26, sz + 50); this.sun.target.updateMatrixWorld();
     this.earth.rotation.y += dt * 0.01;
+    for (const b of this.beacons) { const gl = b.getObjectByName("glow"); if (gl) gl.scale.setScalar(3.5 + Math.sin(t * 3) * 1.2); }
     this.drawMinimap();
     this.renderer.render(this.scene, this.camera);
   }
 
   dispose() {
     this.disposed = true;
-    this.hud?.remove(); this.mini?.remove();
+    this.hud?.remove(); this.mini?.remove(); this.big?.remove(); this.bannerEl?.remove(); window.clearTimeout(this.bannerT);
     voice.stop();
     store.set({ objective: null, hint: null, loading: false });
     this.disposers.forEach((d) => d());
