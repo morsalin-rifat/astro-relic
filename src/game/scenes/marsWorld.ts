@@ -248,6 +248,7 @@ export class MarsWorldScene implements Scene {
       this.oppyBeacon.position.copy(this.oppy.position);
       this.scene.add(this.oppyBeacon);
     }
+    this.buildLivingMars();
 
     // beacon
     this.beacon = new THREE.Group();
@@ -409,25 +410,6 @@ export class MarsWorldScene implements Scene {
         }
       }
       this.hf = { data, nx: NX, nz: NZ, minX, minZ, sx, sz };
-      // make the visible ground follow the blended seam so the player never floats or sinks
-      const band = 15 * sz, v = new THREE.Vector3(), inv = new THREE.Matrix4();
-      for (const w of this.zoneWraps) w.traverse((o) => {
-        const m = o as THREE.Mesh;
-        if (!m.isMesh) return;
-        const pos = m.geometry.attributes["position"] as THREE.BufferAttribute;
-        inv.copy(m.matrixWorld).invert();
-        let touched = false;
-        for (let i = 0; i < pos.count; i++) {
-          v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld);
-          let near = Infinity;
-          for (let s2 = 1; s2 < ZONES.length; s2++) near = Math.min(near, Math.abs(v.z - (-s2 * ZONE + ZONE / 2)));
-          if (near > band) continue;
-          const f = THREE.MathUtils.smoothstep(near, band * 0.6, band);
-          v.y = THREE.MathUtils.lerp(this.sampleHf(v.x, v.z), v.y, f);
-          v.applyMatrix4(inv); pos.setXYZ(i, v.x, v.y, v.z); touched = true;
-        }
-        if (touched) { pos.needsUpdate = true; m.geometry.computeVertexNormals(); m.geometry.computeBoundingSphere(); }
-      });
       this.scene.remove(this.terrain);
       this.terrain.geometry.dispose();
       this.resnap();
@@ -659,7 +641,6 @@ export class MarsWorldScene implements Scene {
       for (const [fx, fz, fr] of [
         [SITE.x, SITE.z, 14],
         [SPIRIT.x, SPIRIT.z, 12],
-      [OPPY.x, OPPY.z, 12],
         [OPPY.x, OPPY.z, 12],
         [0, 0, 10],
       ] as const) {
@@ -788,7 +769,61 @@ export class MarsWorldScene implements Scene {
     this.camera.updateProjectionMatrix();
   }
 
+  private devils: { g: THREE.Points; x: number; z: number; a: number }[] = [];
+  private berries: THREE.InstancedMesh | null = null;
+  private berryPos: [number, number][] = [];
+  private prints: THREE.InstancedMesh | null = null;
+  private printIdx = 0;
+  private lastPrint = new THREE.Vector3(1e9, 0, 0);
+  private buildLivingMars() {
+    // Martian blueberries (hematite spherules) around Oppy
+    const bm = new THREE.InstancedMesh(new THREE.SphereGeometry(0.07, 6, 4),
+      new THREE.MeshStandardMaterial({ color: 0x4a5a78, roughness: 0.35, metalness: 0.4 }), 260);
+    for (let i = 0; i < 260; i++) {
+      const r = 3 + Math.random() * 26, a = Math.random() * 6.28;
+      this.berryPos.push([OPPY.x + Math.cos(a) * r, OPPY.z + Math.sin(a) * r]);
+    }
+    this.berries = bm; this.scene.add(bm);
+    // dust devils
+    for (let k = 0; k < 4; k++) {
+      const n = 400, arr = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) {
+        const h = Math.random(), a = Math.random() * 6.28, r = 0.4 + h * 3.5;
+        arr.set([Math.cos(a) * r, h * 22, Math.sin(a) * r], i * 3);
+      }
+      const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(arr, 3));
+      const g = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xd9a377, size: 0.35, transparent: true, opacity: 0.35, depthWrite: false }));
+      const x = (Math.random() - 0.5) * 260, z = 60 - k * 340 - Math.random() * 120;
+      this.devils.push({ g, x, z, a: Math.random() * 6.28 }); this.scene.add(g);
+    }
+    // boot prints
+    const pm = new THREE.InstancedMesh(new THREE.CircleGeometry(0.12, 8),
+      new THREE.MeshBasicMaterial({ color: 0x4a2414, transparent: true, opacity: 0.45, depthWrite: false }), 120);
+    pm.count = 0; this.prints = pm; this.scene.add(pm);
+  }
+  private updateLivingMars(dt: number) {
+    const d = new THREE.Object3D();
+    if (this.berries && this.hf && !this.berries.userData["snapped"]) {
+      this.berryPos.forEach(([x, z], i) => { d.position.set(x, this.groundHeight(x, z) + 0.04, z); d.rotation.set(0, 0, 0); d.updateMatrix(); this.berries!.setMatrixAt(i, d.matrix); });
+      this.berries.instanceMatrix.needsUpdate = true; this.berries.userData["snapped"] = true;
+    }
+    for (const v of this.devils) {
+      v.a += dt * 0.15; v.x += Math.cos(v.a) * dt * 2.5; v.z += Math.sin(v.a) * dt * 2.5;
+      v.g.position.set(v.x, this.groundHeight(v.x, v.z), v.z); v.g.rotation.y += dt * 3;
+    }
+    const p = this.player.position;
+    if (this.prints && p.distanceTo(this.lastPrint) > 0.7) {
+      this.lastPrint.copy(p);
+      const side = this.printIdx % 2 ? 0.15 : -0.15;
+      d.position.set(p.x + Math.cos(this.player.rotation.y) * side, this.groundHeight(p.x, p.z) + 0.03, p.z - Math.sin(this.player.rotation.y) * side);
+      d.rotation.set(-Math.PI / 2, 0, 0); d.scale.set(1, 1.8, 1); d.updateMatrix();
+      this.prints.setMatrixAt(this.printIdx % 120, d.matrix); this.printIdx++;
+      this.prints.count = Math.min(this.printIdx, 120); this.prints.instanceMatrix.needsUpdate = true;
+    }
+  }
+
   update(dt: number, t: number) {
+    this.updateLivingMars(dt);
     // movement input
     const input = new THREE.Vector2(
       (this.keys.has("KeyD") || this.keys.has("ArrowRight") ? 1 : 0) -
