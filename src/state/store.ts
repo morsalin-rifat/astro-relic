@@ -53,6 +53,7 @@ interface GameState {
   newBadge: string | null;
   loading: boolean;
   showEncounter: boolean;
+  showSpirit: boolean;
   bigMap: boolean;
 }
 
@@ -96,6 +97,7 @@ class Store {
     newBadge: null,
     loading: false,
     showEncounter: false,
+    showSpirit: false,
     bigMap: false,
   };
 

@@ -12,7 +12,7 @@ class VoicePlayer {
       return;
     }
     const lang = store.get().lang === "bn" ? "bn" : "en";
-    const el = new Audio(`/audio/sojourner/${name}_${lang}.mp3`);
+    const el = new Audio(`/audio/${name.includes("/") ? name : "sojourner/" + name}_${lang}.mp3`);
     this.el = el;
     audio.duck(true);
     const done = () => {
