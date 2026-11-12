@@ -39,7 +39,7 @@ const SOURCES = [
 ];
 
 /* ---------- 3D turntable inside the card ---------- */
-function RoverTurntable() {
+export function RoverTurntable({ model = "/models/sojourner.glb", accent = "#ffd97d" }: { model?: string; accent?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -62,7 +62,7 @@ function RoverTurntable() {
     let dead = false;
     const pivot = new THREE.Group();
     scene.add(pivot);
-    MeshoptDecoder.ready.then(() => { if (!dead) new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load("/models/sojourner.glb", (g) => {
+    MeshoptDecoder.ready.then(() => { if (!dead) new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load(model, (g) => {
       const m = g.scene;
       const box = new THREE.Box3().setFromObject(m);
       const s = box.getSize(new THREE.Vector3());
@@ -95,13 +95,13 @@ function RoverTurntable() {
       r.dispose();
       r.domElement.remove();
     };
-  }, []);
+  }, [model]);
   return (
     <div className="relative w-full aspect-square">
       <div ref={ref} className="w-full h-full cursor-grab active:cursor-grabbing touch-none" />
       {!ready && (
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <div className="w-14 h-14 rounded-full border-4 border-[#ffd97d]/20 border-t-[#ffd97d] animate-spin" />
+          <div className="w-14 h-14 rounded-full border-4 border-white/10 animate-spin" style={{ borderTopColor: accent }} />
           <div className="mt-2 text-[10px] tracking-[0.3em] text-[#ffd97d]/80">WAKING UP…</div>
         </div>
       )}
@@ -144,7 +144,7 @@ function PhotoGallery({ lang, onClose }: { lang: "en" | "bn"; onClose: () => voi
 
 
 /* ---------- Hub-style left holo bubble with typewriter ---------- */
-export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker: "nova" | "sojourner"; text: string; speaking?: boolean; onClick?: () => void; hint?: string }) {
+export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker: "nova" | "sojourner" | "spirit"; text: string; speaking?: boolean; onClick?: () => void; hint?: string }) {
   const [n, setN] = useState(0);
   useEffect(() => {
     setN(0);
@@ -162,6 +162,7 @@ export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker
   useEffect(() => { if (!speaking) setN((x) => (x > 0 ? text.length : x)); }, [speaking, text]);
   const done = n >= text.length;
   const nova = speaker === "nova";
+  const acc = speaker === "spirit" ? "#ff8a5c" : "#ffd97d";
   return (
     <div className="fixed z-[56] left-2 right-2 bottom-2 md:right-auto md:bottom-auto md:top-[18%] md:left-6 flex items-end gap-2 sm:gap-3 pointer-events-auto select-none animate-[hubrise_0.45s_ease]"
       onClick={() => { if (!done) setN(text.length); else onClick?.(); }}>
@@ -169,14 +170,14 @@ export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker
         {nova ? (
           <img src="/images/nova.png" alt="Nova" className="w-[72px] sm:w-[110px] md:w-[140px] h-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.65)]" draggable={false} />
         ) : (
-          <div className={`w-[72px] h-[72px] sm:w-[104px] sm:h-[104px] rounded-full border-2 border-[#ffd97d] bg-[radial-gradient(circle,#ffd97d33,#221a14)] flex items-center justify-center text-4xl sm:text-6xl ${speaking ? "shadow-[0_0_26px_#ffd97d]" : "shadow-[0_0_14px_rgba(255,217,125,.35)]"}`}>🤖</div>
+          <div className="w-[72px] h-[72px] sm:w-[104px] sm:h-[104px] rounded-full border-2 flex items-center justify-center text-4xl sm:text-6xl" style={{ borderColor: acc, background: `radial-gradient(circle, ${acc}33, #221a14)`, boxShadow: `0 0 ${speaking ? 26 : 14}px ${acc}${speaking ? "" : "66"}` }}>🤖</div>
         )}
       </div>
       <div className="nova-bubble relative flex-1 md:flex-none md:w-[min(360px,calc(50vw-260px))] md:min-w-[260px] mb-3 cursor-pointer">
         <span className="nova-bubble-tail" aria-hidden />
-        <div className={`nova-bubble-inner ${speaking ? "is-speaking" : ""}`} style={nova ? undefined : { borderColor: "#ffd97d" }}>
+        <div className={`nova-bubble-inner ${speaking ? "is-speaking" : ""}`} style={nova ? undefined : { borderColor: acc }}>
           <div className="flex items-center justify-between gap-2 mb-1.5">
-            <div className="nova-nameplate" style={nova ? undefined : { color: "#ffd97d" }}><span className="nova-dot" />{nova ? "NOVA" : "SOJOURNER · 1997"}</div>
+            <div className="nova-nameplate" style={nova ? undefined : { color: acc }}><span className="nova-dot" />{nova ? "NOVA" : speaker === "spirit" ? "SPIRIT · 2004" : "SOJOURNER · 1997"}</div>
             {speaking && <div className="nova-wave" aria-hidden><i /><i /><i /><i /></div>}
           </div>
           <p className="nova-text min-h-[3.2rem]">{text.slice(0, n)}{!done && <span className="nova-caret" />}</p>
@@ -220,6 +221,7 @@ export function SojournerEncounter() {
     audio.beep(1320);
     voice.play("07_zone_unlock");
     store.say([{ speaker: "nova", en: "Mission complete! The path to Spirit in Gusev Crater is now open.", bn: "মিশন সফল! গুসেভ ক্রেটারে স্পিরিটের দিকে যাওয়ার পথ এখন খোলা।" }]);
+    store.set({ objective: { en: "Follow the orange beacon to Spirit in Gusev Crater", bn: "কমলা আলো ধরে গুসেভ ক্রেটারে স্পিরিটের কাছে যাও" } });
   };
 
   const topic = TOPICS.find((x) => x.id === active);
