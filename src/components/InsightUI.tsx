@@ -360,6 +360,10 @@ export function InsightEncounter() {
             <button onClick={() => { close(); store.set({ objective: { en: "All 4 missions complete — you are a true Astro Relic explorer!", bn: "চারটি মিশনই শেষ — তুমি সত্যিকারের অ্যাস্ট্রো রেলিক এক্সপ্লোরার!" } }); }} className="mt-3 w-full py-3 rounded-full border-2 font-bold tracking-widest" style={{ borderColor: ACC, color: ACC }}>
               {lang === "bn" ? "অভিযান চালিয়ে যাও →" : "CONTINUE EXPEDITION →"}
             </button>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <button onClick={() => { close(); store.emit("engine:goto", "hub"); }} className="py-2 rounded-full border font-bold text-xs tracking-widest" style={{ borderColor: GOLD, color: GOLD }}>🏛️ {lang === "bn" ? "হাবে ফেরো" : "BACK TO HUB"}</button>
+              <button onClick={() => { close(); store.emit("engine:goto", "home"); }} className="py-2 rounded-full border font-bold text-xs tracking-widest" style={{ borderColor: GOLD, color: GOLD }}>🏠 {lang === "bn" ? "হোমে যাও" : "GO TO HOME"}</button>
+            </div>
           </>
         )}
       </div>

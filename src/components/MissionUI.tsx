@@ -14,7 +14,6 @@ export const BADGES: { id: string; icon: string; name: L; rover: L }[] = [
   { id: "gusev-fighter", icon: "🛡️", name: { en: "Gusev Fighter", bn: "গুসেভ যোদ্ধা" }, rover: { en: "Spirit · 2004", bn: "স্পিরিট · ২০০৪" } },
   { id: "meridiani-marathoner", icon: "🏃", name: { en: "Meridiani Marathoner", bn: "মেরিডিয়ানি ম্যারাথনার" }, rover: { en: "Opportunity · 2004", bn: "অপরচুনিটি · ২০০৪" } },
   { id: "silent-listener", icon: "🎧", name: { en: "Silent Listener", bn: "নীরব শ্রোতা" }, rover: { en: "InSight · 2018", bn: "ইনসাইট · ২০১৮" } },
-  { id: "elysium-heartbeat", icon: "💓", name: { en: "Elysium Heartbeat", bn: "এলিসিয়াম হৃদস্পন্দন" }, rover: { en: "InSight · 2018", bn: "ইনসাইট · ২০১৮" } },
 ];
 
 const TOPICS: { id: string; icon: string; label: L; text: L }[] = [

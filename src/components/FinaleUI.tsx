@@ -20,7 +20,8 @@ const TX = {
   name: { en: "Your name", bn: "তোমার নাম" },
   dl: { en: "⬇ Download Certificate", bn: "⬇ সনদ ডাউনলোড" },
   keep: { en: "Keep Exploring", bn: "ঘুরতে থাকো" },
-  hub: { en: "Back to Hub", bn: "হাবে ফেরো" },
+  hub: { en: "🏛️ Back to Hub", bn: "🏛️ হাবে ফেরো" },
+  home: { en: "🏠 Go to Home", bn: "🏠 হোমে যাও" },
 };
 
 function drawCert(name: string) {
@@ -94,10 +95,10 @@ export function FinaleUI() {
 
   if (phase !== "explore" || step === "idle") return null;
 
-  const finish = (hub: boolean) => {
+  const finish = (hub: boolean | "home") => {
     store.set({ flags: Array.from(new Set([...store.get().flags, "finale"])) });
     setStep("idle");
-    if (hub) store.set({ phase: "hub" });
+    if (hub) store.emit("engine:goto", hub === "home" ? "home" : "hub");
   };
   const btn = "min-h-12 px-6 py-3 rounded-full font-bold tracking-wider transition hover:scale-105 active:scale-95";
 
@@ -187,6 +188,7 @@ export function FinaleUI() {
               <div className="flex gap-3 justify-center flex-wrap">
                 <button className={btn + " border"} style={{ borderColor: GOLD }} onClick={() => finish(false)}>{tt(TX.keep)}</button>
                 <button className={btn + " border"} style={{ borderColor: GOLD }} onClick={() => finish(true)}>{tt(TX.hub)}</button>
+                <button className={btn + " border"} style={{ borderColor: GOLD }} onClick={() => finish("home")}>{tt(TX.home)}</button>
               </div>
             </div>
           </div>
