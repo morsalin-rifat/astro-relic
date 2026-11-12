@@ -864,6 +864,7 @@ function HubUI() {
                       if (c.ready && c.universe === "moon") {
                         audio.beep(640);
                         voice.stop();
+                        store.set({ moonZone: Math.max(0, ["ch4", "ch5", "ch6", "ch7"].indexOf(c.id)) });
                         store.emit("engine:goto", "moon");
                       } else if (c.ready) {
                         audio.beep();

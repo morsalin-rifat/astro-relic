@@ -10,13 +10,31 @@ import { makeStarfield, type Scene } from "../utils";
  * Layout follows the real EVA traverse map (scaled ~1.6x so kids can walk it):
  * LM at origin, flag/TV camera west, LRRR + PSEP south, Little West Crater east.
  */
-const WORLD = 420;
-const SEG = 300;
+const WORLD = 420; // corridor width (x)
+const ZMAX = 210, ZMIN = -1470; // corridor runs along -Z through 4 landing sites
+const LEN = ZMAX - ZMIN;
+const SEGX = 200, SEGZ = 800;
+/** Zone centres along Z: 0 Apollo 11 · 1 Apollo 12/Surveyor 3 · 2 Apollo 15 · 3 Apollo 17 */
+export const ZONE_Z = [0, -420, -840, -1260];
+export const MOON_ZONES = [
+  { en: "TRANQUILITY BASE · APOLLO 11", bn: "ট্রাঙ্কুইলিটি বেস · অ্যাপোলো ১১", coord: "MARE TRANQUILLITATIS · 0.674°N 23.473°E", year: "20 JUL 1969",
+    nova: { en: "Welcome to Tranquility Base! Apollo 11 landed here on 20 July 1969. Jump with SPACE — gravity is only one sixth of Earth's!", bn: "ট্রাঙ্কুইলিটি বেসে স্বাগতম! ১৯৬৯ সালের ২০ জুলাই অ্যাপোলো ১১ এখানে নেমেছিল। SPACE চেপে লাফ দাও — এখানে মাধ্যাকর্ষণ পৃথিবীর ছয় ভাগের এক ভাগ!" } },
+  { en: "OCEAN OF STORMS · APOLLO 12 + SURVEYOR 3", bn: "ঝড়ের মহাসাগর · অ্যাপোলো ১২ + সার্ভেয়ার ৩", coord: "OCEANUS PROCELLARUM · 3.01°S 23.42°W", year: "19 NOV 1969",
+    nova: { en: "This is the Ocean of Storms! In 1969 Apollo 12 landed right next to Surveyor 3, a robot that had been sitting here since 1967. Walk down into Surveyor Crater to find it!", bn: "এটা ঝড়ের মহাসাগর! ১৯৬৯ সালে অ্যাপোলো ১২ নেমেছিল ১৯৬৭ সাল থেকে পড়ে থাকা রোবট সার্ভেয়ার ৩-এর ঠিক পাশে। সার্ভেয়ার ক্রেটারে নেমে ওকে খুঁজে বের করো!" } },
+  { en: "HADLEY RILLE · APOLLO 15", bn: "হ্যাডলি রিল · অ্যাপোলো ১৫", coord: "HADLEY–APENNINE · 26.13°N 3.63°E", year: "30 JUL 1971",
+    nova: { en: "Hadley Rille! Look at that giant canyon and Mount Hadley behind it. Apollo 15 brought the first Moon buggy here in 1971 — it is still parked by the lander!", bn: "হ্যাডলি রিল! ওই বিশাল গিরিখাত আর পেছনের মাউন্ট হ্যাডলি দেখো। ১৯৭১ সালে অ্যাপোলো ১৫ এখানে প্রথম চাঁদের গাড়ি এনেছিল — সেটা এখনো ল্যান্ডারের পাশে দাঁড়িয়ে আছে!" } },
+  { en: "TAURUS–LITTROW · APOLLO 17", bn: "টরাস–লিট্রো · অ্যাপোলো ১৭", coord: "TAURUS–LITTROW VALLEY · 20.19°N 30.77°E", year: "11 DEC 1972",
+    nova: { en: "Taurus–Littrow valley, between giant mountains. Apollo 17 was the last time humans walked on the Moon, in December 1972. Find the orange soil at Shorty Crater!", bn: "টরাস–লিট্রো উপত্যকা, বিশাল পাহাড়ের মাঝে। ১৯৭২ সালের ডিসেম্বরে অ্যাপোলো ১৭-ই ছিল চাঁদে মানুষের শেষ হাঁটা। শর্টি ক্রেটারে কমলা মাটি খুঁজে বের করো!" } },
+];
+const zoneOf = (z: number) => THREE.MathUtils.clamp(Math.round(-z / 420), 0, 3);
+const win = (z: number, zc: number, half = 190) => { const d = Math.abs(z - zc) / half; return d >= 1 ? 0 : 1 - d * d * (3 - 2 * d); };
+const rilleX = (z: number) => -60 + Math.sin((z + 840) * 0.018) * 14;
+const LM_SPOTS: [number, number][] = [[0, 0], [30, -398], [0, -830], [0, -1255]];
 const GRAVITY = 2.6; // gentle "1/6 g" feel
 const JUMP_V = 3.4;
 const SPEED = 4.2;
 
-type Site = { id: string; x: number; z: number; en: string; bn: string; info: string; r: number };
+type Site = { id: string; x: number; z: number; en: string; bn: string; info: string; r: number; zone?: number };
 export const MOON_SITES: Site[] = [
   { id: "lm", x: 0, z: 0, en: "EAGLE · Lunar Module", bn: "ঈগল · লুনার মডিউল", info: "Descent stage left behind · 20 Jul 1969", r: 9 },
   { id: "plaque", x: 1.2, z: 3.3, en: "Plaque · \"We came in peace\"", bn: "ফলক · \"আমরা শান্তির জন্য এসেছি\"", info: "Front leg ladder", r: 3 },
@@ -28,12 +46,41 @@ export const MOON_SITES: Site[] = [
   { id: "lwc", x: 96, z: 4, en: "Little West Crater", bn: "লিটল ওয়েস্ট ক্রেটার", info: "Armstrong's surprise run · 33 m wide", r: 22 },
   { id: "wc", x: -150, z: -40, en: "West Crater", bn: "ওয়েস্ট ক্রেটার", info: "Boulders Armstrong flew over to land", r: 55 },
   { id: "dbl", x: 40, z: -70, en: "Double Crater", bn: "ডাবল ক্রেটার", info: "Twin impact pits", r: 26 },
+  // --- Zone 2: Apollo 12 + Surveyor 3, Ocean of Storms ---
+  { id: "intrepid", x: 30, z: -398, en: "INTREPID · Apollo 12 LM", bn: "ইনট্রেপিড · অ্যাপোলো ১২", info: "Pinpoint landing · 19 Nov 1969", r: 9, zone: 1 },
+  { id: "surveyor", x: -8, z: -430, en: "Surveyor 3 Robot", bn: "সার্ভেয়ার ৩ রোবট", info: "Waiting here since April 1967", r: 4, zone: 1 },
+  { id: "svc", x: 10, z: -430, en: "Surveyor Crater", bn: "সার্ভেয়ার ক্রেটার", info: "200 m wide · robot on its slope", r: 34, zone: 1 },
+  { id: "alsep12", x: 62, z: -412, en: "ALSEP Science Station", bn: "ALSEP বিজ্ঞান কেন্দ্র", info: "Apollo 12 experiments", r: 4, zone: 1 },
+  { id: "head", x: -45, z: -395, en: "Head Crater", bn: "হেড ক্রেটার", info: "Named after the 'head' of the snowman", r: 15, zone: 1 },
+  { id: "bench", x: 55, z: -370, en: "Bench Crater", bn: "বেঞ্চ ক্রেটার", info: "Bench-shaped floor", r: 12, zone: 1 },
+  // --- Zone 3: Apollo 15, Hadley Rille ---
+  { id: "falcon", x: 0, z: -830, en: "FALCON · Apollo 15 LM", bn: "ফ্যালকন · অ্যাপোলো ১৫", info: "Landed 30 Jul 1971", r: 9, zone: 2 },
+  { id: "lrv15", x: -14, z: -846, en: "Lunar Rover LRV-1", bn: "লুনার রোভার LRV-1", info: "First car on the Moon · 27.8 km driven", r: 4, zone: 2 },
+  { id: "fallen", x: -7, z: -818, en: "Fallen Astronaut", bn: "ফলেন অ্যাস্ট্রোনট", info: "Memorial to 14 lost space explorers", r: 3, zone: 2 },
+  { id: "feather", x: 8, z: -842, en: "Hammer & Feather Drop", bn: "হাতুড়ি ও পালক পরীক্ষা", info: "Both hit the ground together!", r: 3, zone: 2 },
+  { id: "rille", x: -60, z: -860, en: "Hadley Rille", bn: "হ্যাডলি রিল", info: "Ancient lava canyon · 300 m deep (real)", r: 40, zone: 2 },
+  { id: "mhadley", x: 165, z: -800, en: "Mount Hadley", bn: "মাউন্ট হ্যাডলি", info: "4.5 km high", r: 60, zone: 2 },
+  { id: "delta", x: 40, z: -985, en: "Hadley Delta", bn: "হ্যাডলি ডেল্টা", info: "Where the Genesis Rock was found", r: 40, zone: 2 },
+  // --- Zone 4: Apollo 17, Taurus-Littrow ---
+  { id: "challenger", x: 0, z: -1255, en: "CHALLENGER · Apollo 17 LM", bn: "চ্যালেঞ্জার · অ্যাপোলো ১৭", info: "Last crewed landing · Dec 1972", r: 9, zone: 3 },
+  { id: "lrv17", x: 12, z: -1268, en: "Lunar Rover LRV-3", bn: "লুনার রোভার LRV-3", info: "Fender fixed with a map & tape!", r: 4, zone: 3 },
+  { id: "tdc", x: -8, z: -1270, en: "\"TDC\" in the dust", bn: "ধুলোয় লেখা \"TDC\"", info: "Cernan's daughter's initials", r: 3, zone: 3 },
+  { id: "lastStep", x: 3, z: -1247, en: "The Last Footprint", bn: "শেষ পদচিহ্ন", info: "Gene Cernan · 14 Dec 1972", r: 3, zone: 3 },
+  { id: "shorty", x: 45, z: -1300, en: "Shorty Crater · Orange Soil", bn: "শর্টি ক্রেটার · কমলা মাটি", info: "Volcanic glass beads, 3.6 billion yrs", r: 12, zone: 3 },
+  { id: "camelot", x: -55, z: -1215, en: "Camelot Crater", bn: "ক্যামেলট ক্রেটার", info: "Boulder field", r: 18, zone: 3 },
+  { id: "smassif", x: -165, z: -1300, en: "South Massif", bn: "দক্ষিণ ম্যাসিফ", info: "2.3 km mountain wall", r: 60, zone: 3 },
+  { id: "nmassif", x: 165, z: -1220, en: "North Massif", bn: "উত্তর ম্যাসিফ", info: "Station 6 split boulder", r: 60, zone: 3 },
 ];
 const NAMED_CRATERS = [
   { x: 96, z: 4, R: 26, D: 7 },
   { x: -150, z: -40, R: 60, D: 16 },
   { x: 32, z: -70, R: 16, D: 4 },
   { x: 52, z: -72, R: 14, D: 3.5 },
+  { x: 10, z: -430, R: 36, D: 9 },
+  { x: -45, z: -395, R: 15, D: 4 },
+  { x: 55, z: -370, R: 12, D: 3 },
+  { x: 45, z: -1300, R: 11, D: 2.6 },
+  { x: -55, z: -1215, R: 18, D: 4.5 },
 ];
 
 const loader = () => new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
@@ -213,6 +260,18 @@ export class MoonWorldScene implements Scene {
   private disposers: (() => void)[] = [];
   private disposed = false;
   private earth!: THREE.Mesh;
+  private zone = 0;
+
+  private enterZone(z: number) {
+    this.zone = z; const Z = MOON_ZONES[z]!;
+    const next = z < 3 ? MOON_ZONES[z + 1]! : null;
+    store.set({ objective: next
+      ? { en: `Explore ${Z.en.split(" · ")[0]} — then walk south through the pass to ${next.en.split(" · ")[0]}`, bn: `${Z.bn.split(" · ")[0]} ঘুরে দেখো — তারপর দক্ষিণের গিরিপথ দিয়ে ${next.bn.split(" · ")[0]}-এ যাও` }
+      : { en: `Explore ${Z.en.split(" · ")[0]} — the last place humans walked on the Moon`, bn: `${Z.bn.split(" · ")[0]} ঘুরে দেখো — চাঁদে মানুষের শেষ হাঁটার জায়গা` } });
+    store.say([{ speaker: "nova", ...Z.nova }]);
+    if (this.hud) (this.hud.querySelector("[data-coord]") as HTMLElement).textContent = `${Z.coord} · ${Z.year}`;
+    this.nearSite = "-";
+  }
 
   constructor(renderer: THREE.WebGLRenderer) {
     this.renderer = renderer;
@@ -230,18 +289,20 @@ export class MoonWorldScene implements Scene {
     this.buildPlayer();
     this.buildHud();
 
-    this.player.position.set(7, 0, 10);
-    this.player.position.y = this.groundHeight(7, 10);
+    this.zone = THREE.MathUtils.clamp(store.get().moonZone ?? 0, 0, 3);
+    const sp = LM_SPOTS[this.zone]!; const sx = sp[0] + 7, sz = sp[1] + 10;
+    this.player.position.set(sx, this.groundHeight(sx, sz), sz);
     this.disposers.push(store.on("joystick", (d) => { this.joy = d as { x: number; y: number }; }));
     const onKey = (e: KeyboardEvent) => { if (e.code === "Escape") store.emit("engine:goto", "hub"); };
     window.addEventListener("keydown", onKey);
     this.disposers.push(() => window.removeEventListener("keydown", onKey));
+    if (import.meta.env.DEV) (window as any).__moonZone = (z: number) => { const [x, zz] = LM_SPOTS[z]!; this.player.position.set(x + 7, this.groundHeight(x + 7, zz + 10), zz + 10); };
     if (import.meta.env.DEV) (window as any).__moonTeleport = (x: number, z: number) => this.player.position.set(x, this.groundHeight(x, z), z);
 
     window.setTimeout(() => {
       if (this.disposed) return;
-      store.set({ loading: false, objective: { en: "Explore Tranquility Base — visit every named site", bn: "ট্রাঙ্কুইলিটি বেস ঘুরে দেখো — প্রতিটি নামাঙ্কিত স্থানে যাও" } });
-      store.say([{ speaker: "nova", en: "Welcome to Tranquility Base! This is where Apollo 11 landed on 20 July 1969. Jump with SPACE — gravity here is only one sixth of Earth's!", bn: "ট্রাঙ্কুইলিটি বেসে স্বাগতম! ১৯৬৯ সালের ২০ জুলাই অ্যাপোলো ১১ ঠিক এখানে নেমেছিল। SPACE চেপে লাফ দাও — এখানে মাধ্যাকর্ষণ পৃথিবীর মাত্র ছয় ভাগের এক ভাগ!" }]);
+      store.set({ loading: false });
+      this.enterZone(this.zone);
     }, 600);
   }
 
@@ -276,8 +337,26 @@ export class MoonWorldScene implements Scene {
   private rawHeight(x: number, z: number, craters: { x: number; z: number; R: number; D: number }[]) {
     let h = (pfbm(x * 0.006 + 50, z * 0.006 + 50, 1e6, 4) - 0.5) * 9; // gentle mare swells
     h += (pfbm(x * 0.05, z * 0.05, 1e6, 3) - 0.5) * 0.9;
-    const edge = Math.max(Math.abs(x), Math.abs(z)) / (WORLD / 2);
-    h += Math.max(0, edge - 0.78) ** 2 * (180 + pfbm(x * 0.02, z * 0.02, 1e6, 4) * 520); // distant highland ridge hides world edge
+    const ridgeN = pfbm(x * 0.02, z * 0.02, 1e6, 4);
+    const ex = Math.abs(x) / (WORLD / 2);
+    h += Math.max(0, ex - 0.78) ** 2 * (180 + ridgeN * 520); // highland walls hide corridor edge
+    const ez = Math.max(z - (ZMAX - 50), (ZMIN + 50) - z); if (ez > 0) h += (ez / 50) ** 2 * (40 + ridgeN * 120);
+    // low ridges between landing sites with a walkable pass in the middle
+    for (const zb of [-210, -630, -1050]) {
+      const r = Math.exp(-(((z - zb) / 16) ** 2)); if (r < 0.01) continue;
+      const gap = THREE.MathUtils.smoothstep(Math.abs(x), 14, 40);
+      h += r * gap * (7 + ridgeN * 14);
+    }
+    // Apollo 15: sinuous Hadley Rille + Mount Hadley + Hadley Delta
+    const w15 = win(z, -840, 210);
+    if (w15 > 0) {
+      const dx = (x - rilleX(z)) / 15; h -= w15 * 20 * Math.exp(-(dx ** 4));
+      h += w15 * Math.max(0, x - 95) ** 1.5 * (0.35 + ridgeN * 0.3);
+      h += Math.exp(-(((x - 40) / 70) ** 2) - (((z + 985) / 35) ** 2)) * 18;
+    }
+    // Apollo 17: narrow valley between the North & South Massifs
+    const w17 = win(z, -1260, 220);
+    if (w17 > 0) h += w17 * Math.max(0, Math.abs(x) - 75) ** 1.45 * (0.5 + ridgeN * 0.35);
     for (const c of craters) { const d = Math.hypot(x - c.x, z - c.z) / c.R; if (d < 2.2) h += crater(d, c.D); }
     return h;
   }
@@ -285,38 +364,48 @@ export class MoonWorldScene implements Scene {
   private buildTerrain() {
     const rnd = mulberry(42);
     const craters = [...NAMED_CRATERS];
-    for (let i = 0; i < 170; i++) {
+    for (let i = 0; i < 640; i++) {
       const R = 1.2 + Math.pow(rnd(), 2.6) * 14;
-      const x = (rnd() - 0.5) * WORLD * 0.85, z = (rnd() - 0.5) * WORLD * 0.85;
-      if (Math.hypot(x, z) < 34 + R * 2) continue; // keep the landing site flat
+      const x = (rnd() - 0.5) * WORLD * 0.85, z = ZMIN + 40 + rnd() * (LEN - 80);
+      if (LM_SPOTS.some(([lx, lz]) => Math.hypot(x - lx, z - lz) < 34 + R * 2)) continue; // keep landing sites flat
       craters.push({ x, z, R, D: R * (0.18 + rnd() * 0.1) });
     }
-    const geo = new THREE.PlaneGeometry(WORLD, WORLD, SEG, SEG); geo.rotateX(-Math.PI / 2);
+    craters.sort((a, b) => a.z - b.z);
+    const geo = new THREE.PlaneGeometry(WORLD, LEN, SEGX, SEGZ); geo.rotateX(-Math.PI / 2); geo.translate(0, 0, (ZMAX + ZMIN) / 2);
     const pos = geo.attributes["position"] as THREE.BufferAttribute;
     const col = new Float32Array(pos.count * 3);
     this.heights = new Float32Array(pos.count);
+    let rowZ = NaN, sub: typeof craters = [];
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), z = pos.getZ(i);
-      const h = this.rawHeight(x, z, craters); pos.setY(i, h); this.heights[i] = h;
-      // albedo: fresh crater rims & ray ejecta brighter, mare darker
+      if (z !== rowZ) { rowZ = z; sub = craters.filter((c) => Math.abs(c.z - z) < c.R * 2.2); }
+      const h = this.rawHeight(x, z, sub); pos.setY(i, h); this.heights[i] = h;
+      // albedo: fresh crater rims brighter, highlands brighter, mare darker
       let a = 0.82 + (pfbm(x * 0.02, z * 0.02, 1e6, 3) - 0.5) * 0.25;
-      for (const c of craters) { const d = Math.hypot(x - c.x, z - c.z) / c.R; if (d > 0.8 && d < 1.8) a += 0.12 * (1.8 - d) * (c.R > 10 ? 1 : 0.6); }
-      const blast = Math.hypot(x, z); if (blast < 14) a += 0.18 * (1 - blast / 14); // engine-scoured bright halo
-      col[i * 3] = a; col[i * 3 + 1] = a * 0.99; col[i * 3 + 2] = a * 0.97;
+      for (const c of sub) { const d = Math.hypot(x - c.x, z - c.z) / c.R; if (d > 0.8 && d < 1.8) a += 0.12 * (1.8 - d) * (c.R > 10 ? 1 : 0.6); }
+      for (const [lx, lz] of LM_SPOTS) { const b = Math.hypot(x - lx, z - lz); if (b < 14) a += 0.18 * (1 - b / 14); } // engine-scoured halo
+      a += THREE.MathUtils.clamp(h / 120, 0, 0.18); // highland anorthosite is lighter
+      const zn = zoneOf(z); if (zn === 3) a *= 0.9; // dark mantle deposits of Taurus–Littrow
+      let r = a, gg = a * 0.99, bb = a * 0.97;
+      const sh = Math.hypot(x - 45, z + 1300) / 11; // Shorty Crater orange volcanic soil
+      if (sh < 1.4) { const k = (1 - sh / 1.4) * (0.6 + pnoise(x * 0.8, z * 0.8, 1e6) * 0.4); r += k * 0.45; gg += k * 0.12; bb -= k * 0.25; }
+      col[i * 3] = r; col[i * 3 + 1] = gg; col[i * 3 + 2] = bb;
     }
     geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
     geo.computeVertexNormals();
     const { map, nmap } = makeRegolithMaps();
-    map.repeat.set(WORLD / 6, WORLD / 6); nmap.repeat.copy(map.repeat);
+    map.repeat.set(WORLD / 6, LEN / 6); nmap.repeat.copy(map.repeat);
     const mat = new THREE.MeshStandardMaterial({ map, normalMap: nmap, normalScale: new THREE.Vector2(1.4, 1.4), vertexColors: true, roughness: 0.97, metalness: 0 });
     const m = new THREE.Mesh(geo, mat); m.receiveShadow = true; this.scene.add(m);
     this.bakeMinimap(craters);
   }
 
   groundHeight(x: number, z: number) {
-    const s = WORLD / SEG, n = SEG + 1;
-    const fx = THREE.MathUtils.clamp((x + WORLD / 2) / s, 0, SEG - 0.001), fz = THREE.MathUtils.clamp((z + WORLD / 2) / s, 0, SEG - 0.001);
-    const ix = Math.floor(fx), iz = Math.floor(fz), tx = fx - ix, tz = fz - iz;
+    const sx = WORLD / SEGX, sz = LEN / SEGZ, n = SEGX + 1;
+    const fx = THREE.MathUtils.clamp((x + WORLD / 2) / sx, 0, SEGX - 0.001), fz = THREE.MathUtils.clamp((z - ZMIN) / sz, 0, SEGZ - 0.001);
+    // PlaneGeometry rows run from +Z (row 0) to -Z after rotateX(-PI/2)
+    const rz = SEGZ - fz; const iz = Math.min(Math.floor(rz), SEGZ - 1), tz = rz - iz;
+    const ix = Math.floor(fx), tx = fx - ix;
     const h = this.heights;
     const a = h[iz * n + ix]!, b = h[iz * n + ix + 1]!, c = h[(iz + 1) * n + ix]!, d = h[(iz + 1) * n + ix + 1]!;
     return (a * (1 - tx) + b * tx) * (1 - tz) + (c * (1 - tx) + d * tx) * tz;
@@ -334,16 +423,18 @@ export class MoonWorldScene implements Scene {
     g.computeVertexNormals();
     const { map, nmap } = makeRegolithMaps();
     const mat = new THREE.MeshStandardMaterial({ color: 0x8e8b86, map, normalMap: nmap, roughness: 0.92, flatShading: true });
-    const COUNT = 900;
+    const COUNT = 2600;
     const rocks = new THREE.InstancedMesh(g, mat, COUNT);
     const o = new THREE.Object3D();
     for (let i = 0; i < COUNT; i++) {
       // clusters near West Crater (the boulder field Armstrong avoided) + scatter
       let x: number, z: number;
       if (i < 220) { const a = rnd() * 6.28, r = 55 + rnd() * 50; x = -150 + Math.cos(a) * r; z = -40 + Math.sin(a) * r; }
-      else { x = (rnd() - 0.5) * WORLD * 0.9; z = (rnd() - 0.5) * WORLD * 0.9; }
-      if (Math.hypot(x, z) < 12) continue;
-      const s = (i < 220 ? 0.4 + rnd() * 1.6 : 0.06 + Math.pow(rnd(), 4) * 0.9);
+      else if (i < 420) { const a = rnd() * 6.28, r = 14 + rnd() * 26; x = -55 + Math.cos(a) * r; z = -1215 + Math.sin(a) * r; } // Camelot boulders
+      else if (i < 560) { const zz = -700 - rnd() * 280; x = rilleX(zz) + (rnd() < 0.5 ? -1 : 1) * (12 + rnd() * 10); z = zz; } // rille rim blocks
+      else { x = (rnd() - 0.5) * WORLD * 0.9; z = ZMIN + 30 + rnd() * (LEN - 60); }
+      if (LM_SPOTS.some(([lx, lz]) => Math.hypot(x - lx, z - lz) < 12)) continue;
+      const s = (i < 560 ? 0.4 + rnd() * 1.6 : 0.06 + Math.pow(rnd(), 4) * 0.9);
       o.position.set(x, this.groundHeight(x, z) + s * 0.15, z);
       o.rotation.set(rnd() * 3, rnd() * 6, rnd() * 3); o.scale.set(s, s * (0.6 + rnd() * 0.5), s * (0.8 + rnd() * 0.4)); o.updateMatrix();
       rocks.setMatrixAt(i, o.matrix);
@@ -365,6 +456,7 @@ export class MoonWorldScene implements Scene {
     const black = new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: 0.8 });
 
     // --- Eagle descent stage (octagonal, gold foil, 4 legs + footpads) ---
+    const makeLM = (plaqueText: string[]) => {
     const lm = new THREE.Group();
     const body = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 1.7, 8), foil); body.position.y = 2.1; body.rotation.y = Math.PI / 8; lm.add(body);
     const top = new THREE.Mesh(new THREE.CylinderGeometry(2.0, 2.1, 0.12, 8), silver); top.position.y = 3.0; top.rotation.y = Math.PI / 8; lm.add(top);
@@ -380,11 +472,16 @@ export class MoonWorldScene implements Scene {
     // ladder on the front (+z) leg
     for (let r = 0; r < 9; r++) { const rung = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.04, 0.04), silver); rung.position.set(0, 0.35 + r * 0.28, 2.65 - r * 0.06); lm.add(rung); }
     // the plaque
-    const plaque = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.42), new THREE.MeshStandardMaterial({ metalness: 0.9, roughness: 0.25, map: canvasTex(256, 180, (g) => { g.fillStyle = "#c8ccd4"; g.fillRect(0, 0, 256, 180); g.fillStyle = "#222"; g.font = "bold 13px serif"; g.textAlign = "center"; ["HERE MEN FROM THE PLANET EARTH", "FIRST SET FOOT UPON THE MOON", "JULY 1969, A.D.", "WE CAME IN PEACE FOR", "ALL MANKIND"].forEach((l, i) => g.fillText(l, 128, 60 + i * 22)); g.beginPath(); g.arc(70, 26, 16, 0, 7); g.arc(186, 26, 16, 0, 7); g.stroke(); }) }));
+    const plaque = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.42), new THREE.MeshStandardMaterial({ metalness: 0.9, roughness: 0.25, map: canvasTex(256, 180, (g) => { g.fillStyle = "#c8ccd4"; g.fillRect(0, 0, 256, 180); g.fillStyle = "#222"; g.font = "bold 13px serif"; g.textAlign = "center"; plaqueText.forEach((l, i) => g.fillText(l, 128, 60 + i * 22)); g.beginPath(); g.arc(70, 26, 16, 0, 7); g.arc(186, 26, 16, 0, 7); g.stroke(); }) }));
     plaque.position.set(0, 1.55, 2.32); lm.add(plaque);
     // scattered leftover gear (jettisoned PLSS backpacks, bags)
     const bag = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.35, 0.4), new THREE.MeshStandardMaterial({ color: 0xe9e6dd, roughness: 0.8 })); bag.position.set(-3.2, 0.18, -2.6); bag.rotation.set(0.3, 0.8, 0.2); lm.add(bag);
-    this.place(lm, 0, 0);
+    return lm; };
+    this.place(makeLM(["HERE MEN FROM THE PLANET EARTH", "FIRST SET FOOT UPON THE MOON", "JULY 1969, A.D.", "WE CAME IN PEACE FOR", "ALL MANKIND"]), 0, 0);
+    this.place(makeLM(["APOLLO 12", "INTREPID", "NOVEMBER 1969", "OCEAN OF STORMS", ""]), 30, -398, 0.4);
+    this.place(makeLM(["APOLLO 15", "FALCON", "JULY 1971", "HADLEY-APENNINE", ""]), 0, -830, -0.3);
+    this.place(makeLM(["HERE MAN COMPLETED HIS FIRST", "EXPLORATIONS OF THE MOON", "DECEMBER 1972, A.D.", "MAY THE SPIRIT OF PEACE", "BE REFLECTED IN THE LIVES OF ALL MANKIND"]), 0, -1255, 0.2);
+    this.buildLaterSites(foil, silver, dark, black);
 
     // --- Flag ---
     const flag = new THREE.Group();
@@ -436,6 +533,84 @@ export class MoonWorldScene implements Scene {
     trail([[2, 2], [40, 3], [72, 4]], 150); // Armstrong's run to Little West Crater
   }
 
+
+  private buildLaterSites(foil: THREE.Material, silver: THREE.Material, dark: THREE.Material, black: THREE.Material) {
+    const dusty = new THREE.MeshStandardMaterial({ color: 0xcfc4ad, roughness: 0.75, metalness: 0.3 }); // Surveyor's paint browned by 31 months of sun
+    // --- Surveyor 3: tripod robot lander on the crater slope ---
+    const sv = new THREE.Group();
+    const frame = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.12, 3), dusty); frame.position.y = 1.0; sv.add(frame);
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.2), silver); mast.position.y = 2.0; sv.add(mast);
+    for (let k = 0; k < 3; k++) {
+      const a = k * 2.094, cx = Math.cos(a), cz = Math.sin(a);
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.5), dusty); leg.position.set(cx * 1.15, 0.55, cz * 1.15); leg.lookAt(cx * 0.6, 1.1, cz * 0.6); leg.rotateX(Math.PI / 2); sv.add(leg);
+      const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.08, 14), dusty); pad.position.set(cx * 1.6, 0.04, cz * 1.6); sv.add(pad);
+      const tank = new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 10), silver); tank.position.set(cx * 0.45, 0.8, cz * 0.45); sv.add(tank);
+    }
+    const sp = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.03, 0.6), new THREE.MeshStandardMaterial({ color: 0x1b2850, metalness: 0.6, roughness: 0.3 })); sp.position.set(0, 3.1, 0.25); sp.rotation.x = -0.6; sv.add(sp);
+    const ant = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.03, 0.5), silver); ant.position.set(0, 2.9, -0.3); ant.rotation.x = 0.7; sv.add(ant);
+    const tvc = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.55, 12), dusty); tvc.position.set(0.5, 1.45, 0.2); tvc.rotation.z = 0.5; sv.add(tvc); // the camera Apollo 12 brought home
+    const scoop = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 1.1), silver); scoop.position.set(-0.4, 0.9, 0.7); scoop.rotation.x = 0.4; sv.add(scoop);
+    const svp = this.place(sv, -8, -430, 0.8); svp.rotation.x = 0.12; // sits tilted on the slope
+    // ALSEP station
+    const al = new THREE.Group();
+    const cs = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.35, 0.45), foil); cs.position.y = 0.2; al.add(cs);
+    const rtg = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.5, 10), dark); rtg.position.set(1.4, 0.25, 0.3); al.add(rtg);
+    const dish = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.15, 16, 1, true), silver); dish.position.set(0, 0.7, 0); dish.rotation.x = Math.PI; al.add(dish);
+    this.place(al, 62, -412);
+
+    // --- Lunar Roving Vehicle factory ---
+    const makeLRV = () => {
+      const g = new THREE.Group();
+      const ch = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.12, 3.0), silver); ch.position.y = 0.55; g.add(ch);
+      const wheel = new THREE.TorusGeometry(0.4, 0.1, 8, 20); const wm = new THREE.MeshStandardMaterial({ color: 0x8c8a84, metalness: 0.7, roughness: 0.5, wireframe: false });
+      for (const [x, z] of [[-0.8, 1.1], [0.8, 1.1], [-0.8, -1.1], [0.8, -1.1]] as const) {
+        const w = new THREE.Mesh(wheel, wm); w.rotation.y = Math.PI / 2; w.position.set(x, 0.42, z); g.add(w);
+        const f = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.03, 0.9), dark); f.position.set(x, 0.92, z); g.add(f); // fenders
+      }
+      for (const x of [-0.3, 0.3]) { const seat = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.5, 0.06), new THREE.MeshStandardMaterial({ color: 0x5c6470, roughness: 0.8 })); seat.position.set(x, 0.85, -0.1); seat.rotation.x = -0.2; g.add(seat); }
+      const con = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.35, 0.12), black); con.position.set(0, 1.05, 0.55); g.add(con);
+      const um = new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.18, 24, 1, true), new THREE.MeshStandardMaterial({ color: 0xe8e8e2, side: THREE.DoubleSide, metalness: 0.4, roughness: 0.5 }));
+      um.position.set(0.35, 1.9, 1.15); um.rotation.x = -2.4; g.add(um); // high-gain "umbrella" antenna
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.2), silver); pole.position.set(0.35, 1.3, 1.1); g.add(pole);
+      const cam = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.3), foil); cam.position.set(-0.3, 1.4, 1.2); g.add(cam);
+      return g;
+    };
+    this.place(makeLRV(), -14, -846, 1.1);
+    this.place(makeLRV(), 12, -1268, -0.7);
+
+    // --- Fallen Astronaut figurine + plaque (shown big enough for kids to spot) ---
+    const fa = new THREE.Group();
+    const fig = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.3, 4, 8), new THREE.MeshStandardMaterial({ color: 0xdfe3ea, metalness: 0.9, roughness: 0.2 })); fig.rotation.z = Math.PI / 2; fig.position.y = 0.06; fa.add(fig);
+    const pl = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.35), new THREE.MeshStandardMaterial({ metalness: 0.8, roughness: 0.3, map: canvasTex(256, 150, (g) => { g.fillStyle = "#cfd3da"; g.fillRect(0, 0, 256, 150); g.fillStyle = "#222"; g.font = "bold 14px serif"; g.textAlign = "center"; g.fillText("IN MEMORY OF", 128, 30); g.font = "10px serif"; ["GAGARIN · KOMAROV · GRISSOM", "WHITE · CHAFFEE · BASSETT", "SEE · FREEMAN · WILLIAMS", "DOBROVOLSKY · PATSAYEV · VOLKOV", "BELYAYEV · BONDARENKO"].forEach((l, i) => g.fillText(l, 128, 56 + i * 18)); }) }));
+    pl.rotation.x = -Math.PI / 2; pl.position.set(0.45, 0.02, 0); fa.add(pl);
+    this.place(fa, -7, -818);
+    // --- Hammer & falcon feather lying side by side ---
+    const hf = new THREE.Group();
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4), dark); handle.rotation.z = Math.PI / 2; handle.position.y = 0.03; hf.add(handle);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.16), silver); head.position.set(0.2, 0.04, 0); hf.add(head);
+    const feather = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 0.28), new THREE.MeshStandardMaterial({ color: 0x8a6a48, side: THREE.DoubleSide })); feather.rotation.x = -Math.PI / 2; feather.position.set(0, 0.015, 0.2); hf.add(feather);
+    this.place(hf, 8, -842);
+
+    // --- "TDC" initials + Cernan's last footprints ---
+    const tdc = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.7), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, map: canvasTex(256, 112, (g) => { g.font = "bold 90px system-ui"; g.textAlign = "center"; g.fillStyle = "rgba(40,38,36,.55)"; g.fillText("TDC", 128, 92); }) }));
+    tdc.rotation.x = -Math.PI / 2; tdc.position.set(-8, this.groundHeight(-8, -1270) + 0.03, -1270); this.scene.add(tdc);
+    const bootM = new THREE.MeshBasicMaterial({ map: bootTex(), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+    const last = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 1.0), bootM); last.rotation.x = -Math.PI / 2; last.position.set(3, this.groundHeight(3, -1247) + 0.03, -1247); this.scene.add(last);
+    // old EVA trails + LRV tyre tracks at the later sites
+    const tracks = (pts: [number, number][], w: number, step: number, n: number, mat: THREE.Material) => {
+      const im = new THREE.InstancedMesh(new THREE.PlaneGeometry(w, step * 0.9), mat, n); const o = new THREE.Object3D(); let k = 0;
+      for (let s = 0; s < pts.length - 1 && k < n; s++) {
+        const [ax, az] = pts[s]!, [bx, bz] = pts[s + 1]!; const L = Math.hypot(bx - ax, bz - az), ang = Math.atan2(bx - ax, bz - az);
+        for (let d = 0; d < L && k < n; d += step, k++) { const x = ax + (bx - ax) * d / L, z = az + (bz - az) * d / L; o.position.set(x, this.groundHeight(x, z) + 0.025, z); o.rotation.set(-Math.PI / 2, 0, ang); o.updateMatrix(); im.setMatrixAt(k, o.matrix); }
+      }
+      im.count = k; this.scene.add(im);
+    };
+    const tyre = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, map: canvasTex(64, 64, (g) => { g.fillStyle = "rgba(30,28,26,.35)"; for (const x of [4, 50]) { for (let y = 0; y < 64; y += 8) g.fillRect(x, y, 10, 5); } }) });
+    tracks([[-14, -846], [-30, -870], [-42, -900], [-20, -960], [30, -975], [20, -900], [-14, -846]], 1.8, 0.8, 600, tyre);
+    tracks([[12, -1268], [35, -1292], [40, -1305], [-30, -1240], [-50, -1225], [12, -1268]], 1.8, 0.8, 600, tyre);
+    tracks([[30, -398], [10, -414], [-6, -428]], 0.4, 0.55, 120, bootM); // Conrad & Bean's walk to Surveyor
+  }
+
   private buildPrints() {
     this.prints = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.17, 0.34), new THREE.MeshBasicMaterial({ map: bootTex(), transparent: true, depthWrite: false }), 500);
     this.prints.count = 0; this.scene.add(this.prints);
@@ -451,7 +626,7 @@ export class MoonWorldScene implements Scene {
       const s = labelSprite(site.en, site.info);
       const big = site.r > 15;
       if (big) s.scale.set(16, 4, 1);
-      s.position.set(site.x, this.groundHeight(site.x, site.z) + (big ? 14 : site.id === "lm" ? 6 : 2.6), site.z);
+      s.position.set(site.x, this.groundHeight(site.x, site.z) + (big ? 14 : site.r === 9 ? 6 : 2.6), site.z);
       this.scene.add(s); this.labels.push({ s, site });
     }
   }
@@ -475,7 +650,7 @@ export class MoonWorldScene implements Scene {
   private buildHud() {
     const hud = document.createElement("div");
     hud.style.cssText = "position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:40;pointer-events:none;text-align:center;font-family:system-ui,sans-serif;color:#dfe7f5;text-shadow:0 1px 4px #000";
-    hud.innerHTML = `<div style="font-size:10px;letter-spacing:.4em;opacity:.6">MARE TRANQUILLITATIS · 0.674°N 23.473°E</div><div data-site style="font-size:15px;letter-spacing:.18em;color:#ffd97d;margin-top:4px">TRANQUILITY BASE · APOLLO 11</div>`;
+    hud.innerHTML = `<div data-coord style="font-size:10px;letter-spacing:.4em;opacity:.6">MARE TRANQUILLITATIS · 0.674°N 23.473°E</div><div data-site style="font-size:15px;letter-spacing:.18em;color:#ffd97d;margin-top:4px">TRANQUILITY BASE · APOLLO 11</div>`;
     document.body.appendChild(hud); this.hud = hud;
     const back = document.createElement("button");
     back.textContent = "🏛️ HUB";
@@ -493,18 +668,17 @@ export class MoonWorldScene implements Scene {
   }
 
   private bakeMinimap(craters: { x: number; z: number; R: number }[]) {
-    const N = 420; const c = document.createElement("canvas"); c.width = c.height = N; const g = c.getContext("2d")!;
-    const img = g.createImageData(N, N);
-    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-      const wx = x - WORLD / 2, wz = y - WORLD / 2;
-      const i = Math.min(SEG, Math.round(((wz + WORLD / 2) / WORLD) * SEG)) * (SEG + 1) + Math.min(SEG, Math.round(((wx + WORLD / 2) / WORLD) * SEG));
-      const ix = Math.min(SEG, Math.round(((wx + 1 + WORLD / 2) / WORLD) * SEG)) + Math.min(SEG, Math.round(((wz + WORLD / 2) / WORLD) * SEG)) * (SEG + 1);
-      const sl = (this.heights[ix]! - this.heights[i]!) * 40;
-      const v = THREE.MathUtils.clamp(95 + this.heights[i]! * 4 + sl, 20, 230);
-      const p = (y * N + x) * 4; img.data[p] = v; img.data[p + 1] = v; img.data[p + 2] = v * 1.05; img.data[p + 3] = 255;
+    const W = WORLD / 2, H = LEN / 2; const c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d")!;
+    const img = g.createImageData(W, H);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const wx = x * 2 - WORLD / 2, wz = ZMIN + y * 2;
+      const h0 = this.groundHeight(wx, wz), sl = (this.groundHeight(wx + 2, wz) - h0) * 22;
+      const v = THREE.MathUtils.clamp(95 + h0 * 2.2 + sl, 20, 235);
+      const orange = Math.hypot(wx - 45, wz + 1300) < 13;
+      const p = (y * W + x) * 4; img.data[p] = orange ? v * 1.35 : v; img.data[p + 1] = v; img.data[p + 2] = orange ? v * 0.7 : v * 1.05; img.data[p + 3] = 255;
     }
     g.putImageData(img, 0, 0);
-    g.strokeStyle = "rgba(255,255,255,.15)"; for (const k of craters) if (k.R > 8) { g.beginPath(); g.arc(k.x + N / 2, k.z + N / 2, k.R, 0, 7); g.stroke(); }
+    g.strokeStyle = "rgba(255,255,255,.15)"; for (const k of craters) if (k.R > 8) { g.beginPath(); g.arc((k.x + WORLD / 2) / 2, (k.z - ZMIN) / 2, k.R / 2, 0, 7); g.stroke(); }
     this.miniBg = c;
   }
 
@@ -519,18 +693,20 @@ export class MoonWorldScene implements Scene {
     }
     const c = this.big; c.style.display = "block";
     const W = (c.width = innerWidth), H = (c.height = innerHeight), g = c.getContext("2d")!;
-    const R = 180; // metres shown around base
+    const R = 200; // metres shown around the current landing site
+    const zc = ZONE_Z[this.zone]!;
     const sc = Math.min(W, H) * 0.86 / (2 * R), cx = W / 2, cy = H / 2 + 10;
-    const toX = (x: number) => cx + x * sc, toY = (z: number) => cy + z * sc;
+    const toX = (x: number) => cx + x * sc, toY = (z: number) => cy + (z - zc) * sc;
     g.save(); g.beginPath(); g.rect(cx - R * sc, cy - R * sc, 2 * R * sc, 2 * R * sc); g.clip();
-    g.drawImage(this.miniBg, toX(-WORLD / 2), toY(-WORLD / 2), WORLD * sc, WORLD * sc); g.restore();
+    g.drawImage(this.miniBg, toX(-WORLD / 2), toY(ZMIN), WORLD * sc, LEN * sc); g.restore();
     g.strokeStyle = "rgba(200,220,255,.6)"; g.lineWidth = 2; g.strokeRect(cx - R * sc, cy - R * sc, 2 * R * sc, 2 * R * sc);
     g.strokeStyle = "rgba(255,217,125,.8)"; g.setLineDash([5, 5]); g.beginPath();
     [[0, 3], [-9, 6], [-22, 16], [-5, 13], [6, 26], [-4, 30], [0, 3]].forEach(([x, z], i) => (i ? g.lineTo(toX(x!), toY(z!)) : g.moveTo(toX(x!), toY(z!)))); g.stroke(); g.setLineDash([]);
     g.textAlign = "center";
     MOON_SITES.forEach((s, i) => {
+      if (Math.abs(s.z - zc) > R + 20) return;
       const x = toX(s.x), y = toY(s.z);
-      g.fillStyle = s.id === "lm" ? "#ffd97d" : "#9fd0ff"; g.strokeStyle = "#000"; g.lineWidth = 2;
+      g.fillStyle = s.r === 9 ? "#ffd97d" : "#9fd0ff"; g.strokeStyle = "#000"; g.lineWidth = 2;
       g.beginPath(); g.arc(x, y, s.id === "lm" ? 7 : 5, 0, 7); g.fill(); g.stroke();
       const near = s.r < 10; const off = near ? (i % 2 ? 16 : -10) : -12;
       g.font = `bold ${near ? 11 : 13}px system-ui`; g.fillStyle = "#fff";
@@ -539,7 +715,8 @@ export class MoonWorldScene implements Scene {
     const p = this.player.position;
     g.fillStyle = "#4fd1ff"; g.beginPath(); g.arc(toX(p.x), toY(p.z), 7, 0, 7); g.fill(); g.stroke();
     g.fillStyle = "#fff"; g.font = "bold 12px system-ui"; g.fillText("YOU", toX(p.x), toY(p.z) - 12);
-    g.fillStyle = "#ffd97d"; g.font = "bold 18px system-ui"; g.fillText("TRANQUILITY BASE · APOLLO 11", W / 2, 34);
+    g.fillStyle = "#ffd97d"; g.font = "bold 18px system-ui"; g.fillText(MOON_ZONES[this.zone]!.en, W / 2, 34);
+    g.fillStyle = "#cfe0ff"; g.font = "12px system-ui"; g.fillText(`Site ${this.zone + 1} of 4 · walk south (down) through the pass to reach the next site`, W / 2, 54);
     g.fillStyle = "#cfe0ff"; g.font = "12px system-ui"; g.fillText("Tap anywhere to close · মানচিত্র বন্ধ করতে চাপো", W / 2, H - 16);
   }
 
@@ -549,7 +726,7 @@ export class MoonWorldScene implements Scene {
     const p = this.player.position;
     g.save(); g.clearRect(0, 0, S, S); g.beginPath(); g.arc(S / 2, S / 2, S / 2, 0, 7); g.clip();
     g.translate(S / 2, S / 2); g.rotate(this.camYaw); g.scale(scale, scale); g.translate(-p.x, -p.z);
-    g.drawImage(this.miniBg, -WORLD / 2, -WORLD / 2);
+    g.drawImage(this.miniBg, -WORLD / 2, ZMIN, WORLD, LEN);
     // EVA traverse line
     g.strokeStyle = "rgba(255,217,125,.7)"; g.lineWidth = 0.6; g.setLineDash([2, 2]); g.beginPath();
     [[0, 3], [-9, 6], [-22, 16], [-5, 13], [6, 26], [-4, 30], [0, 3]].forEach(([x, z], i) => (i ? g.lineTo(x!, z!) : g.moveTo(x!, z!))); g.stroke(); g.setLineDash([]);
@@ -558,9 +735,10 @@ export class MoonWorldScene implements Scene {
     const toScreen = (x: number, z: number) => { const dx = (x - p.x) * scale, dz = (z - p.z) * scale; const c = Math.cos(this.camYaw), s = Math.sin(this.camYaw); return [S / 2 + dx * c - dz * s, S / 2 + dx * s + dz * c] as const; };
     g.font = "bold 10px system-ui"; g.textAlign = "center";
     for (const site of MOON_SITES) {
+      if ((site.zone ?? 0) !== this.zone) continue;
       let [x, y] = toScreen(site.x, site.z); const d = Math.hypot(x - S / 2, y - S / 2); const edge = d > S / 2 - 12;
       if (edge) { x = S / 2 + ((x - S / 2) / d) * (S / 2 - 12); y = S / 2 + ((y - S / 2) / d) * (S / 2 - 12); }
-      g.fillStyle = site.id === "lm" ? "#ffd97d" : "#9fd0ff"; g.beginPath(); g.arc(x, y, site.id === "lm" ? 5 : 3.5, 0, 7); g.fill();
+      g.fillStyle = site.r === 9 ? "#ffd97d" : "#9fd0ff"; g.beginPath(); g.arc(x, y, site.r === 9 ? 5 : 3.5, 0, 7); g.fill();
       const near = Math.hypot(site.x - p.x, site.z - p.z) < 18 || site.r > 15;
       if (!edge && near) { g.fillStyle = "rgba(0,0,0,.6)"; const w = g.measureText(site.en.split(" ·")[0]!).width; g.fillRect(x - w / 2 - 2, y - 17, w + 4, 12); g.fillStyle = "#fff"; g.fillText(site.en.split(" ·")[0]!.split(" (")[0]!, x, y - 8); }
     }
@@ -607,9 +785,10 @@ export class MoonWorldScene implements Scene {
       this.player.rotation.y = Math.atan2(this.vel.x, this.vel.z);
     } else if (this.grounded) this.vel.multiplyScalar(Math.exp(-6 * dt));
     p.addScaledVector(this.vel, dt);
-    const lim = WORLD / 2 - 40; p.x = THREE.MathUtils.clamp(p.x, -lim, lim); p.z = THREE.MathUtils.clamp(p.z, -lim, lim);
-    // keep out of the lander body
-    const r = Math.hypot(p.x, p.z); if (r < 2.4) { p.x *= 2.4 / r; p.z *= 2.4 / r; }
+    const lim = WORLD / 2 - 40; p.x = THREE.MathUtils.clamp(p.x, -lim, lim); p.z = THREE.MathUtils.clamp(p.z, ZMIN + 60, ZMAX - 40);
+    // keep out of the lander bodies
+    for (const [lx, lz] of LM_SPOTS) { const dx = p.x - lx, dz = p.z - lz, r = Math.hypot(dx, dz); if (r < 2.4 && r > 0) { p.x = lx + dx * 2.4 / r; p.z = lz + dz * 2.4 / r; } }
+    const zn = zoneOf(p.z); if (zn !== this.zone) this.enterZone(zn);
     // low-gravity vertical motion + bunny hop while walking
     const gy = this.groundHeight(p.x, p.z);
     const moving = this.vel.length() > 0.5;
@@ -639,7 +818,7 @@ export class MoonWorldScene implements Scene {
       (s.material as THREE.SpriteMaterial).opacity = THREE.MathUtils.clamp(1.3 - d / (site.r > 15 ? 260 : 60), 0, 1);
       if (d < site.r + 4 && d - site.r < bestD) { bestD = d - site.r; best = `${site.en} — ${site.bn}`; }
     }
-    if (best !== this.nearSite) { this.nearSite = best; (this.hud.querySelector("[data-site]") as HTMLElement).textContent = best || "TRANQUILITY BASE · APOLLO 11"; }
+    if (best !== this.nearSite) { this.nearSite = best; (this.hud.querySelector("[data-site]") as HTMLElement).textContent = best || MOON_ZONES[this.zone]!.en; }
 
     // camera
     const target = p.clone().add(new THREE.Vector3(0, 1.4, 0));
