@@ -609,6 +609,9 @@ function HubUI() {
   const flags = useGame((s) => s.flags);
   const hasSeenHubIntro = useGame((s) => s.hasSeenHubIntro);
   const [panel, setPanel] = useState<HubPanel>(null);
+  useEffect(() => {
+    if (panel && !store.get().hasSeenHubIntro) store.set({ hasSeenHubIntro: true, tutorialDone: true });
+  }, [panel]);
   const [toast, setToast] = useState<string | null>(null);
   const [entered, setEntered] = useState(false);
 
@@ -838,8 +841,8 @@ function HubUI() {
 
       {/* chapters panel with waving flags */}
       {panel === "chapters" && (
-        <div className="absolute inset-y-0 left-0 z-40 flex items-center pl-4 sm:pl-10 pointer-events-none">
-          <div className="pointer-events-auto hub-console-panel w-[min(420px,92vw)] p-6 animate-[hubrise_0.45s_ease]">
+        <div className="absolute inset-0 z-40 flex items-center pl-4 sm:pl-10 bg-black/50 backdrop-blur-sm pointer-events-auto" onClick={() => setPanel(null)}>
+          <div onClick={(e) => e.stopPropagation()} className="pointer-events-auto hub-console-panel w-[min(420px,92vw)] p-6 animate-[hubrise_0.45s_ease]">
             <div className="flex items-center justify-between mb-1 pb-2 border-b border-white/10">
               <div className="text-[10px] tracking-[0.4em] text-[#ffd97d] font-mono">
                 🚩 {t(HUB.chapterTrail, lang)}
