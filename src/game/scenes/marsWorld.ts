@@ -309,6 +309,11 @@ export class MarsWorldScene implements Scene {
       meeting: this.meeting,
       yaw: this.camYaw.toFixed(2),
     });
+    (window as any).__marsProbe = (x: number, z: number) => {
+      const rc = new THREE.Raycaster(new THREE.Vector3(x, 500, z), new THREE.Vector3(0, -1, 0));
+      const hits = rc.intersectObjects(this.zoneWraps, true).map((h) => [+h.point.y.toFixed(1), h.object.name]);
+      return { ground: +this.groundHeight(x, z).toFixed(1), hits: hits.slice(0, 4) };
+    };
     (window as any).__marsTeleport = (x: number, z: number) => {
       this.player.position.set(x, this.groundHeight(x, z), z);
     };
