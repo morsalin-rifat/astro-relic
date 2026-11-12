@@ -28,6 +28,7 @@ function MarsIntroVideo() {
     return () => clearTimeout(id);
   }, [phase]);
   if (phase !== "cinematic") return null;
+  const isMoon = store.get().universe === "moon";
   const finish = () => {
     if (fading) return;
     setFading(true);
@@ -38,7 +39,7 @@ function MarsIntroVideo() {
   return (
     <div className="absolute inset-0 z-50 bg-black">
       <video
-        src="/videos/mars/mars_intro.mp4"
+        src={isMoon ? "/videos/moon/moon_intro.mp4" : "/videos/mars/mars_intro.mp4"}
         autoPlay
         playsInline
         onEnded={finish}
