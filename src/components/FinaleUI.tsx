@@ -96,7 +96,7 @@ export function FinaleUI() {
   const finish = (hub: boolean) => {
     store.set({ flags: Array.from(new Set([...store.get().flags, "finale"])) });
     setStep("idle");
-    if (hub) store.set({ phase: "solar" as never });
+    if (hub) store.set({ phase: "hub" });
   };
   const btn = "min-h-12 px-6 py-3 rounded-full font-bold tracking-wider transition hover:scale-105 active:scale-95";
 
