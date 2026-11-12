@@ -67,7 +67,7 @@ function crater(d: number, D: number) {
   // d = dist / R
   if (d > 2.2) return 0;
   const bowl = d < 1 ? -D * (1 - d * d) * 0.9 : 0;
-  const rim = D * 0.32 * Math.exp(-((d - 1) / 0.22) ** 2);
+  const rim = D * 0.32 * Math.exp(-(((d - 1) / 0.22) ** 2));
   const ejecta = d > 1 ? D * 0.08 * Math.exp(-(d - 1) * 2.2) : 0;
   return bowl + rim + ejecta;
 }
