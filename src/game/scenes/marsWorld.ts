@@ -11,6 +11,7 @@ import { NOVA_WELCOME_MARS, NOVA_NEAR_SITE, UI } from "../../data/content";
 const SITE = new THREE.Vector3(42, 0, -30);
 const SPIRIT = new THREE.Vector3(-20, 0, -340);
 const OPPY = new THREE.Vector3(12, 0, -690);
+const INSIGHT = new THREE.Vector3(-6, 0, -1040);
 const WORLD = 320;
 const ZONE = 350; // metres per real NASA site
 const ZONES = [
@@ -57,6 +58,12 @@ export class MarsWorldScene implements Scene {
   private oppyNear = false;
   private oppyLeave = false;
   private oppyLockSaid = false;
+  private insight = new THREE.Group();
+  private insightBeacon = new THREE.Group();
+  private insightMeeting = false;
+  private insightNear = false;
+  private insightLeave = false;
+  private insightLockSaid = false;
   private needLeave = false;
   private disposers: (() => void)[] = [];
   private metAtStart: boolean;
@@ -249,6 +256,36 @@ export class MarsWorldScene implements Scene {
       this.oppyBeacon.add(sl);
       this.oppyBeacon.position.copy(this.oppy.position);
       this.scene.add(this.oppyBeacon);
+    }
+    // InSight lander in Elysium Planitia (zone 4)
+    this.insight.position.set(INSIGHT.x, this.groundHeight(INSIGHT.x, INSIGHT.z), INSIGHT.z);
+    this.insight.rotation.y = 0.6;
+    this.scene.add(this.insight);
+    loader().load("/models/insight.glb", (gltf) => {
+      if (this.disposed) return;
+      const m = gltf.scene;
+      const box = new THREE.Box3().setFromObject(m);
+      const size = box.getSize(new THREE.Vector3());
+      const k = 5.5 / Math.max(size.x, size.z, 0.001);
+      m.scale.setScalar(k);
+      const c = box.getCenter(new THREE.Vector3());
+      m.position.set(-c.x * k, -box.min.y * k, -c.z * k);
+      m.traverse((o) => { if ((o as THREE.Mesh).isMesh) o.castShadow = true; });
+      this.insight.add(m);
+    });
+    {
+      const sb = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.6, 30, 12, 1, true),
+        new THREE.MeshBasicMaterial({ color: 0xb58cff, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }));
+      sb.position.y = 15;
+      this.insightBeacon.add(sb);
+      const sr = new THREE.Mesh(new THREE.RingGeometry(3.4, 3.9, 48),
+        new THREE.MeshBasicMaterial({ color: 0xb58cff, transparent: true, opacity: 0.7, side: THREE.DoubleSide }));
+      sr.rotation.x = -Math.PI / 2; sr.position.y = 0.15; sr.name = "beaconRing";
+      this.insightBeacon.add(sr);
+      const sl = new THREE.PointLight(0xb58cff, 12, 25); sl.position.y = 3;
+      this.insightBeacon.add(sl);
+      this.insightBeacon.position.copy(this.insight.position);
+      this.scene.add(this.insightBeacon);
     }
     this.buildLivingMars();
 
@@ -642,6 +679,7 @@ export class MarsWorldScene implements Scene {
     pin(this.rover.position.x, this.rover.position.z, "#ffd97d", "SOJOURNER");
     pin(this.spirit.position.x, this.spirit.position.z, "#ff8a5c", "SPIRIT");
     pin(this.oppy.position.x, this.oppy.position.z, "#6cc6ff", "OPPY");
+    pin(this.insight.position.x, this.insight.position.z, "#b58cff", "INSIGHT");
     const p = this.player.position;
     pin(p.x, p.z, "#4fd1ff", "YOU");
   }
@@ -665,11 +703,12 @@ export class MarsWorldScene implements Scene {
     // rover pin
     const sojDone = store.get().flags.includes("sojourner");
     const spDone = store.get().flags.includes("spirit");
-    const tgt = spDone ? this.oppy.position : sojDone ? this.spirit.position : this.rover.position;
+    const opDone = store.get().flags.includes("oppy");
+    const tgt = opDone ? this.insight.position : spDone ? this.oppy.position : sojDone ? this.spirit.position : this.rover.position;
     const rx = (tgt.x - p.x) * sc, rz = (tgt.z - p.z) * sc;
     const rd = Math.hypot(rx, rz), lim = R - 10;
     const k = rd > lim ? lim / rd : 1;
-    g.fillStyle = spDone ? "#6cc6ff" : sojDone ? "#ff8a5c" : "#ffd97d"; g.strokeStyle = "#000"; g.lineWidth = 2;
+    g.fillStyle = opDone ? "#b58cff" : spDone ? "#6cc6ff" : sojDone ? "#ff8a5c" : "#ffd97d"; g.strokeStyle = "#000"; g.lineWidth = 2;
     g.beginPath(); g.arc(rx * k, rz * k, 7, 0, Math.PI * 2); g.fill(); g.stroke();
     g.restore();
     // player arrow (camera-forward = up)
@@ -679,7 +718,7 @@ export class MarsWorldScene implements Scene {
     g.restore();
     g.fillStyle = "rgba(0,0,0,.55)"; g.fillRect(0, W - 30, W, 30);
     g.fillStyle = "#ffe2b8"; g.font = "bold 15px sans-serif"; g.textAlign = "center";
-    g.fillText(`${spDone ? "OPPY" : sojDone ? "SPIRIT" : "SOJOURNER"} · ${Math.round(p.distanceTo(tgt))}m`, R, W - 10);
+    g.fillText(`${opDone ? "INSIGHT" : spDone ? "OPPY" : sojDone ? "SPIRIT" : "SOJOURNER"} · ${Math.round(p.distanceTo(tgt))}m`, R, W - 10);
     // sector banner
     this.sectorTimer -= dt;
     const name = this.sectorAt(p.x, p.z);
@@ -699,7 +738,7 @@ export class MarsWorldScene implements Scene {
       this.rocks.setMatrixAt(i, dummy.matrix);
     });
     this.rocks.instanceMatrix.needsUpdate = true;
-    for (const o of [this.lander, this.rover, this.beacon, this.player, this.spirit, this.spiritBeacon, this.oppy, this.oppyBeacon]) {
+    for (const o of [this.lander, this.rover, this.beacon, this.player, this.spirit, this.spiritBeacon, this.oppy, this.oppyBeacon, this.insight, this.insightBeacon]) {
       o.position.y = this.groundHeight(o.position.x, o.position.z);
     }
   }
@@ -777,6 +816,7 @@ export class MarsWorldScene implements Scene {
         [SITE.x, SITE.z, 14],
         [SPIRIT.x, SPIRIT.z, 12],
         [OPPY.x, OPPY.z, 12],
+        [INSIGHT.x, INSIGHT.z, 14],
         [0, 0, 10],
       ] as const) {
         const dd = Math.hypot(x - fx, z - fz);
@@ -968,7 +1008,7 @@ export class MarsWorldScene implements Scene {
         (this.keys.has("KeyS") || this.keys.has("ArrowDown") ? 1 : 0) +
         this.joy.y,
     );
-    const moving = !this.meeting && !this.spiritMeeting && !this.oppyMeeting && input.lengthSq() > 0.001;
+    const moving = !this.meeting && !this.spiritMeeting && !this.oppyMeeting && !this.insightMeeting && input.lengthSq() > 0.001;
     if (moving) {
       input.normalize();
       const speed = 6.5;
@@ -1146,6 +1186,45 @@ export class MarsWorldScene implements Scene {
       }
       if (this.oppyMeeting) {
         const to = this.oppy.position.clone().sub(this.player.position);
+        this.camYaw = THREE.MathUtils.lerp(this.camYaw, Math.atan2(-to.x, -to.z) + Math.PI, dt * 1.5);
+      }
+    }
+
+    // InSight (zone 4) triggers — open only after Oppy's mission
+    {
+      const st = store.get();
+      const ready = st.flags.includes("oppy");
+      const dS = this.player.position.distanceTo(this.insight.position);
+      const sr = this.insightBeacon.getObjectByName("beaconRing") as THREE.Mesh | undefined;
+      if (sr) { const k = 1 + Math.sin(t * 2.4) * 0.25; sr.scale.set(k, k, 1); }
+      this.insightBeacon.visible = !st.flags.includes("insight");
+      if (this.insightMeeting && !st.showInsight) {
+        this.insightMeeting = false; this.insightLeave = true; this.camDist = Math.max(this.camDist, 9);
+      }
+      if (this.insightLeave && dS > 10) this.insightLeave = false;
+      if (!ready) {
+        if (dS < 16 && !this.insightLockSaid) {
+          this.insightLockSaid = true;
+          store.say([{ speaker: "nova", en: "InSight is resting here. First finish Oppy's mission in Meridiani Planum!", bn: "ইনসাইট এখানে বিশ্রাম নিচ্ছে। আগে মেরিডিয়ানি প্লেনামে ওপির মিশন শেষ করো!" }]);
+        }
+        if (dS > 32) this.insightLockSaid = false;
+      } else if (!this.insightMeeting && !this.oppyMeeting && !this.meeting && !this.spiritMeeting) {
+        if (!this.insightNear && dS < 30) {
+          this.insightNear = true;
+          voice.play("insight/01_insight_arrival");
+          store.say([{ speaker: "nova", en: "Explorer, we've arrived at Elysium Planitia! There's no mountain-climbing rover here. Instead, we're meeting a special friend who came to listen to the secrets beneath Mars. Meet InSight!", bn: "এক্সপ্লোরার, আমরা এসে গেছি এলিসিয়াম প্লেনিশিয়ায়! এখানে কোনো পাহাড়ে ওঠার রোভার নেই। এখানে অপেক্ষা করছে এমন এক বন্ধু, যে মঙ্গলের মাটির নিচের রহস্য শুনতে এসেছিল। তার নাম InSight!" }]);
+          store.set({ objective: { en: "Walk up to InSight", bn: "ইনসাইটের কাছে হেঁটে যাও" } });
+        }
+        if (!this.insightLeave && dS < 6.5) {
+          this.insightMeeting = true;
+          voice.stop();
+          store.clearDialogue();
+          store.set({ objective: null, hint: null, showInsight: true });
+          this.camDist = 7;
+        }
+      }
+      if (this.insightMeeting) {
+        const to = this.insight.position.clone().sub(this.player.position);
         this.camYaw = THREE.MathUtils.lerp(this.camYaw, Math.atan2(-to.x, -to.z) + Math.PI, dt * 1.5);
       }
     }
