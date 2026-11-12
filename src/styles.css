@@ -788,3 +788,13 @@ body {
 .rover-dust{position:absolute;left:4px;bottom:4px;width:12px;height:12px;border-radius:50%;background:rgba(210,140,90,.6);animation:dustpuff 1s ease-out infinite}
 @keyframes dustpuff{from{opacity:.8;transform:scale(.4)}to{opacity:0;transform:translate(-40px,-14px) scale(2.2)}}
 @keyframes badgepop{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
+
+/* Moon loading screen */
+@keyframes moonspin { from { background-position: 0% 0; } to { background-position: -200% 0; } }
+.moon-spin { animation: moonspin 18s linear infinite; }
+@keyframes earthrise { 0% { left: 4%; top: 70%; opacity: 0; } 20% { opacity: 1; } 100% { left: 70%; top: 2%; opacity: 1; } }
+.earth-rise { animation: earthrise 6s ease-out infinite alternate; }
+@keyframes astrohop { 0%,100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -26px); } }
+.astro-hop { animation: astrohop 1.8s ease-in-out infinite; }
+@keyframes moonbar { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+.moon-bar { animation: moonbar 1.6s ease-in-out infinite; }
