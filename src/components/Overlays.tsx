@@ -31,7 +31,9 @@ function MarsIntroVideo() {
   const finish = () => {
     if (fading) return;
     setFading(true);
-    setTimeout(() => store.emit("engine:goto", "explore"), 600);
+    const moon = store.get().universe === "moon";
+    if (moon) store.set({ moonZone: 0 });
+    setTimeout(() => store.emit("engine:goto", moon ? "moon" : "explore"), 600);
   };
   return (
     <div className="absolute inset-0 z-50 bg-black">
