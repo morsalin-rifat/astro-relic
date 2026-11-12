@@ -862,7 +862,7 @@ export class MoonWorldScene implements Scene {
     for (const { s, site } of this.labels) {
       const d = Math.hypot(site.x - p.x, site.z - p.z);
       (s.material as THREE.SpriteMaterial).opacity = THREE.MathUtils.clamp(1.3 - d / (site.r > 15 ? 260 : 60), 0, 1);
-      if (this.zone === 0 && A11_SPOTS.includes(site.id) && d < site.r + 2.5 && d - site.r < nearD) { nearD = d - site.r; nearId = site.id; }
+      if (this.zone === 0 && A11_SPOTS.includes(site.id) && d < (site.r === 9 ? 8 : site.r + 2.5) && d - Math.min(site.r, 3) < nearD) { nearD = d - Math.min(site.r, 3); nearId = site.id; }
       if (d < site.r + 4 && d - site.r < bestD) { bestD = d - site.r; best = `${site.en} — ${site.bn}`; }
     }
     if (nearId !== store.get().moonNear) store.set({ moonNear: nearId });
