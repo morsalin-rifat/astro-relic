@@ -49,6 +49,8 @@ export class MarsWorldScene implements Scene {
   private spiritLeave = false;
   private spiritLockSaid = false;
   private zoneWraps: THREE.Group[] = [];
+  private snapNext = false;
+  private fallV = 0;
   private oppy = new THREE.Group();
   private oppyBeacon = new THREE.Group();
   private oppyMeeting = false;
@@ -309,8 +311,14 @@ export class MarsWorldScene implements Scene {
       meeting: this.meeting,
       yaw: this.camYaw.toFixed(2),
     });
+    (window as any).__marsProbe = (x: number, z: number) => {
+      const rc = new THREE.Raycaster(new THREE.Vector3(x, 500, z), new THREE.Vector3(0, -1, 0));
+      const hits = rc.intersectObjects(this.zoneWraps, true).map((h) => [+h.point.y.toFixed(1), h.object.name]);
+      return { ground: +this.groundHeight(x, z).toFixed(1), hits: hits.slice(0, 4) };
+    };
     (window as any).__marsTeleport = (x: number, z: number) => {
       this.player.position.set(x, this.groundHeight(x, z), z);
+      this.snapNext = true;
     };
 
     this.disposers.push(
@@ -334,37 +342,52 @@ export class MarsWorldScene implements Scene {
     this.disposers.push(() => window.clearTimeout(this.welcomeT));
   }
 
-  /** 4 real NASA sites laid end-to-end along -Z, 350 m each, tall relief. */
+  /** 4 real NASA sites laid end-to-end along -Z, each cropped to the same ZONE x ZONE square
+   *  with the same relief; seams get offset-matched heights + a visible sand ramp. */
   private loadNasaMap() {
-    const NX = 256, NZ = 1024;
-    const minX = -ZONE / 2, minZ = -ZONE * (ZONES.length - 0.5);
-    const sx = ZONE / (NX - 1), sz = (ZONE * ZONES.length) / (NZ - 1);
+    const NX = 256, NZ = 1024, N = ZONES.length, B = 15; // B = seam half-width (m)
+    const minX = -ZONE / 2, minZ = -ZONE * (N - 0.5);
+    const sx = ZONE / (NX - 1), sz = (ZONE * N) / (NZ - 1);
     const data = new Float32Array(NX * NZ).fill(-1e9);
-    let left = ZONES.length;
+    const wraps: THREE.Group[] = new Array(N);
+    this.renderer.localClippingEnabled = true;
+    let left = N;
     const a = new THREE.Vector3(), b = new THREE.Vector3(), d = new THREE.Vector3();
+    const rowOf = (z: number) => Math.round((z - minZ) / sz);
     ZONES.forEach((zone, zi) => loader().load(zone.url, (gltf) => {
       if (this.disposed) return;
       const root = gltf.scene;
       root.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(root);
       const size = box.getSize(new THREE.Vector3());
-      const k = (ZONE + 6) / Math.max(size.x, size.z);
+      const k = ZONE / Math.max(Math.min(size.x, size.z), 0.001); // crop to centred square
       const kv = MAP_DEPTH / Math.max(size.y, 0.001);
       const c = box.getCenter(new THREE.Vector3());
       const wrap = new THREE.Group();
       wrap.add(root);
       root.position.set(-c.x, -c.y, -c.z);
       wrap.scale.set(k, kv, k);
-      wrap.position.z = -zi * ZONE;
+      const zc = -zi * ZONE;
+      wrap.position.z = zc;
       wrap.updateMatrixWorld(true);
+      const zTop = zc + ZONE / 2 - (zi > 0 ? B : 0), zBot = zc - ZONE / 2 + (zi < N - 1 ? B : 0);
+      const planes = [
+        new THREE.Plane(new THREE.Vector3(-1, 0, 0), ZONE / 2),
+        new THREE.Plane(new THREE.Vector3(1, 0, 0), ZONE / 2),
+        new THREE.Plane(new THREE.Vector3(0, 0, -1), zTop),
+        new THREE.Plane(new THREE.Vector3(0, 0, 1), -zBot),
+      ];
+      const r0 = Math.max(0, rowOf(zc - ZONE / 2)), r1 = Math.min(NZ - 1, rowOf(zc + ZONE / 2));
       wrap.traverse((o) => {
         const m = o as THREE.Mesh;
         if (!m.isMesh) return;
+        if (/comparison/i.test(m.name)) { m.visible = false; return; } // reference copy, not terrain
         m.receiveShadow = true;
         const mat = m.material as THREE.MeshStandardMaterial;
         mat.color = new THREE.Color(...(zone.grade as [number, number, number]));
         mat.roughness = 0.95;
         mat.metalness = 0;
+        mat.clippingPlanes = planes;
         if (mat.map) mat.map.anisotropy = 8;
         const g = m.geometry;
         const pos = g.attributes["position"] as THREE.BufferAttribute;
@@ -379,8 +402,9 @@ export class MarsWorldScene implements Scene {
           d.fromBufferAttribute(pos, i2).applyMatrix4(m.matrixWorld);
           const x0 = Math.max(0, Math.floor((Math.min(a.x, b.x, d.x) - minX) / sx));
           const x1 = Math.min(NX - 1, Math.ceil((Math.max(a.x, b.x, d.x) - minX) / sx));
-          const z0 = Math.max(0, Math.floor((Math.min(a.z, b.z, d.z) - minZ) / sz));
-          const z1 = Math.min(NZ - 1, Math.ceil((Math.max(a.z, b.z, d.z) - minZ) / sz));
+          const z0 = Math.max(r0, Math.floor((Math.min(a.z, b.z, d.z) - minZ) / sz));
+          const z1 = Math.min(r1, Math.ceil((Math.max(a.z, b.z, d.z) - minZ) / sz));
+          if (z0 > z1 || x0 > x1) continue;
           const den = (b.z - d.z) * (a.x - d.x) + (d.x - b.x) * (a.z - d.z);
           if (Math.abs(den) < 1e-9) continue;
           for (let gz = z0; gz <= z1; gz++) {
@@ -397,19 +421,77 @@ export class MarsWorldScene implements Scene {
           }
         }
       });
+      wraps[zi] = wrap;
       this.scene.add(wrap);
       this.zoneWraps.push(wrap);
       if (--left > 0) return;
-      // fill holes, then smooth seams between sites so walking is continuous
-      for (let i = 0; i < data.length; i++) if ((data[i] ?? 0) < -1e8) data[i] = 0;
-      for (let s = 1; s < ZONES.length; s++) {
-        const zc = Math.round((-s * ZONE + ZONE / 2 - minZ) / sz), w = 14;
-        for (let gx = 0; gx < NX; gx++) {
-          const lo = data[(zc - w) * NX + gx] ?? 0, hi = data[(zc + w) * NX + gx] ?? 0;
-          for (let o = -w; o <= w; o++) data[(zc + o) * NX + gx] = THREE.MathUtils.lerp(lo, hi, (o + w) / (2 * w));
+
+      // 1) fill holes from neighbours along each row (then whole-row fallback)
+      for (let gz = 0; gz < NZ; gz++) {
+        let last = NaN;
+        for (let gx = 0; gx < NX; gx++) { const v = data[gz * NX + gx]!; if (v > -1e8) last = v; else if (!isNaN(last)) data[gz * NX + gx] = last; }
+        last = NaN;
+        for (let gx = NX - 1; gx >= 0; gx--) { const v = data[gz * NX + gx]!; if (v > -1e8) last = v; else if (!isNaN(last)) data[gz * NX + gx] = last; }
+      }
+      for (let gz = 1; gz < NZ; gz++) if (data[gz * NX]! < -1e8) for (let gx = 0; gx < NX; gx++) data[gz * NX + gx] = data[(gz - 1) * NX + gx]!;
+      for (let gz = NZ - 2; gz >= 0; gz--) if (data[gz * NX]! < -1e8) for (let gx = 0; gx < NX; gx++) data[gz * NX + gx] = data[(gz + 1) * NX + gx]!;
+      for (let i = 0; i < data.length; i++) if (data[i]! < -1e8) data[i] = 0;
+
+      // 2) vertical offsets so neighbouring sites meet at the same mean height
+      const w = Math.round(B / sz);
+      const rowAvg = (r: number) => { let s = 0; for (let gx = 0; gx < NX; gx++) s += data[r * NX + gx]!; return s / NX; };
+      const off = new Array(N).fill(0);
+      for (let s = 1; s < N; s++) {
+        const zr = rowOf(-s * ZONE + ZONE / 2);
+        off[s] = off[s - 1] + rowAvg(zr + w) - rowAvg(zr - w); // zr+w is in zone s-1 (higher z)
+      }
+      for (let zi2 = 0; zi2 < N; zi2++) {
+        wraps[zi2]!.position.y = off[zi2];
+        const zc2 = -zi2 * ZONE;
+        const ra = Math.max(0, rowOf(zc2 - ZONE / 2)), rb = Math.min(NZ - 1, rowOf(zc2 + ZONE / 2));
+        for (let gz = ra; gz <= rb; gz++) {
+          const zr = minZ + gz * sz; if (Math.abs(zr - zc2) > ZONE / 2 + 1e-3) continue;
+          for (let gx = 0; gx < NX; gx++) data[gz * NX + gx] = data[gz * NX + gx]! + off[zi2];
         }
       }
+      // 3) smooth sand ramp across each seam (visible mesh == walkable height)
+      const sandA = new THREE.Color(0x8e5a3e), sandB = new THREE.Color(0xc08a66);
+      for (let s = 1; s < N; s++) {
+        const zr = rowOf(-s * ZONE + ZONE / 2);
+        for (let gx = 0; gx < NX; gx++) {
+          const lo = data[(zr - w) * NX + gx]!, hi = data[(zr + w) * NX + gx]!;
+          for (let o = -w + 1; o < w; o++) {
+            const t = (o + w) / (2 * w);
+            data[(zr + o) * NX + gx] = THREE.MathUtils.lerp(lo, hi, t * t * (3 - 2 * t));
+          }
+        }
+        const rows = 2 * w + 1, verts = new Float32Array(NX * rows * 3), cols = new Float32Array(NX * rows * 3);
+        const ga = new THREE.Color(...(ZONES[s]!.grade as [number, number, number]));
+        const gb = new THREE.Color(...(ZONES[s - 1]!.grade as [number, number, number]));
+        for (let r = 0; r < rows; r++) for (let gx = 0; gx < NX; gx++) {
+          const gz = zr - w + r, i = r * NX + gx;
+          const px = minX + gx * sx, pz = minZ + gz * sz;
+          verts[i * 3] = px; verts[i * 3 + 1] = data[gz * NX + gx]! + 0.05; verts[i * 3 + 2] = pz;
+          const col = sandA.clone().lerp(sandB, fbm(px * 0.15, pz * 0.15, 4)).multiply(ga.clone().lerp(gb, r / (rows - 1)).multiplyScalar(0.85));
+          cols[i * 3] = col.r; cols[i * 3 + 1] = col.g; cols[i * 3 + 2] = col.b;
+        }
+        const ind: number[] = [];
+        for (let r = 0; r < rows - 1; r++) for (let gx = 0; gx < NX - 1; gx++) {
+          const p0 = r * NX + gx, p1 = p0 + 1, p2 = p0 + NX, p3 = p2 + 1;
+          ind.push(p0, p2, p1, p1, p2, p3);
+        }
+        const sg = new THREE.BufferGeometry();
+        sg.setAttribute("position", new THREE.BufferAttribute(verts, 3));
+        sg.setAttribute("color", new THREE.BufferAttribute(cols, 3));
+        sg.setIndex(ind);
+        sg.computeVertexNormals();
+        if ((sg.attributes["normal"] as THREE.BufferAttribute).getY(0) < 0) { ind.reverse(); sg.setIndex(ind); sg.computeVertexNormals(); }
+        const strip = new THREE.Mesh(sg, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0 }));
+        strip.receiveShadow = true;
+        this.scene.add(strip);
+      }
       this.hf = { data, nx: NX, nz: NZ, minX, minZ, sx, sz };
+      this.buildMapEdges();
       this.scene.remove(this.terrain);
       this.terrain.geometry.dispose();
       this.resnap();
@@ -620,6 +702,59 @@ export class MarsWorldScene implements Scene {
     for (const o of [this.lander, this.rover, this.beacon, this.player, this.spirit, this.spiritBeacon, this.oppy, this.oppyBeacon]) {
       o.position.y = this.groundHeight(o.position.x, o.position.z);
     }
+  }
+
+  /** red bedrock under everything + rising dunes around the outer edge: no black void anywhere */
+  private buildMapEdges() {
+    const h = this.hf!;
+    const maxX = h.minX + h.sx * (h.nx - 1), maxZ = h.minZ + h.sz * (h.nz - 1);
+    let lo = Infinity;
+    for (let i = 0; i < h.data.length; i += 7) lo = Math.min(lo, h.data[i]!);
+    const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0 });
+    const W = 70, M = 10, step = 4;
+    const sandA = new THREE.Color(0x8a5236), sandB = new THREE.Color(0xb27a58);
+    const skirt = (x0: number, z0: number, x1: number, z1: number, ox: number, oz: number) => {
+      const len = Math.hypot(x1 - x0, z1 - z0), n = Math.ceil(len / step) + 1;
+      const verts: number[] = [], cols: number[] = [], ind: number[] = [];
+      for (let r = 0; r <= M; r++) {
+        const t = r / M;
+        for (let i = 0; i < n; i++) {
+          const u = i / (n - 1);
+          const ex = x0 + (x1 - x0) * u, ez = z0 + (z1 - z0) * u;
+          const base = this.sampleHf(THREE.MathUtils.clamp(ex, h.minX, maxX), THREE.MathUtils.clamp(ez, h.minZ, maxZ));
+          const px = ex + ox * t * W, pz = ez + oz * t * W;
+          const rise = t * t * (3 - 2 * t) * (16 + fbm(px * 0.03, pz * 0.03) * 10);
+          verts.push(px, base + rise - (r === 0 ? 0.3 : 0), pz);
+          const c = sandA.clone().lerp(sandB, fbm(px * 0.06 + 3, pz * 0.06));
+          cols.push(c.r, c.g, c.b);
+        }
+      }
+      for (let r = 0; r < M; r++) for (let i = 0; i < n - 1; i++) {
+        const p0 = r * n + i, p1 = p0 + 1, p2 = p0 + n, p3 = p2 + 1;
+        ind.push(p0, p2, p1, p1, p2, p3);
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute(verts, 3));
+      g.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3));
+      g.setIndex(ind);
+      g.computeVertexNormals();
+      const ny = (g.attributes["normal"] as THREE.BufferAttribute).getY(Math.floor(n / 2));
+      if (ny < 0) { ind.reverse(); g.setIndex(ind); g.computeVertexNormals(); }
+      const m = new THREE.Mesh(g, mat);
+      m.receiveShadow = true;
+      this.scene.add(m);
+    };
+    skirt(h.minX, maxZ + W, h.minX, h.minZ - W, -1, 0);
+    skirt(maxX, maxZ + W, maxX, h.minZ - W, 1, 0);
+    skirt(h.minX - W, maxZ, maxX + W, maxZ, 0, 1);
+    skirt(h.minX - W, h.minZ, maxX + W, h.minZ, 0, -1);
+    const bed = new THREE.Mesh(
+      new THREE.PlaneGeometry(maxX - h.minX + W * 4, maxZ - h.minZ + W * 4),
+      new THREE.MeshStandardMaterial({ color: 0x6a3018, roughness: 1, metalness: 0 }),
+    );
+    bed.rotation.x = -Math.PI / 2;
+    bed.position.set((h.minX + maxX) / 2, lo - 4, (h.minZ + maxZ) / 2);
+    this.scene.add(bed);
   }
 
   private sampleHf(x: number, z: number): number {
@@ -849,6 +984,7 @@ export class MarsWorldScene implements Scene {
     } else {
       this.velocity.lerp(new THREE.Vector3(), dt * 10);
     }
+    const prevX = this.player.position.x, prevZ = this.player.position.z, prevY = this.player.position.y;
     this.player.position.addScaledVector(this.velocity, dt);
     // world bounds
     const h = this.hf;
@@ -856,7 +992,16 @@ export class MarsWorldScene implements Scene {
     const bz0 = h ? h.minZ + 15 : -WORLD / 2 + 10, bz1 = h ? h.minZ + h.sz * (h.nz - 1) - 15 : WORLD / 2 - 10;
     this.player.position.x = THREE.MathUtils.clamp(this.player.position.x, bx0, bx1);
     this.player.position.z = THREE.MathUtils.clamp(this.player.position.z, bz0, bz1);
-    this.player.position.y = this.groundHeight(this.player.position.x, this.player.position.z);
+    // no teleporting up cliffs: block steps steeper than ~55°, fall smoothly down drops
+    let gy = this.groundHeight(this.player.position.x, this.player.position.z);
+    const run = Math.hypot(this.player.position.x - prevX, this.player.position.z - prevZ);
+    if (run > 1e-4 && gy - prevY > Math.max(0.35, run * 1.5) && !this.snapNext) {
+      this.player.position.x = prevX; this.player.position.z = prevZ;
+      this.velocity.multiplyScalar(0.2);
+      gy = this.groundHeight(prevX, prevZ);
+    }
+    this.fallV = gy < prevY - 0.05 && !this.snapNext ? this.fallV + 25 * dt : 0;
+    this.player.position.y = this.fallV > 0 ? Math.max(gy, prevY - this.fallV * dt) : gy;
 
     // walk animation
     const limbs = this.player.userData["limbs"];
@@ -1013,8 +1158,9 @@ export class MarsWorldScene implements Scene {
       Math.cos(this.camYaw) * Math.cos(this.camPitch),
     ).multiplyScalar(this.camDist);
     const camPos = target.clone().add(camOffset);
-    camPos.y = Math.max(camPos.y, this.groundHeight(camPos.x, camPos.z) + 0.6);
-    this.camera.position.lerp(camPos, dt * 5);
+    camPos.y = Math.max(camPos.y, this.groundHeight(camPos.x, camPos.z) + 1.5);
+    if (this.snapNext) { this.camera.position.copy(camPos); this.snapNext = false; }
+    else this.camera.position.lerp(camPos, dt * 5);
     this.camera.lookAt(target);
 
     // sun follows player for tight shadows
