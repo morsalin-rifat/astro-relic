@@ -1,14 +1,15 @@
 import * as THREE from "three";
 import { store } from "../../state/store";
+import { voice } from "../voice";
 import { audio } from "../audio";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import { makeStarfield, fbm, type Scene } from "../utils";
 import { buildExplorer, buildNova, buildSojourner } from "../models/builders";
-import { voice } from "../voice";
 import { NOVA_WELCOME_MARS, NOVA_NEAR_SITE, UI } from "../../data/content";
 
 const SITE = new THREE.Vector3(42, 0, -30);
+const SPIRIT = new THREE.Vector3(-20, 0, -340);
 const WORLD = 320;
 const ZONE = 350; // metres per real NASA site
 const ZONES = [
@@ -40,6 +41,12 @@ export class MarsWorldScene implements Scene {
   private velocity = new THREE.Vector3();
   private nearSiteSaid = false;
   private meeting = false;
+  private spirit = new THREE.Group();
+  private spiritBeacon = new THREE.Group();
+  private spiritMeeting = false;
+  private spiritNear = false;
+  private spiritLeave = false;
+  private spiritLockSaid = false;
   private needLeave = false;
   private disposers: (() => void)[] = [];
   private metAtStart: boolean;
@@ -171,6 +178,37 @@ export class MarsWorldScene implements Scene {
       this.rover.children.forEach((ch) => (ch.visible = false));
       this.rover.add(m);
     });
+
+    // Spirit rover in Gusev Crater (zone 2)
+    this.spirit.position.set(SPIRIT.x, this.groundHeight(SPIRIT.x, SPIRIT.z), SPIRIT.z);
+    this.spirit.rotation.y = 0.6;
+    this.scene.add(this.spirit);
+    loader().load("/models/spirit.glb", (gltf) => {
+      if (this.disposed) return;
+      const m = gltf.scene;
+      const box = new THREE.Box3().setFromObject(m);
+      const size = box.getSize(new THREE.Vector3());
+      const k = 1.9 / Math.max(size.x, size.z, 0.001);
+      m.scale.setScalar(k);
+      const c = box.getCenter(new THREE.Vector3());
+      m.position.set(-c.x * k, -box.min.y * k, -c.z * k);
+      m.traverse((o) => { if ((o as THREE.Mesh).isMesh) o.castShadow = true; });
+      this.spirit.add(m);
+    });
+    {
+      const sb = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.6, 30, 12, 1, true),
+        new THREE.MeshBasicMaterial({ color: 0xff8a5c, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }));
+      sb.position.y = 15;
+      this.spiritBeacon.add(sb);
+      const sr = new THREE.Mesh(new THREE.RingGeometry(1.6, 2, 40),
+        new THREE.MeshBasicMaterial({ color: 0xff8a5c, transparent: true, opacity: 0.7, side: THREE.DoubleSide }));
+      sr.rotation.x = -Math.PI / 2; sr.position.y = 0.15; sr.name = "beaconRing";
+      this.spiritBeacon.add(sr);
+      const sl = new THREE.PointLight(0xff8a5c, 12, 25); sl.position.y = 3;
+      this.spiritBeacon.add(sl);
+      this.spiritBeacon.position.copy(this.spirit.position);
+      this.scene.add(this.spiritBeacon);
+    }
 
     // beacon
     this.beacon = new THREE.Group();
@@ -479,6 +517,7 @@ export class MarsWorldScene implements Scene {
       g.fillText(label, toX(x), toY(z) - 12);
     };
     pin(this.rover.position.x, this.rover.position.z, "#ffd97d", "SOJOURNER");
+    pin(this.spirit.position.x, this.spirit.position.z, "#ff8a5c", "SPIRIT");
     const p = this.player.position;
     pin(p.x, p.z, "#4fd1ff", "YOU");
   }
@@ -500,10 +539,12 @@ export class MarsWorldScene implements Scene {
       g.drawImage(this.miniBg, (h.minX - p.x) * sc, (h.minZ - p.z) * sc, h.sx * (h.nx - 1) * sc, h.sz * (h.nz - 1) * sc);
     } else { g.fillStyle = "#5a2e18"; g.fillRect(-R * 2, -R * 2, W * 2, W * 2); }
     // rover pin
-    const rx = (this.rover.position.x - p.x) * sc, rz = (this.rover.position.z - p.z) * sc;
+    const sojDone = store.get().flags.includes("sojourner");
+    const tgt = sojDone ? this.spirit.position : this.rover.position;
+    const rx = (tgt.x - p.x) * sc, rz = (tgt.z - p.z) * sc;
     const rd = Math.hypot(rx, rz), lim = R - 10;
     const k = rd > lim ? lim / rd : 1;
-    g.fillStyle = "#ffd97d"; g.strokeStyle = "#000"; g.lineWidth = 2;
+    g.fillStyle = sojDone ? "#ff8a5c" : "#ffd97d"; g.strokeStyle = "#000"; g.lineWidth = 2;
     g.beginPath(); g.arc(rx * k, rz * k, 7, 0, Math.PI * 2); g.fill(); g.stroke();
     g.restore();
     // player arrow (camera-forward = up)
@@ -513,7 +554,7 @@ export class MarsWorldScene implements Scene {
     g.restore();
     g.fillStyle = "rgba(0,0,0,.55)"; g.fillRect(0, W - 30, W, 30);
     g.fillStyle = "#ffe2b8"; g.font = "bold 15px sans-serif"; g.textAlign = "center";
-    g.fillText(`SOJOURNER · ${Math.round(p.distanceTo(this.rover.position))}m`, R, W - 10);
+    g.fillText(`${sojDone ? "SPIRIT" : "SOJOURNER"} · ${Math.round(p.distanceTo(tgt))}m`, R, W - 10);
     // sector banner
     this.sectorTimer -= dt;
     const name = this.sectorAt(p.x, p.z);
@@ -533,7 +574,7 @@ export class MarsWorldScene implements Scene {
       this.rocks.setMatrixAt(i, dummy.matrix);
     });
     this.rocks.instanceMatrix.needsUpdate = true;
-    for (const o of [this.lander, this.rover, this.beacon, this.player]) {
+    for (const o of [this.lander, this.rover, this.beacon, this.player, this.spirit, this.spiritBeacon]) {
       o.position.y = this.groundHeight(o.position.x, o.position.z);
     }
   }
@@ -556,6 +597,7 @@ export class MarsWorldScene implements Scene {
       // flatten pads at landing site and start
       for (const [fx, fz, fr] of [
         [SITE.x, SITE.z, 14],
+        [SPIRIT.x, SPIRIT.z, 12],
         [0, 0, 10],
       ] as const) {
         const dd = Math.hypot(x - fx, z - fz);
@@ -584,6 +626,7 @@ export class MarsWorldScene implements Scene {
     // flatten near site and start
     for (const [fx, fz, fr] of [
       [SITE.x, SITE.z, 14],
+      [SPIRIT.x, SPIRIT.z, 12],
       [0, 0, 10],
     ] as const) {
       const d = Math.hypot(x - fx, z - fz);
@@ -691,7 +734,7 @@ export class MarsWorldScene implements Scene {
         (this.keys.has("KeyS") || this.keys.has("ArrowDown") ? 1 : 0) +
         this.joy.y,
     );
-    const moving = !this.meeting && input.lengthSq() > 0.001;
+    const moving = !this.meeting && !this.spiritMeeting && input.lengthSq() > 0.001;
     if (moving) {
       input.normalize();
       const speed = 6.5;
@@ -783,6 +826,45 @@ export class MarsWorldScene implements Scene {
         Math.atan2(-toRover.x, -toRover.z) + Math.PI,
         dt * 1.5,
       );
+    }
+
+    // Spirit (zone 2) triggers — open only after Sojourner's mission
+    {
+      const st = store.get();
+      const sojDone = st.flags.includes("sojourner");
+      const dS = this.player.position.distanceTo(this.spirit.position);
+      const sr = this.spiritBeacon.getObjectByName("beaconRing") as THREE.Mesh | undefined;
+      if (sr) { const k = 1 + Math.sin(t * 2.4) * 0.25; sr.scale.set(k, k, 1); }
+      this.spiritBeacon.visible = !st.flags.includes("spirit");
+      if (this.spiritMeeting && !st.showSpirit) {
+        this.spiritMeeting = false; this.spiritLeave = true; this.camDist = Math.max(this.camDist, 8);
+      }
+      if (this.spiritLeave && dS > 8) this.spiritLeave = false;
+      if (!sojDone) {
+        if (dS < 14 && !this.spiritLockSaid) {
+          this.spiritLockSaid = true;
+          store.say([{ speaker: "nova", en: "Spirit is resting here. First finish Sojourner's mission in Ares Vallis!", bn: "স্পিরিট এখানে বিশ্রাম নিচ্ছে। আগে অ্যারিস ভ্যালিসে সোজার্নারের মিশন শেষ করো!" }]);
+        }
+        if (dS > 30) this.spiritLockSaid = false;
+      } else if (!this.spiritMeeting && !this.meeting) {
+        if (!this.spiritNear && dS < 28) {
+          this.spiritNear = true;
+          voice.play("spirit/01_spirit_arrival");
+          store.say([{ speaker: "nova", en: "Awesome job, Explorer! We've reached Gusev Crater. Look ahead—there stands our brave fighter rover, Spirit!", bn: "সাবাশ এক্সপ্লোরার! আমরা গুসেভ ক্রেটারে এসে গেছি। ওই দেখো সামনে দাঁড়িয়ে আছে আমাদের লড়াকু রোভার স্পিরিট!" }]);
+          store.set({ objective: { en: "Walk up to Spirit", bn: "স্পিরিটের কাছে হেঁটে যাও" } });
+        }
+        if (!this.spiritLeave && dS < 4.6) {
+          this.spiritMeeting = true;
+          voice.stop();
+          store.clearDialogue();
+          store.set({ objective: null, hint: null, showSpirit: true });
+          this.camDist = 5;
+        }
+      }
+      if (this.spiritMeeting) {
+        const to = this.spirit.position.clone().sub(this.player.position);
+        this.camYaw = THREE.MathUtils.lerp(this.camYaw, Math.atan2(-to.x, -to.z) + Math.PI, dt * 1.5);
+      }
     }
 
     // third-person camera
