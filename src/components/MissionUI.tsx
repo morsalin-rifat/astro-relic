@@ -177,7 +177,7 @@ export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker
         <span className="nova-bubble-tail" aria-hidden />
         <div className={`nova-bubble-inner ${speaking ? "is-speaking" : ""}`} style={nova ? undefined : { borderColor: acc }}>
           <div className="flex items-center justify-between gap-2 mb-1.5">
-            <div className="nova-nameplate" style={nova ? undefined : { color: acc }}><span className="nova-dot" />{nova ? "NOVA" : speaker === "spirit" ? "SPIRIT · 2004" : speaker === "oppy" ? "OPPY · 2004" : "SOJOURNER · 1997"}</div>
+            <div className="nova-nameplate" style={nova ? undefined : speaker === "oppy" ? { color: "#04121c", background: acc } : { color: acc }}><span className="nova-dot" />{nova ? "NOVA" : speaker === "spirit" ? "SPIRIT · 2004" : speaker === "oppy" ? "OPPY · 2004" : "SOJOURNER · 1997"}</div>
             {speaking && <div className="nova-wave" aria-hidden><i /><i /><i /><i /></div>}
           </div>
           <p className="nova-text min-h-[3.2rem]">{text.slice(0, n)}{!done && <span className="nova-caret" />}</p>
