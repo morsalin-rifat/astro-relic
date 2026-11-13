@@ -8,7 +8,10 @@ import LINES from "../data/apollo12Lines.json";
 
 /** Apollo 12 + Surveyor 3 mission (moon zone 1). Same flow as Apollo11UI. Clips: public/audio/apollo12/<clip>_<en|bn>.mp3 */
 type L = { en: string; bn: string };
-type Who = "nova" | "eagle";
+type Who = "nova" | "intrepid";
+const IMG = (n: string) => `/images/apollo12/${n}.jpg`;
+const SPOT_IMG: Record<string, string> = { intrepid: "intrepid", surveyor: "surveyor", tvcam: "tvcam", scoop: "scoop", rtg: "rtg", alsep12: "alsep", head: "head" };
+const STORY_IMG = ["lightning", "pinpoint", "whoopee", "walk_to_robot", "camera_cut", "tvcam"];
 const LN = LINES as Record<string, L>;
 const ACC = "#9fd0ff";
 const V = (c: string) => `apollo12/${c}`;
@@ -70,7 +73,7 @@ export function Apollo12Mission() {
   const freeze = (f: boolean) => store.set({ moonFreeze: f });
   const objective = (o: L) => store.set({ objective: o });
   const reset = () => { setSeen([]); setSlide(0); setQi(0); setSpot(null); setCut(false); };
-  const meet = () => { museum.current = false; reset(); freeze(true); setStage("welcome"); sayC("welcome", "eagle"); };
+  const meet = () => { museum.current = false; reset(); freeze(true); setStage("welcome"); sayC("welcome", "intrepid"); };
 
   useEffect(() => store.on("a12:arrive", () => {
     reset(); setStage("go");
@@ -96,7 +99,7 @@ export function Apollo12Mission() {
     window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
   }, []);
 
-  const openSpot = (s: Spot) => { freeze(true); setSpot(s); setCut(false); setStage("spot"); audio.beep(1100); sayC(s.clip, s.id === "intrepid" ? "eagle" : "nova"); };
+  const openSpot = (s: Spot) => { freeze(true); setSpot(s); setCut(false); setStage("spot"); audio.beep(1100); sayC(s.clip, s.id === "intrepid" ? "intrepid" : "nova"); };
   const huntObjective = (n: number) => objective({ en: `🔍 Find the ${7 - n} golden stars around Surveyor Crater (${n}/7)`, bn: `🔍 সার্ভেয়ার ক্রেটারের চারপাশে ${7 - n}টি সোনালি তারা খোঁজো (${n}/7)` });
   const closeSpot = () => {
     if (!spot) return;
@@ -144,6 +147,12 @@ export function Apollo12Mission() {
     </div>
   );
   const head = (top: string, title: string) => (<><div className="text-[10px] tracking-[0.35em]" style={{ color: `${ACC}cc` }}>{top}</div><div className="text-xl sm:text-2xl font-bold tracking-wide mb-2">{title}</div></>);
+  const photo = (src: string, extra?: React.ReactNode) => (
+    <div className="relative rounded-2xl aspect-[4/3] border overflow-hidden bg-black" style={{ borderColor: `${ACC}55` }}>
+      <img key={src} src={src} alt="" className="w-full h-full object-cover animate-[hubrise_0.5s_ease]" />
+      <div className="absolute bottom-1 right-2 text-[9px] text-white/60">NASA</div>{extra}
+    </div>
+  );
   const art = (icon: string, extra?: React.ReactNode) => (
     <div className="relative rounded-2xl aspect-[4/3] border flex items-center justify-center bg-[radial-gradient(circle,rgba(159,208,255,.22),rgba(0,0,0,.6)_70%)] overflow-hidden" style={{ borderColor: `${ACC}55` }}>
       <div key={icon} className="text-8xl animate-float-gentle">{icon}</div>{extra}
@@ -159,6 +168,12 @@ export function Apollo12Mission() {
           {SPOTS.map((s) => <span key={s.id} title={t(s.name, lang)} className={`text-base sm:text-lg ${seen.includes(s.id) ? "" : "grayscale opacity-35"}`}>{seen.includes(s.id) ? s.icon : "⭐"}</span>)}
         </div>
       )}
+      {stage === "hunt" && (
+        <div className="absolute z-40 top-[160px] left-1/2 -translate-x-1/2 rounded-2xl bg-black/65 border px-4 py-2 text-xs sm:text-sm text-center text-white/90 pointer-events-none max-w-[92vw]" style={{ borderColor: `${ACC}66` }}>
+          {B("⭐ Walk to a golden star → 🗺️ stars glow ★ on your mini-map → press [E] to explore!", "⭐ সোনালি তারার কাছে হাঁটো → 🗺️ মিনি-ম্যাপে ★ দেখো → কাছে গিয়ে [E] চাপো!")}
+          <span className="ml-2 font-bold" style={{ color: ACC }}>{seen.length}/7</span>
+        </div>
+      )}
 
       {action && !["welcome", "story", "spot", "memory", "log", "pledge", "quiz", "badge"].includes(stage) && (
         <button onClick={action.run} className="absolute z-[57] left-1/2 -translate-x-1/2 bottom-28 md:bottom-16 flex items-center gap-2 rounded-full px-6 py-3.5 text-black font-bold text-sm sm:text-base shadow-[0_0_30px_rgba(159,208,255,.7)] animate-bounce pointer-events-auto" style={{ background: ACC }}>
@@ -169,7 +184,7 @@ export function Apollo12Mission() {
 
       {stage === "welcome" && card(<>
         {head("OCEAN OF STORMS · 1969", B("INTREPID meets SURVEYOR 3", "ইনট্রেপিড ও সার্ভেয়ার ৩"))}
-        {art("🚀", <div className="absolute bottom-3 right-4 text-5xl">🤖</div>)}
+        {photo(IMG("walk_to_robot"))}
         <div className="grid grid-cols-3 gap-2 text-center text-[10px] mt-3">
           {[["180 m", B("from the robot", "রোবট থেকে দূরে")], ["31", B("months alone", "মাস একা")], ["2", B("moonwalks", "বার হাঁটা")]].map(([a, b]) => (
             <div key={a} className="rounded-xl bg-white/5 border border-white/10 py-1.5"><div className="font-bold text-sm" style={{ color: ACC }}>{a}</div><div className="opacity-70">{b}</div></div>))}
@@ -179,7 +194,7 @@ export function Apollo12Mission() {
 
       {stage === "story" && card(<>
         {head(`${B("CHAPTER", "পর্ব")} ${slide + 1}/${STORY.length} · ${STORY[slide]!.year}`, `${STORY[slide]!.icon} ${t(STORY[slide]!.title, lang)}`)}
-        {art(STORY[slide]!.icon, slide === 0 ? <div className="absolute top-2 left-2 px-2 py-1 rounded-md bg-yellow-400 text-black text-xs font-mono font-bold animate-pulse">SCE → AUX</div> : null)}
+        {photo(IMG(STORY_IMG[slide]!), slide === 0 ? <div className="absolute top-2 left-2 px-2 py-1 rounded-md bg-yellow-400 text-black text-xs font-mono font-bold animate-pulse">SCE → AUX</div> : null)}
         <div className="mt-3 text-sm leading-relaxed opacity-90">{t(LN[STORY[slide]!.clip]!, lang)}</div>
         <div className="flex justify-center gap-1.5 mt-3">{STORY.map((_, k) => <span key={k} className="h-2 rounded-full transition-all" style={{ width: k === slide ? 22 : 8, background: k <= slide ? ACC : "rgba(255,255,255,.25)" }} />)}</div>
         <button className={`${btn} mt-3`} style={{ background: ACC }} onClick={nextSlide}>{slide + 1 >= STORY.length ? `🔍 ${B("LET'S EXPLORE!", "চলো ঘুরে দেখি!")}` : `${B("NEXT", "পরেরটা")} →`}</button>
@@ -188,10 +203,10 @@ export function Apollo12Mission() {
       {stage === "spot" && spot && card(<>
         {head(museum.current ? B("RELIC", "নিদর্শন") : `${B("TREASURE", "গুপ্তধন")} ${seen.length + 1}/7`, `${spot.icon} ${t(spot.name, lang)}`)}
         {spot.id === "tvcam"
-          ? art(cut ? "📦" : "📷", <div className="absolute inset-x-0 bottom-3 text-center">{cut
+          ? photo(IMG(cut ? "camera_cut" : "tvcam"), <div className="absolute inset-x-0 bottom-3 text-center">{cut
               ? <div className="mx-auto w-fit rounded-xl bg-black/70 px-3 py-1.5 font-mono text-xs text-green-300">✅ {B("Camera packed for Earth!", "ক্যামেরা পৃথিবীর জন্য ব্যাগে!")}</div>
               : <button onClick={() => { setCut(true); audio.beep(1600); }} className="px-5 py-2.5 rounded-full bg-yellow-400 text-black font-bold text-sm animate-bounce">✂️ {B("CUT THE CAMERA!", "ক্যামেরা কাটো!")}</button>}</div>)
-          : art(spot.icon)}
+          : photo(IMG(SPOT_IMG[spot.id]!))}
         <div className="mt-3 rounded-2xl px-3 py-2 text-sm font-bold text-center" style={{ background: `${ACC}22`, color: ACC }}>💡 {t(spot.fact, lang)}</div>
         <button disabled={spot.id === "tvcam" && !cut} className={`${btn} mt-3 disabled:opacity-30`} style={{ background: ACC }} onClick={closeSpot}>
           {spot.id === "tvcam" && !cut ? B("Cut the camera first! ✂️", "আগে ক্যামেরা কাটো! ✂️") : `✅ ${B("GOT IT!", "বুঝেছি!")}`}
@@ -200,7 +215,7 @@ export function Apollo12Mission() {
 
       {(stage === "memory" || stage === "log") && card(<>
         {head("SURVEYOR 3 · RELIC LOG", B("Waking up the robot's memory", "রোবটের স্মৃতি জাগানো"))}
-        {art("🤖", <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(159,208,255,.45),transparent_60%)] animate-pulse mix-blend-screen" />)}
+        {photo(IMG("surveyor"), <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(159,208,255,.45),transparent_60%)] animate-pulse mix-blend-screen" />)}
         {stage === "log"
           ? <div className="mt-3 rounded-xl bg-black/70 border border-[#7dffb0]/40 p-3 font-mono text-[12px] leading-relaxed text-[#9dffc4]"><TypeLog key={lang} text={t(LN["final_log"]!, lang)} onStart={() => sayC("final_log")} /></div>
           : <div className="mt-3 text-center text-xs tracking-[0.3em] animate-pulse" style={{ color: ACC }}>📻 ··· BEEP ··· KSHHH ··· 📻</div>}
