@@ -33,10 +33,11 @@ jobs:
 
       - name: Create Android app
         run: |
-          bun add @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
-          npx cap add android
+          set -x
+          ls dist/client | head
+          ./node_modules/.bin/cap add android
           sed -i 's/android:name=".MainActivity"/android:name=".MainActivity" android:screenOrientation="sensorLandscape"/' android/app/src/main/AndroidManifest.xml
-          npx cap sync android
+          ./node_modules/.bin/cap sync android
 
       - name: Build APK
         working-directory: android
