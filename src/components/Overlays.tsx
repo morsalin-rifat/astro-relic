@@ -868,7 +868,7 @@ function HubUI() {
             </div>
             <div className="mt-4 space-y-2.5">
               {chapters.map((c, i) => {
-                const done = ({ ch1: "sojourner", ch2: "spirit", ch3: "opportunity", ch8: "insight" } as Record<string, string>)[c.id] ? flags.includes(({ ch1: "sojourner", ch2: "spirit", ch3: "opportunity", ch8: "insight" } as Record<string, string>)[c.id]!) || (c.id === "ch1" && flags.includes("pathfinder")) : false;
+                const done = ({ ch1: "sojourner", ch2: "spirit", ch3: "oppy", ch8: "insight" } as Record<string, string>)[c.id] ? flags.includes(({ ch1: "sojourner", ch2: "spirit", ch3: "oppy", ch8: "insight" } as Record<string, string>)[c.id]!) || (c.id === "ch1" && flags.includes("pathfinder")) : false;
                 return (
                   <button
                     key={c.id}
