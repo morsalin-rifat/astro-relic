@@ -202,7 +202,7 @@ export function Apollo12Mission() {
         {head("SURVEYOR 3 · RELIC LOG", B("Waking up the robot's memory", "রোবটের স্মৃতি জাগানো"))}
         {art("🤖", <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(159,208,255,.45),transparent_60%)] animate-pulse mix-blend-screen" />)}
         {stage === "log"
-          ? <div className="mt-3 rounded-xl bg-black/70 border border-[#7dffb0]/40 p-3 font-mono text-[12px] leading-relaxed text-[#9dffc4]"><TypeLog key={lang} text={t(LN.final_log!, lang)} onStart={() => sayC("final_log")} /></div>
+          ? <div className="mt-3 rounded-xl bg-black/70 border border-[#7dffb0]/40 p-3 font-mono text-[12px] leading-relaxed text-[#9dffc4]"><TypeLog key={lang} text={t(LN["final_log"]!, lang)} onStart={() => sayC("final_log")} /></div>
           : <div className="mt-3 text-center text-xs tracking-[0.3em] animate-pulse" style={{ color: ACC }}>📻 ··· BEEP ··· KSHHH ··· 📻</div>}
         {stage === "log" && <button className={`${btn} mt-3`} style={{ background: ACC }} onClick={() => { setStage("pledge"); sayC("heritage"); }}>🛡️ {B("NEXT", "পরেরটা")} →</button>}
       </>)}
