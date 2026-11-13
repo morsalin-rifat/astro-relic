@@ -146,8 +146,15 @@ function PhotoGallery({ lang, onClose }: { lang: "en" | "bn"; onClose: () => voi
 
 
 /* ---------- Hub-style left holo bubble with typewriter ---------- */
+const bubblePos = { x: 0, y: 0 };
+let bubbleHidden = false;
 export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker: "nova" | "sojourner" | "spirit" | "oppy" | "insight" | "eagle"; text: string; speaking?: boolean; onClick?: () => void; hint?: string }) {
   const [n, setN] = useState(0);
+  const [pos, setPos] = useState({ ...bubblePos });
+  const [hidden, setHidden] = useState(false);
+  const drag = useRef<{ sx: number; sy: number; ox: number; oy: number; moved: boolean } | null>(null);
+  // a new line always brings the bubble back
+  useEffect(() => { bubbleHidden = false; setHidden(false); }, [text]);
   useEffect(() => {
     setN(0);
     if (speaking) {
@@ -165,9 +172,29 @@ export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker
   const done = n >= text.length;
   const nova = speaker === "nova";
   const acc = speaker === "spirit" ? "#ff8a5c" : speaker === "oppy" ? "#6cc6ff" : speaker === "insight" ? "#b58cff" : "#ffd97d";
+  const skip = (e: React.MouseEvent) => { e.stopPropagation(); setN(text.length); if (speaking) voice.skip(); };
+  const onDown = (e: React.PointerEvent) => { drag.current = { sx: e.clientX, sy: e.clientY, ox: pos.x, oy: pos.y, moved: false }; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); e.stopPropagation(); };
+  const onMove = (e: React.PointerEvent) => {
+    const d = drag.current; if (!d) return;
+    const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
+    if (Math.abs(dx) + Math.abs(dy) > 6) d.moved = true;
+    if (d.moved) { const np = { x: d.ox + dx, y: d.oy + dy }; bubblePos.x = np.x; bubblePos.y = np.y; setPos(np); }
+  };
+  const onUp = (e: React.PointerEvent) => { const d = drag.current; drag.current = null; e.stopPropagation(); if (d && !d.moved) { if (!done) setN(text.length); else onClick?.(); } };
+  if (hidden || bubbleHidden) {
+    return (
+      <button onClick={() => { bubbleHidden = false; setHidden(false); }} title="Show Nova"
+        className="fixed z-[56] left-3 bottom-24 md:bottom-auto md:top-[18%] w-14 h-14 rounded-full border-2 bg-black/60 flex items-center justify-center pointer-events-auto animate-float-gentle"
+        style={{ borderColor: acc, boxShadow: `0 0 ${speaking ? 22 : 10}px ${acc}` }}>
+        {nova ? <img src="/images/nova.png" alt="Nova" className="w-11 h-11 object-contain" draggable={false} /> : <span className="text-2xl">{speaker === "eagle" ? "🦅" : "🤖"}</span>}
+        {speaking && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full animate-ping" style={{ background: acc }} />}
+      </button>
+    );
+  }
   return (
-    <div className="fixed z-[56] left-2 right-2 bottom-2 md:right-auto md:bottom-auto md:top-[18%] md:left-6 flex items-end gap-2 sm:gap-3 pointer-events-auto select-none animate-[hubrise_0.45s_ease]"
-      onClick={() => { if (!done) setN(text.length); else onClick?.(); }}>
+    <div className="fixed z-[56] left-2 right-2 bottom-2 md:right-auto md:bottom-auto md:top-[18%] md:left-6 flex items-end gap-2 sm:gap-3 pointer-events-auto select-none animate-[hubrise_0.45s_ease] touch-none"
+      style={{ transform: `translate(${pos.x}px, ${pos.y}px)`, cursor: "grab" }}
+      onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}>
       <div className={`relative flex-shrink-0 ${speaking ? "animate-talking-glow" : "animate-float-gentle"}`}>
         {nova ? (
           <img src="/images/nova.png" alt="Nova" className="w-[72px] sm:w-[110px] md:w-[140px] h-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.65)]" draggable={false} />
@@ -180,7 +207,11 @@ export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker
         <div className={`nova-bubble-inner ${speaking ? "is-speaking" : ""}`} style={nova ? undefined : { borderColor: acc }}>
           <div className="flex items-center justify-between gap-2 mb-1.5">
             <div className="nova-nameplate" style={nova ? undefined : speaker === "oppy" || speaker === "insight" ? { color: "#04121c", background: acc } : { color: acc }}><span className="nova-dot" />{nova ? "NOVA" : speaker === "spirit" ? "SPIRIT · 2004" : speaker === "oppy" ? "OPPY · 2004" : speaker === "insight" ? "INSIGHT · 2018" : speaker === "eagle" ? "EAGLE · 1969" : "SOJOURNER · 1997"}</div>
-            {speaking && <div className="nova-wave" aria-hidden><i /><i /><i /><i /></div>}
+            <div className="flex items-center gap-1.5">
+              {speaking && <div className="nova-wave" aria-hidden><i /><i /><i /><i /></div>}
+              {(speaking || !done) && <button onPointerDown={(e) => e.stopPropagation()} onPointerUp={(e) => e.stopPropagation()} onClick={skip} title="Skip" className="text-[11px] font-bold px-2 py-0.5 rounded-full border border-white/30 bg-white/10 hover:bg-white/25">⏩</button>}
+              <button onPointerDown={(e) => e.stopPropagation()} onPointerUp={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); bubbleHidden = true; setHidden(true); }} title="Hide" className="text-[11px] font-bold w-6 h-6 rounded-full border border-white/30 bg-white/10 hover:bg-white/25">✕</button>
+            </div>
           </div>
           <p className="nova-text min-h-[3.2rem]">{text.slice(0, n)}{!done && <span className="nova-caret" />}</p>
           {hint && done && <div className="text-[10px] tracking-[0.25em] text-white/50 mt-1">{hint} ▸</div>}

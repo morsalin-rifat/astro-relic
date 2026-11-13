@@ -166,6 +166,8 @@ export function Apollo11Mission() {
     objective({ en: "🚶 Walk south through the glowing pass to Apollo 12 & Surveyor 3", bn: "🚶 আলো জ্বলা দক্ষিণের গিরিপথ দিয়ে অ্যাপোলো ১২ ও সার্ভেয়ার ৩-এ যাও" });
   };
 
+  useEffect(() => { store.emit("a11:stars", stage === "hunt" || stage === "spot" ? SPOT_IDS.filter((id) => !seen.includes(id)) : []); }, [stage, seen]);
+
   if (phase !== "moon" || stage === "idle") return null;
 
   const btn = "w-full py-3 rounded-full text-black font-bold tracking-widest text-sm active:scale-95 transition-transform";
