@@ -212,7 +212,7 @@ export class MarsWorldScene implements Scene {
   private big: HTMLCanvasElement | null = null;
   private sectorName = "";
   private sectorTimer = 0;
-  private discoveryStars: { id: string; sprite: THREE.Sprite; y: number }[] = [];
+  private discoveryStars: { id: string; sprite: THREE.Sprite; y: number; label: THREE.Sprite }[] = [];
 
   private welcomeT = 0;
   constructor(renderer: THREE.WebGLRenderer) {
@@ -713,7 +713,10 @@ export class MarsWorldScene implements Scene {
       const y = this.groundHeight(d.x, d.z) + 3.2;
       sprite.position.set(d.x, y, d.z);
       this.scene.add(sprite);
-      this.discoveryStars.push({ id: d.id, sprite, y });
+      const label = makeTextSprite(d.name[store.get().lang === "bn" ? "bn" : "en"], { size: 1.3, color: gold, font: '600 40px "Hind Siliguri", sans-serif' });
+      label.position.set(d.x, y + 2.2, d.z);
+      this.scene.add(label);
+      this.discoveryStars.push({ id: d.id, sprite, y, label });
     }
   }
 
@@ -722,6 +725,9 @@ export class MarsWorldScene implements Scene {
     this.discoveryStars.forEach((d,index) => {
       d.sprite.visible = !st.marsStars.includes(d.id);
       d.sprite.position.y = d.y + Math.sin(t * 2 + index) * 0.35;
+      const p = d.sprite.position, me = this.player.position;
+      d.label.visible = d.sprite.visible && Math.hypot(p.x - me.x, p.z - me.z) < 40;
+      d.label.position.y = d.sprite.position.y + 2.2;
     });
     const near = nearestStar(this.player.position.x, this.player.position.z, st.marsStars)?.id ?? null;
     if (near !== st.marsNear) store.set({ marsNear: near });
