@@ -78,12 +78,8 @@ async function makeSelfie(face: string, o: { zoom: number; dx: number; dy: numbe
   const W = 1024, H = 1280;
   const c = document.createElement("canvas"); c.width = W; c.height = H;
   const g = c.getContext("2d")!;
-  const [bg, me, cu] = await Promise.all([loadImg("/images/selfie/astronaut.jpg"), loadImg(face), o.custom ? loadImg(o.custom) : Promise.resolve(null)]);
+  const [bg, me, cu] = await Promise.all([loadImg(o.mars ? "/images/selfie/astronaut_mars.jpg" : "/images/selfie/astronaut.jpg"), loadImg(face), o.custom ? loadImg(o.custom) : Promise.resolve(null)]);
   cover(g, bg, 0, 0, W, H);
-  if (o.mars) { // red-planet tint: dusty butterscotch sky and rusty ground
-    g.save(); g.globalCompositeOperation = "multiply"; g.fillStyle = "#e8a070"; g.fillRect(0, 0, W, H);
-    g.globalCompositeOperation = "soft-light"; const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, "#d9925a"); sky.addColorStop(1, "#8a3a1a"); g.fillStyle = sky; g.fillRect(0, 0, W, H); g.restore();
-  }
   // face in visor
   const cx = 688, cy = 356, rx = 78, ry = 80;
   g.save(); g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, 7); g.clip();
