@@ -962,7 +962,7 @@ function HubUI() {
           onClick={() => setPanel(null)}
         >
           <div
-            className="hub-console-panel w-[min(520px,94vw)] p-7 animate-[hubrise_0.45s_ease]"
+            className="hub-console-panel w-[min(560px,94vw)] max-h-[90vh] overflow-y-auto p-6 animate-[hubrise_0.45s_ease]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
@@ -979,7 +979,7 @@ function HubUI() {
             <div className="font-display text-xl tracking-[0.15em] text-[#f3ede0]">
               {t(HUB.howToPlay, lang)}
             </div>
-            <div className="mt-5 space-y-4">
+            <div className="mt-4 space-y-2.5">
               {HOWTO.map((s) => (
                 <div
                   key={s.title.en}
@@ -990,7 +990,7 @@ function HubUI() {
                     <div className="text-sm tracking-[0.1em] text-[#ffd97d] font-display">
                       {t(s.title, lang)}
                     </div>
-                    <div className="text-[12px] text-white/70 leading-relaxed mt-1 font-sans">
+                    <div className="text-[13px] text-white/80 leading-relaxed mt-1 font-sans">
                       {t(s.body, lang)}
                     </div>
                   </div>
