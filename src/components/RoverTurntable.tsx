@@ -9,7 +9,7 @@ import { useGame } from "../state/store";
 export type Spot = { topic: string; icon: string; en: string; bn: string; at: [number, number, number] };
 
 /** Hotspots matched to each rover's voice-script part topics. */
-export const SPOTS: Record<string, Spot[]> = {
+export const SPOTS: Record<"sojourner" | "spirit" | "oppy" | "insight", Spot[]> = {
   sojourner: [
     { topic: "03_part_wheels", icon: "🛞", en: "Wheels", bn: "চাকা", at: [0.05, 0.12, 0.85] },
     { topic: "03_part_eyes", icon: "👀", en: "Stereo eyes", bn: "স্টেরিও চোখ", at: [0.5, 0.55, 0.98] },
@@ -40,7 +40,7 @@ export const SPOTS: Record<string, Spot[]> = {
 const DIST = 3.4, MIN_D = 1.7, MAX_D = 6;
 
 /** 360° viewer: drag to orbit (all sides + up/down), wheel/pinch to zoom, tap glowing pins to hear that part's story. */
-export function RoverTurntable({ model = "/models/sojourner.glb", accent = "#ffd97d", spots }: { model?: string; accent?: string; spots?: Spot[] }) {
+export function RoverTurntable({ model = "/models/sojourner.glb", accent = "#ffd97d", spots }: { model?: string; accent?: string; spots?: Spot[] | undefined }) {
   const lang = useGame((s) => s.lang);
   const [big, setBig] = useState(false);
   const [auto, setAuto] = useState(true);
