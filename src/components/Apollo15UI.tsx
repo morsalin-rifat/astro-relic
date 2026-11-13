@@ -77,7 +77,7 @@ export function Apollo15Mission() {
 
   useEffect(() => store.on("a15:arrive", () => {
     reset(); setStage("go");
-    objective({ en: "🦅 Walk to the lander Falcon (follow the arrow on your mini-map)", bn: "🦅 ল্যান্ডার ফ্যালকনের কাছে হেঁটে যাও" });
+    objective({ en: "🦅 Walk to the lander Falcon", bn: "🦅 ল্যান্ডার ফ্যালকনের কাছে হেঁটে যাও" });
     window.setTimeout(() => sayC("arrival"), 600);
   }), []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => store.on("a15:revisit", () => { setStage("done"); museum.current = true; }), []);
