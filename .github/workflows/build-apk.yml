@@ -32,18 +32,23 @@ jobs:
         run: bunx --bun vite build --config vite.apk.config.ts
 
       - name: Create Android app
+        env:
+          CI: "true"
+          CAPACITOR_TELEMETRY: "false"
         run: |
-          set -x
-          ls dist/client | head
-          ./node_modules/.bin/cap add android
+          set -o pipefail
+          run() { "$@" > step.log 2>&1 || { echo "::error title=Failed: $*::$(tail -c 3000 step.log | tr '\n' ' ')"; cat step.log; exit 1; }; cat step.log; }
+          test -f dist/client/index.html || { echo "::error::dist/client/index.html missing"; exit 1; }
+          run ./node_modules/.bin/cap telemetry off
+          run ./node_modules/.bin/cap add android
           sed -i 's/android:name=".MainActivity"/android:name=".MainActivity" android:screenOrientation="sensorLandscape"/' android/app/src/main/AndroidManifest.xml
-          ./node_modules/.bin/cap sync android
+          run ./node_modules/.bin/cap sync android
 
       - name: Build APK
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon > gradle.log 2>&1 || { echo "::error title=Gradle failed::$(grep -iE 'error|wrong|failed' gradle.log | tail -n 15 | tr '\n' ' ')"; tail -n 80 gradle.log; exit 1; }
           cp app/build/outputs/apk/debug/app-debug.apk ../AstroRelic.apk
 
       - uses: actions/upload-artifact@v4
