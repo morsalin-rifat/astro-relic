@@ -102,7 +102,7 @@ async function drawCert(name: string, selfie: string | null) {
   const imgs = await Promise.all(MOON_PATCHES.map((p) => loadImg(p.img)));
   MOON_PATCHES.forEach((p, i) => {
     const x = 380 + i * 280, y = 700;
-    if (ok(imgs[i])) g.drawImage(imgs[i], x - 95, y - 95, 190, 190);
+    const im = imgs[i]; if (im && ok(im)) g.drawImage(im, x - 95, y - 95, 190, 190);
     g.fillStyle = GOLD; g.font = "bold 24px sans-serif"; g.fillText(`${p.name} · ${p.year}`, x, y + 130);
     g.fillStyle = SILVER; g.font = "18px sans-serif"; g.fillText(p.badge, x, y + 158);
   });
@@ -242,7 +242,7 @@ export function MoonFinaleUI() {
         <div className="min-h-full flex items-center justify-center p-4">
           <div className="w-full max-w-3xl rounded-2xl border p-6 md:p-10 backdrop-blur-md" style={{ borderColor: SILVER, background: "rgba(8,12,28,.8)" }}>
             <div className="text-center tracking-[0.4em] text-sm mb-2" style={{ color: GOLD }}>LUNAR MISSION DEBRIEF</div>
-            <div className="text-center font-serif italic text-xl mb-6" style={{ color: SILVER }}>“{tt(QUOTES[q])}”</div>
+            <div className="text-center font-serif italic text-xl mb-6" style={{ color: SILVER }}>“{tt(QUOTES[q]!)}”</div>
             <div className="grid grid-cols-4 gap-3 mb-6">
               {MOON_PATCHES.map((p) => <img key={p.id} src={p.img} alt={`${p.name} patch`} className="w-full max-w-24 mx-auto drop-shadow-[0_0_12px_rgba(255,217,125,.5)]" />)}
             </div>
@@ -269,7 +269,7 @@ export function MoonFinaleUI() {
             {selfie && <img src={selfie} alt="Your moon selfie" className="w-24 h-24 rounded-full object-cover mx-auto border-4 mb-3" style={{ borderColor: GOLD }} />}
             <input value={name} onChange={(e) => setName(e.target.value.slice(0, 30))} placeholder={tt(TX.name)}
               className="w-full text-center text-2xl font-serif bg-transparent border-b-2 outline-none py-2 mb-2" style={{ borderColor: GOLD }} />
-            <div className="italic text-sm mb-4" style={{ color: SILVER }}>“{tt(QUOTES[0])}”</div>
+            <div className="italic text-sm mb-4" style={{ color: SILVER }}>“{tt(QUOTES[0]!)}”</div>
             <div className="flex justify-center gap-2 mb-6">{MOON_PATCHES.map((p) => <img key={p.id} src={p.img} alt={`${p.name} patch`} className="w-14 h-14 object-contain" />)}</div>
             <div className="flex flex-col gap-3">
               <button className={btn} style={{ background: GOLD, color: "#1a1205" }} onClick={() => drawCert(name, selfie)}>{tt(TX.dl)}</button>
