@@ -13,7 +13,7 @@ export const SPOTS: Record<"sojourner" | "spirit" | "oppy" | "insight", Spot[]> 
   sojourner: [
     { topic: "03_part_wheels", icon: "🛞", en: "Wheels", bn: "চাকা", at: [0.05, 0.12, 0.85] },
     { topic: "03_part_eyes", icon: "👀", en: "Stereo eyes", bn: "স্টেরিও চোখ", at: [0.5, 0.55, 0.98] },
-    { topic: "03_part_antenna", icon: "📡", en: "Antenna", bn: "অ্যান্টেনা", at: [0.7, 0.98, 0.4] },
+    { topic: "03_part_antenna", icon: "📡", en: "Antenna", bn: "অ্যান্টেনা", at: [0.9, 0.98, 0.3] },
     { topic: "03_part_solar", icon: "☀️", en: "Solar panel", bn: "সোলার প্যানেল", at: [0.5, 0.8, 0.5] },
     { topic: "03_part_nose_apxs", icon: "🔬", en: "APXS nose", bn: "APXS নাক", at: [0.5, 0.35, 0.02] },
   ],
@@ -47,6 +47,7 @@ export function RoverTurntable({ model = "/models/sojourner.glb", accent = "#ffd
   const [ready, setReady] = useState(false);
   const [hint, setHint] = useState(true);
   const host = useRef<HTMLDivElement>(null);
+  const hold = useRef(false);
   const pins = useRef<(HTMLButtonElement | null)[]>([]);
   const api = useRef({ auto: true, reset: () => {}, zoom: (_k: number) => {} });
   api.current.auto = auto;
@@ -148,7 +149,7 @@ export function RoverTurntable({ model = "/models/sojourner.glb", accent = "#ffd
     const loop = (now: number) => {
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
-      if (!pts.size && api.current.auto) { goal.yaw += vel * dt * 0.02 + 0.35 * dt; }
+      if (!pts.size && api.current.auto && !hold.current) { goal.yaw += vel * dt * 0.02 + 0.35 * dt; }
       vel *= Math.exp(-3 * dt);
       const e = 1 - Math.exp(-10 * dt);
       yaw += (goal.yaw - yaw) * e; pitch += (goal.pitch - pitch) * e; dist += (goal.dist - dist) * e;
@@ -204,7 +205,7 @@ export function RoverTurntable({ model = "/models/sojourner.glb", accent = "#ffd
     <div className={big ? "relative w-[min(92vw,92vh)] aspect-square" : "relative w-full aspect-square"}>
       <div ref={host} className="absolute inset-0 cursor-grab active:cursor-grabbing touch-none select-none" aria-label={B("3D rover model, drag to turn", "৩D রোভার, ঘোরাতে টানো")} />
       {ready && list.map((s, i) => (
-        <button key={s.topic} ref={(b) => { pins.current[i] = b; }} onClick={() => pick(s.topic)}
+        <button key={s.topic} ref={(b) => { pins.current[i] = b; }} onClick={() => pick(s.topic)} onPointerEnter={() => { hold.current = true; }} onPointerLeave={() => { hold.current = false; }}
           className="group absolute left-0 top-0 flex items-center gap-1 rounded-full border-2 bg-black/70 pl-1 pr-2 py-0.5 text-[10px] font-bold text-white shadow-[0_0_12px_rgba(0,0,0,.5)] transition-opacity"
           style={{ borderColor: accent, willChange: "transform" }} title={B(s.en, s.bn)}>
           <span className="relative grid h-5 w-5 place-items-center rounded-full text-xs" style={{ background: `${accent}44` }}>
@@ -239,7 +240,7 @@ export function RoverTurntable({ model = "/models/sojourner.glb", accent = "#ffd
     <>
       <div className="relative w-full aspect-square" />
       {createPortal(
-        <div className="fixed inset-0 z-[80] grid place-items-center bg-[radial-gradient(circle_at_50%_40%,rgba(255,150,90,.22),rgba(5,3,2,.94)_70%)] p-3" onClick={(e) => { if (e.target === e.currentTarget) setBig(false); }}>
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-[radial-gradient(circle_at_50%_40%,rgba(255,150,90,.22),rgba(5,3,2,.98)_70%)] backdrop-blur-md p-3" onClick={(e) => { if (e.target === e.currentTarget) setBig(false); }}>
           <div className="absolute top-4 left-1/2 -translate-x-1/2 text-center text-[11px] tracking-[0.3em] text-white/80">360° · {B("TAP A PIN TO HEAR ITS STORY", "পিনে চাপো, গল্প শোনো")}</div>
           {view}
         </div>,
