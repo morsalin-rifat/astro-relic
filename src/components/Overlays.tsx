@@ -958,11 +958,11 @@ function HubUI() {
       {/* how-to-play modal */}
       {panel === "howto" && (
         <div
-          className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-md pointer-events-auto p-4"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md pointer-events-auto p-4"
           onClick={() => setPanel(null)}
         >
           <div
-            className="hub-console-panel w-[min(560px,94vw)] max-h-[90vh] overflow-y-auto p-6 animate-[hubrise_0.45s_ease]"
+            className="hub-console-panel w-[min(560px,94vw)] max-h-[calc(100dvh-2rem)] overflow-y-auto p-4 sm:p-6 animate-[hubrise_0.45s_ease]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
