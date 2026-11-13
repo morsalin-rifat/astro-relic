@@ -518,9 +518,11 @@ function pressKey(code: string) {
 }
 function TouchActions() {
   const phase = useGame((s) => s.phase);
-  const near = useGame((s) => s.moonNear);
+  const moonNear = useGame((s) => s.moonNear);
+  const marsNear = useGame((s) => s.marsNear);
   const lang = useGame((s) => s.lang);
-  if (phase !== "moon") return null;
+  if (phase !== "moon" && phase !== "explore") return null;
+  const near = phase === "moon" ? moonNear : marsNear;
   const btn = "touch-btn rounded-full border border-[#ffd97d]/60 bg-black/45 text-[#ffd97d] font-semibold touch-none select-none active:scale-90 transition-transform flex items-center justify-center";
   return (
     <div className="touch-actions absolute z-30 flex items-end gap-3 [@media(pointer:fine)]:hidden">
