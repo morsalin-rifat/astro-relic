@@ -1042,7 +1042,7 @@ export function Overlays() {
       <div className={marsMapOpen ? "hidden" : "contents"}><NovaGuide /></div>
       <Caption />
       <MarsIntroVideo />
-      <Dialogue />
+      <div className={marsMapOpen ? "hidden" : "contents"}><Dialogue /></div>
       <JourneyChoice />
       <StoryOverlay />
       <InspectPanel />
