@@ -774,7 +774,7 @@ function HubUI() {
 
       {/* Right-Side Mission Command Console Menu */}
       <div
-        className={`absolute right-3 sm:right-8 top-1/2 -translate-y-1/2 z-30 transition-all duration-700 pointer-events-none ${
+        className={`hub-console-wrap absolute right-3 sm:right-8 top-1/2 -translate-y-1/2 z-30 transition-all duration-700 pointer-events-none ${
           entered ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"
         }`}
       >

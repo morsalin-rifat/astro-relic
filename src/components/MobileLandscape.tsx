@@ -64,10 +64,10 @@ export function MobileLandscape() {
     <div className="rotate-prompt fixed inset-0 z-[200] flex flex-col items-center justify-center gap-5 p-8 text-center pointer-events-auto"
       onPointerUp={() => void goLandscape()} role="dialog" aria-label="Rotate device">
       <div className="text-6xl animate-[rotatehint_2.2s_ease-in-out_infinite]">📱</div>
-      <p className="text-lg font-semibold text-expedition-ink">
+      <p className="text-lg font-semibold text-relic-gold">
         {lang === "bn" ? "সেরা অভিজ্ঞতার জন্য ফোনটি আড়াআড়ি ঘুরিয়ে নাও" : "Turn your phone sideways for the best adventure"}
       </p>
-      <p className="text-sm text-muted-foreground">{lang === "bn" ? "ঘোরালেই খেলা চালু হবে 🔄" : "The game continues as soon as you rotate 🔄"}</p>
+      <p className="text-sm text-expedition-ink">{lang === "bn" ? "ঘোরালেই খেলা চালু হবে 🔄" : "The game continues as soon as you rotate 🔄"}</p>
     </div>
   );
 }
