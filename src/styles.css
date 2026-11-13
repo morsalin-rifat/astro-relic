@@ -826,7 +826,7 @@ body {
   .game-ui { zoom: 0.72; }
   .hub-console-wrap { zoom: 0.78; top: 54%; }
   .hub-console-wrap .hub-console-panel { gap: 0.35rem; }
-  .badge-pill { top: auto !important; bottom: max(1rem, env(safe-area-inset-bottom)); left: max(1rem, env(safe-area-inset-left)); right: auto !important; }
+  .badge-pill { top: auto !important; bottom: max(1rem, env(safe-area-inset-bottom)); left: 50%; right: auto !important; transform: translateX(-50%); }
   .mars-actions:not(.mars-actions-on-map) { top: auto; bottom: max(14px, env(safe-area-inset-bottom)); right: max(14px, env(safe-area-inset-right)); width: auto; }
   .mars-actions:not(.mars-actions-on-map) > div:first-child { padding-bottom: 4px; }
   .mars-actions:not(.mars-actions-on-map) > div:last-child { grid-template-columns: repeat(4, minmax(0, 1fr)); }
