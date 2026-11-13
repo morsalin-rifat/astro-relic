@@ -480,6 +480,7 @@ export class MarsWorldScene implements Scene {
     this.buildMinimap();
     audio.play("mars");
     store.set({ hint: UI.moveHint });
+    if (import.meta.env.DEV) (window as any).__marsMeet = () => this.startMeeting(true);
     (window as any).__marsDebug = () => ({
       p: this.player.position.toArray().map((n: number) => n.toFixed(1)),
       distBeacon: this.player.position.distanceTo(this.beacon.position).toFixed(1),

@@ -3,7 +3,8 @@ import { createPortal } from "react-dom";
 import { store, useGame, t } from "../state/store";
 import { voice } from "../game/voice";
 import { audio } from "../game/audio";
-import { HoloBubble, RoverTurntable } from "./MissionUI";
+import { HoloBubble } from "./MissionUI";
+import { RoverTurntable, SPOTS } from "./RoverTurntable";
 
 type L = { en: string; bn: string };
 const ACC = "#ff8a5c";
@@ -118,7 +119,7 @@ export function SpiritEncounter() {
         <div className="relative mx-auto w-[min(260px,70vw)] mt-1">
           <div className="absolute inset-0 rounded-full border-2 border-dashed animate-[spin_30s_linear_infinite]" style={{ borderColor: `${ACC}55` }} />
           <div className="absolute inset-4 rounded-full bg-[radial-gradient(circle,rgba(255,130,90,.25),transparent_70%)]" />
-          <RoverTurntable model="/models/spirit.glb" accent={ACC} />
+          <RoverTurntable model="/models/spirit.glb" accent={ACC} spots={step === "explore" ? SPOTS.spirit : undefined} />
         </div>
         <div className="grid grid-cols-3 gap-2 text-center text-[10px] mt-1">
           {[["90 → 2208", lang === "bn" ? "সল কাজ" : "sols worked"], ["7.73 km", lang === "bn" ? "পথ চলা" : "driven"], ["6", lang === "bn" ? "চাকা" : "wheels"]].map(([a, b]) => (
@@ -138,7 +139,7 @@ export function SpiritEncounter() {
           <>
             <div className="grid grid-cols-2 gap-2 mt-3">
               {TOPICS.map((tp) => (
-                <button key={tp.id} onClick={() => { setActive(tp.id); setSeen((s) => (s.includes(tp.id) ? s : [...s, tp.id])); say(tp.id, tp.text, tp.id.startsWith("09") ? "nova" : "spirit"); setGallery(tp.id === "04_spirit_photo_gallery"); }}
+                <button key={tp.id} data-topic={tp.id} onClick={() => { setActive(tp.id); setSeen((s) => (s.includes(tp.id) ? s : [...s, tp.id])); say(tp.id, tp.text, tp.id.startsWith("09") ? "nova" : "spirit"); setGallery(tp.id === "04_spirit_photo_gallery"); }}
                   className="text-left text-xs rounded-2xl px-3 py-2 border transition-all"
                   style={active === tp.id ? { background: ACC, color: "#000", borderColor: ACC } : { background: "rgba(255,255,255,.05)", borderColor: "rgba(255,255,255,.15)" }}>
                   <span className="text-lg mr-1">{tp.icon}</span>{t(tp.label, lang)}{seen.includes(tp.id) && active !== tp.id ? " ✓" : ""}
