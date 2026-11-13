@@ -7,6 +7,9 @@ import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.j
 import { makeStarfield, fbm, type Scene } from "../utils";
 import { buildExplorer, buildNova, buildSojourner } from "../models/builders";
 import { NOVA_WELCOME_MARS, NOVA_NEAR_SITE, UI } from "../../data/content";
+import { MARS_DISCOVERIES } from "../../data/marsDiscoveries";
+import { nearestStar } from "../sim/marsStarRules";
+import { makeTextSprite } from "../utils";
 
 const SITE = new THREE.Vector3(42, 0, -30);
 const SPIRIT = new THREE.Vector3(-20, 0, -340);
@@ -209,6 +212,7 @@ export class MarsWorldScene implements Scene {
   private big: HTMLCanvasElement | null = null;
   private sectorName = "";
   private sectorTimer = 0;
+  private discoveryStars: { id: string; sprite: THREE.Sprite; y: number }[] = [];
 
   private welcomeT = 0;
   constructor(renderer: THREE.WebGLRenderer) {
@@ -471,6 +475,7 @@ export class MarsWorldScene implements Scene {
     this.scene.add(this.nova.group);
 
     this.loadNasaMap();
+    this.buildDiscoveryStars();
     this.loadHero();
     this.buildMinimap();
     audio.play("mars");
@@ -494,6 +499,7 @@ export class MarsWorldScene implements Scene {
     };
 
     this.disposers.push(
+      store.on("mars:camera-reset", () => { this.camYaw = 0; this.camPitch = 0.32; this.camDist = 7; this.snapNext = true; }),
       store.on("joystick", (d) => {
         const v = d as { x: number; y: number };
         this.joy = v;
@@ -699,6 +705,27 @@ export class MarsWorldScene implements Scene {
     this.mini = c;
   }
 
+  private buildDiscoveryStars() {
+    const gold = getComputedStyle(document.documentElement).getPropertyValue("--relic-gold").trim();
+    for (const d of MARS_DISCOVERIES) {
+      const sprite = makeTextSprite("★", { size: 2.8, color: gold });
+      const y = this.groundHeight(d.x, d.z) + 3.2;
+      sprite.position.set(d.x, y, d.z);
+      this.scene.add(sprite);
+      this.discoveryStars.push({ id: d.id, sprite, y });
+    }
+  }
+
+  private updateDiscoveryStars(t: number) {
+    const st = store.get();
+    this.discoveryStars.forEach((d,index) => {
+      d.sprite.visible = !st.marsStars.includes(d.id);
+      d.sprite.position.y = d.y + Math.sin(t * 2 + index) * 0.35;
+    });
+    const near = nearestStar(this.player.position.x, this.player.position.z, st.marsStars)?.id ?? null;
+    if (near !== st.marsNear) store.set({ marsNear: near });
+  }
+
   private bakeMinimap() {
     const h = this.hf; if (!h) return;
     let lo = Infinity, hi = -Infinity;
@@ -737,8 +764,9 @@ export class MarsWorldScene implements Scene {
     const W = (c.width = innerWidth), H = (c.height = innerHeight);
     const g = c.getContext("2d")!;
     const minX = -ZONE / 2, maxZ = ZONE / 2, depth = ZONE * ZONES.length;
-    const sc = Math.min((W * 0.8) / ZONE, (H * 0.86) / depth);
-    const ox = W / 2 - (ZONE * sc) / 2, oy = H * 0.07;
+    const mobile = W < 640;
+    const sc = Math.min((W * 0.8) / ZONE, (H * (mobile ? 0.58 : 0.80)) / depth);
+    const ox = W / 2 - (ZONE * sc) / 2, oy = mobile ? H * 0.06 : H * 0.10;
     const toX = (x: number) => ox + (x - minX) * sc, toY = (z: number) => oy + (maxZ - z) * sc;
     g.clearRect(0, 0, W, H);
     if (this.miniBg && this.hf) {
@@ -755,15 +783,17 @@ export class MarsWorldScene implements Scene {
       const unlocked = i === 0 || badges.length >= i;
       g.fillStyle = "rgba(0,0,0,.6)"; g.fillRect(ox + 6, y0 + 6, Math.min(ZONE * sc - 12, 330), 24);
       g.fillStyle = unlocked ? "#ffd97d" : "#9a8a80"; g.font = "bold 12px sans-serif"; g.textAlign = "left";
-      g.fillText((unlocked ? "" : "🔒 ") + zn.name, ox + 12, y0 + 22);
+      const label = mobile ? ["1 · ARES VALLIS", "2 · GUSEV", "3 · MERIDIANI", "4 · ELYSIUM"][i] ?? zn.name : zn.name;
+      g.save(); g.beginPath(); g.rect(ox+6,y0+6,ZONE*sc-12,24); g.clip();
+      g.fillText((unlocked ? "" : "🔒 ") + label, ox + 12, y0 + 22); g.restore();
     });
     const pin = (x: number, z: number, col: string, label: string) => {
       g.fillStyle = col; g.strokeStyle = "#000"; g.lineWidth = 2;
       g.beginPath(); g.arc(toX(x), toY(z), 7, 0, 6.29); g.fill(); g.stroke();
-      g.fillStyle = "#fff"; g.font = "bold 12px sans-serif"; g.textAlign = "center";
+      g.fillStyle = "#fff"; g.font = mobile ? "bold 9px sans-serif" : "bold 12px sans-serif"; g.textAlign = "center";
       g.fillText(label, toX(x), toY(z) - 12);
     };
-    g.font = "11px sans-serif"; g.textAlign = "center";
+    g.font = mobile ? "8px sans-serif" : "11px sans-serif"; g.textAlign = "center";
     for (const m of MARS_SITES) {
       g.fillStyle = "rgba(255,240,220,.85)"; g.beginPath(); g.arc(toX(m.x), toY(m.z), 3, 0, 6.29); g.fill();
       g.fillStyle = "rgba(0,0,0,.55)"; const tw = g.measureText(m.en).width; g.fillRect(toX(m.x) - tw / 2 - 3, toY(m.z) + 5, tw + 6, 14);
@@ -771,7 +801,12 @@ export class MarsWorldScene implements Scene {
     }
     g.fillStyle = "rgba(0,0,0,.6)"; g.fillRect(W / 2 - 200, H - 34, 400, 24);
     g.fillStyle = "#ffd97d"; g.font = "bold 12px sans-serif";
-    g.fillText("WASD walk · SPACE jump · E talk · M / tap = close map", W / 2, H - 18);
+    g.fillText("WASD · E inspect · M map · C camera · ESC close", W / 2, H - 18);
+    g.font = "bold 18px sans-serif";
+    for (const d of MARS_DISCOVERIES) {
+      g.fillStyle = store.get().marsStars.includes(d.id) ? "#9bd6b8" : "#ffd97d";
+      g.fillText(store.get().marsStars.includes(d.id) ? "✓" : "★", toX(d.x), toY(d.z));
+    }
     pin(this.rover.position.x, this.rover.position.z, "#ffd97d", "SOJOURNER");
     pin(this.spirit.position.x, this.spirit.position.z, "#ff8a5c", "SPIRIT");
     pin(this.oppy.position.x, this.oppy.position.z, "#6cc6ff", "OPPY");
@@ -796,6 +831,12 @@ export class MarsWorldScene implements Scene {
     if (this.miniBg && h) {
       g.drawImage(this.miniBg, (h.minX - p.x) * sc, (h.minZ - p.z) * sc, h.sx * (h.nx - 1) * sc, h.sz * (h.nz - 1) * sc);
     } else { g.fillStyle = "#5a2e18"; g.fillRect(-R * 2, -R * 2, W * 2, W * 2); }
+    g.font = "bold 19px sans-serif"; g.textAlign = "center"; g.fillStyle = "#ffd97d";
+    for (const d of MARS_DISCOVERIES) {
+      if (store.get().marsStars.includes(d.id)) continue;
+      const dx = (d.x-p.x)*sc, dz=(d.z-p.z)*sc;
+      if (Math.hypot(dx,dz)<R-12) g.fillText("★",dx,dz);
+    }
     // rover pin
     const sojDone = store.get().flags.includes("sojourner");
     const spDone = store.get().flags.includes("spirit");
@@ -1007,6 +1048,13 @@ export class MarsWorldScene implements Scene {
   }
 
   onPointerDown(x: number, y: number) {
+    if (store.get().marsCard || store.get().bigMap) return;
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2(x, y), this.camera);
+    const hits = ray.intersectObjects(this.discoveryStars.filter(d=>d.sprite.visible).map(d=>d.sprite));
+    const hit = hits[0];
+    const clicked = hit ? this.discoveryStars.find(d=>d.sprite === hit.object) : null;
+    if (clicked && clicked.id === store.get().marsNear) { store.emit("mars:inspect"); return; }
     this.dragging = true;
     this.lastPointer = { x, y };
   }
@@ -1094,6 +1142,15 @@ export class MarsWorldScene implements Scene {
   }
 
   update(dt: number, t: number) {
+    dt = Math.min(dt, 0.05);
+    this.updateDiscoveryStars(t);
+    const paused = !!store.get().marsCard || store.get().bigMap;
+    if (paused) {
+      this.velocity.set(0,0,0);
+      this.drawMinimap(dt);
+      this.renderer.render(this.scene,this.camera);
+      return;
+    }
     this.updateLivingMars(dt);
     // movement input
     const input = new THREE.Vector2(
@@ -1348,6 +1405,7 @@ export class MarsWorldScene implements Scene {
 
     this.stars.rotation.y += dt * 0.002;
     this.renderer.render(this.scene, this.camera);
+    if (!store.get().loading) this.renderer.domElement.dataset["sceneReady"] = "mars";
   }
 
   dispose() {
@@ -1355,7 +1413,8 @@ export class MarsWorldScene implements Scene {
     this.mini?.remove();
     this.big?.remove();
     voice.stop();
-    store.set({ loading: false, bigMap: false, showEncounter: false });
+    store.set({ loading: false, bigMap: false, showEncounter: false, marsNear: null, marsCard: null });
+    this.discoveryStars.forEach(d => d.sprite.material.map?.dispose());
     store.set({ objective: null, hint: null });
     this.disposers.forEach((d) => d());
     this.scene.traverse((o: THREE.Object3D) => {

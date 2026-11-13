@@ -13,6 +13,8 @@
 
 # Architecture decisions
 
+- Mars discoveries use browser-safe data and pure collection/proximity rules; the existing scene owns sprite placement while MarsStarHunt owns cards and shortcuts, keeping rendering independent of scoring. Progress stays in the existing local game save, not a shared leaderboard. `data-scene-ready="mars"` marks a rendered exploration frame for browser checks.
+
 - The Astro Relic game (three.js + `src/game`, `src/state`, `src/data`, `src/components/Overlays|SolarHUD`) touches browser APIs at module load (localStorage in the store, WebGL). Keep it behind the lazy client-only mount in `src/routes/index.tsx` / `src/components/game/Game.tsx`; never import `src/game/*` or `src/state/store` from an SSR-evaluated module.
 - Migrated from https://github.com/morsalin-rifat/astro-relic.git (Vite SPA, source of truth for behavior); game assets live in `public/images/` (referenced by absolute URL, not imports).
 - Mars explore world = one procedural heightfield corridor (`marsRelief` + `MARS_SITES` in `marsWorld.ts`), 4 zones along -Z shaped after NASA traverse maps with ridge passes between them, like the Moon; no imported terrain GLBs (they caused seam glitches). `store.marsZone` picks the spawn zone for chapter jumps. Dev-only `?phase=<phase>`, `__marsTeleport`, `__marsProbe`.

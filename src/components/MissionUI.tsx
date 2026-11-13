@@ -398,7 +398,7 @@ export function BigMapClose() {
   const open = useGame((s) => s.bigMap);
   const lang = useGame((s) => s.lang);
   useEffect(() => {
-    const k = (e: KeyboardEvent) => { if (e.key === "Escape" && store.get().bigMap) { store.set({ bigMap: false }); return; } if (e.key.toLowerCase() === "m" && store.get().phase === "explore") store.set({ bigMap: !store.get().bigMap }); };
+    const k = (e: KeyboardEvent) => { if (store.get().phase !== "explore" && e.code === "Escape" && store.get().bigMap) store.set({ bigMap: false }); };
     addEventListener("keydown", k);
     return () => removeEventListener("keydown", k);
   }, []);
