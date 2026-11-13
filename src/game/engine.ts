@@ -128,6 +128,7 @@ export class Engine {
     if (showLoader) store.set({ loading: true });
     window.setTimeout(() => {
       this.setPhase(phase);
+      if (phase === "hub") store.clearDialogue();
       store.set({ phase, fading: false });
       // explore clears the loader itself once the NASA terrain is ready
       if (phase === "hub") window.setTimeout(() => store.set({ loading: false }), 1400);
