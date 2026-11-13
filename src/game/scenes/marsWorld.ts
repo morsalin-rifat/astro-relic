@@ -17,7 +17,7 @@ const ZONE = 350; // metres per real NASA site
 const ZONES = [
   { url: "/models/zone1_ares.glb", name: "ZONE 1 · ARES VALLIS — SOJOURNER 1997", grade: [1.25, 0.82, 0.6] },
   { url: "/models/zone2_gusev.glb", name: "ZONE 2 · GUSEV CRATER — SPIRIT 2004", grade: [1.2, 0.75, 0.55] },
-  { url: "/models/zone3_meridiani.glb", name: "ZONE 3 · PERSEVERANCE VALLEY ANALOGUE — OPPORTUNITY", grade: [1.05, 0.8, 0.7] },
+  { url: "/models/zone3_meridiani.glb", name: "ZONE 3 · MERIDIANI PLANUM — OPPORTUNITY 2004", grade: [1.05, 0.8, 0.7] },
   { url: "/models/zone4_elysium.glb", name: "ZONE 4 · ELYSIUM PLANITIA — INSIGHT 2018", grade: [1.15, 0.85, 0.68] },
 ];
 const loader = () => new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
