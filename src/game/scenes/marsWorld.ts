@@ -23,6 +23,124 @@ const ZONES = [
 const loader = () => new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const MAP_DEPTH = 70; // vertical relief (exaggerated for drama)
 
+// ---------- Procedural Mars relief, shaped after NASA traverse maps ----------
+type Crater = { x: number; z: number; r: number; d: number; scal?: number };
+const rng = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+/** Named, real landmarks (scaled so kids can walk them). zone = 0 Ares · 1 Gusev · 2 Meridiani · 3 Elysium */
+export const MARS_SITES = [
+  { id: "twinpeaks", zone: 0, x: -82, z: -105, en: "Twin Peaks", bn: "টুইন পিকস" },
+  { id: "yogi", zone: 0, x: 52, z: -24, en: "Yogi Rock", bn: "যোগী পাথর" },
+  { id: "barnacle", zone: 0, x: 36, z: -38, en: "Barnacle Bill", bn: "বার্নাকল বিল" },
+  { id: "aresflood", zone: 0, x: 95, z: 60, en: "Ancient flood channel", bn: "প্রাচীন বন্যার নদীপথ" },
+  { id: "bonneville", zone: 1, x: 62, z: -300, en: "Bonneville Crater", bn: "বনভিল ক্রেটার" },
+  { id: "husband", zone: 1, x: -78, z: -455, en: "Husband Hill · Columbia Hills", bn: "হাসব্যান্ড হিল · কলম্বিয়া হিলস" },
+  { id: "homeplate", zone: 1, x: -18, z: -478, en: "Home Plate", bn: "হোম প্লেট" },
+  { id: "eagle", zone: 2, x: 0, z: -640, en: "Eagle Crater (hole-in-one)", bn: "ঈগল ক্রেটার (হোল-ইন-ওয়ান)" },
+  { id: "endurance", zone: 2, x: -78, z: -705, en: "Endurance Crater", bn: "এনডিউরেন্স ক্রেটার" },
+  { id: "victoria", zone: 2, x: 72, z: -780, en: "Victoria Crater", bn: "ভিক্টোরিয়া ক্রেটার" },
+  { id: "homestead", zone: 3, x: -6, z: -1040, en: "Homestead Hollow", bn: "হোমস্টেড হলো" },
+  { id: "heatshield", zone: 3, x: 70, z: -1000, en: "Heat-shield scar", bn: "হিট-শিল্ডের দাগ" },
+  { id: "elysiummons", zone: 3, x: -110, z: -1150, en: "Lava plains · Elysium", bn: "লাভা সমভূমি · এলিসিয়াম" },
+] as const;
+const BIG_CRATERS: Crater[] = [
+  { x: 62, z: -300, r: 36, d: 9 },            // Bonneville
+  { x: 0, z: -640, r: 11, d: 2.6 },           // Eagle
+  { x: -78, z: -705, r: 30, d: 8 },           // Endurance
+  { x: 72, z: -780, r: 48, d: 13, scal: 1 },  // Victoria (scalloped bays)
+  { x: -6, z: -1058, r: 14, d: 1.2 },         // Homestead hollow (filled)
+  { x: 70, z: -1000, r: 7, d: 1.4 },          // heat-shield impact
+];
+function extraCraters(): Crater[] {
+  const r = rng(1997), out: Crater[] = [];
+  const dens = [26, 30, 22, 60]; // Elysium is pocked with small hollows
+  for (let zi = 0; zi < 4; zi++) for (let k = 0; k < dens[zi]!; k++) {
+    const x = (r() - 0.5) * (ZONE - 30), z = -zi * ZONE + (r() - 0.5) * (ZONE - 40);
+    const rad = 2 + Math.pow(r(), 2.2) * (zi === 3 ? 9 : 14);
+    out.push({ x, z, r: rad, d: rad * (zi === 3 ? 0.1 : 0.18) });
+  }
+  return out;
+}
+const gauss = (x: number, z: number, cx: number, cz: number, sx: number, sz = sx) =>
+  Math.exp(-(((x - cx) / sx) ** 2 + ((z - cz) / sz) ** 2));
+function craterH(x: number, z: number, c: Crater) {
+  const dx = x - c.x, dz = z - c.z, dist = Math.hypot(dx, dz);
+  let rr = c.r;
+  if (c.scal) rr *= 1 + 0.07 * Math.sin(Math.atan2(dz, dx) * 9) + 0.03 * Math.sin(Math.atan2(dz, dx) * 23);
+  const d = dist / rr;
+  if (d > 1.8) return { h: 0, bowl: 0 };
+  const rim = c.d * 0.38 * Math.exp(-(((d - 1) / 0.22) ** 2));
+  if (d >= 1) return { h: rim, bowl: 0 };
+  // flat-ish floor with steeper walls + terraced layers for Victoria/Endurance
+  let bowl = -c.d * (1 - Math.pow(d, 2.6));
+  if (c.r > 25) bowl += Math.sin(d * 18) * 0.35 * d;
+  return { h: bowl + rim, bowl: 1 - d };
+}
+const smooth = (t: number) => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+function marsRelief(x: number, z: number, extra: Crater[]) {
+  const zt = Math.min(3, Math.max(0, -z / ZONE));
+  const w = [0, 1, 2, 3].map((i) => smooth(1 - Math.abs(zt - i)));
+  let h = (fbm(x * 0.008 + 7, z * 0.008 + 3, 4) - 0.5) * 8; // broad swells
+  h += (fbm(x * 0.05, z * 0.05, 3) - 0.5) * 1.2;            // small bumps
+  // Zone 1 · Ares Vallis: streamlined flood grooves (flow toward NE) + Twin Peaks + far channel walls
+  if (w[0]! > 0) {
+    const flow = (x * 0.55 + z * 0.83);
+    let a = Math.sin(flow * 0.09 + fbm(x * 0.02, z * 0.02) * 4) * 0.9 + Math.sin(flow * 0.31) * 0.25;
+    a += 24 * gauss(x, z, -82, -100, 16, 13) + 19 * gauss(x, z, -52, -122, 13, 11);  // Twin Peaks
+    a += 9 * gauss(x, z, -130, 30, 26, 60) + 7 * gauss(x, z, 140, -40, 22, 70);       // channel banks
+    a -= 3 * gauss(x, z, 95, 60, 30, 70);                                             // flood trough
+    h += a * w[0]!;
+  }
+  // Zone 2 · Gusev: flat crater floor rising into the Columbia Hills; Home Plate plateau
+  if (w[1]! > 0) {
+    let a = -1.5;
+    a += 32 * gauss(x, z, -78, -455, 30, 22) + 18 * gauss(x, z, -125, -430, 22, 30) + 14 * gauss(x, z, -40, -505, 20, 14);
+    const hp = Math.hypot(x + 18, z + 478); a += 2.2 * (1 - smooth((hp - 9) / 3));
+    h += a * w[1]!;
+  }
+  // Zone 3 · Meridiani: smooth plains striped with sand ripples (Opportunity's "blueberry" fields)
+  if (w[2]! > 0) {
+    h = h * (1 - 0.6 * w[2]!) + (Math.sin(x * 0.9 + Math.sin(z * 0.05) * 3) * 0.18 + Math.sin(z * 0.23 + x * 0.1) * 0.35) * w[2]!;
+  }
+  // Zone 4 · Elysium: very flat lava plain, far volcanic rise on the horizon
+  if (w[3]! > 0) {
+    h = h * (1 - 0.75 * w[3]!) + (16 * gauss(x, z, -150, -1180, 50, 60) + 6 * gauss(x, z, 150, -1120, 40, 50)) * w[3]!;
+  }
+  let bowl = 0;
+  for (const c of BIG_CRATERS) { if (Math.abs(z - c.z) > c.r * 1.9) continue; const r = craterH(x, z, c); h += r.h; bowl = Math.max(bowl, r.bowl); }
+  for (const c of extra) { if (Math.abs(z - c.z) > c.r * 1.9 || Math.abs(x - c.x) > c.r * 1.9) continue; const r = craterH(x, z, c); h += r.h; bowl = Math.max(bowl, r.bowl * 0.6); }
+  // ridges between zones with a central pass (like the Moon corridor)
+  for (let s = 1; s < 4; s++) {
+    const zr = -s * ZONE + ZONE / 2;
+    const ridge = Math.exp(-(((z - zr) / 14) ** 2)) * (14 + fbm(x * 0.04, s * 9) * 10);
+    h += ridge * (1 - Math.exp(-((x / 24) ** 2)));
+  }
+  return { h, zt, bowl };
+}
+/** [dust low, dust high, rock] per zone */
+const MARS_PALETTE = [
+  [0x8a4a2a, 0xb66a40, 0x5e3a2a], // Ares: rocky rust
+  [0x9a5a36, 0xc0835a, 0x6a4632], // Gusev: lighter dust
+  [0x6e3c28, 0x9a5a3e, 0xc9a27a], // Meridiani: dark sand, pale outcrops
+  [0xa8683f, 0xcf9466, 0x7a4a30], // Elysium: bright fine dust
+];
+function makeGrainTexture(bump = false) {
+  const S = 256, c = document.createElement("canvas"); c.width = c.height = S;
+  const g = c.getContext("2d")!, img = g.createImageData(S, S), r = rng(bump ? 77 : 42);
+  for (let i = 0; i < S * S; i++) {
+    const v = bump ? 110 + r() * 110 : 205 + r() * 50;
+    img.data[i * 4] = v; img.data[i * 4 + 1] = v * (bump ? 1 : 0.97); img.data[i * 4 + 2] = v * (bump ? 1 : 0.93); img.data[i * 4 + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  for (let k = 0; k < 140; k++) { // pebbles
+    g.fillStyle = bump ? `rgba(255,255,255,${0.3 + r() * 0.5})` : `rgba(90,50,30,${0.15 + r() * 0.25})`;
+    g.beginPath(); g.arc(r() * S, r() * S, 0.6 + r() * 2.2, 0, 6.29); g.fill();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
+  if (!bump) t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
 export class MarsWorldScene implements Scene {
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
@@ -325,9 +443,14 @@ export class MarsWorldScene implements Scene {
 
     // player
     this.player = buildExplorer();
-    const startPos = this.metAtStart
-      ? new THREE.Vector3(SITE.x + 7, 0, SITE.z + 7)
-      : new THREE.Vector3(0, 0, 0);
+    const mz = store.get().marsZone;
+    const ZSPAWN = [null, SPIRIT, OPPY, INSIGHT][mz] ?? null;
+    if (mz > 0) this.metAtStart = false;
+    const startPos = ZSPAWN
+      ? new THREE.Vector3(ZSPAWN.x + 4, 0, ZSPAWN.z + 26)
+      : this.metAtStart
+        ? new THREE.Vector3(SITE.x + 7, 0, SITE.z + 7)
+        : new THREE.Vector3(0, 0, 0);
     this.player.position.set(startPos.x, this.groundHeight(startPos.x, startPos.z), startPos.z);
     this.scene.add(this.player);
 
@@ -389,7 +512,7 @@ export class MarsWorldScene implements Scene {
     const data = new Float32Array(NX * NZ);
     const zoneT = new Float32Array(NX * NZ); // continuous zone index for colouring
     const craterK = new Float32Array(NX * NZ); // 0..1 inside bowls (darker)
-    const extra = this.extraCraters();
+    const extra = extraCraters();
     for (let gz = 0; gz < NZ; gz++) for (let gx = 0; gx < NX; gx++) {
       const x = minX + gx * sx, z = minZ + gz * sz, i = gz * NX + gx;
       const r = marsRelief(x, z, extra);
