@@ -491,7 +491,11 @@ export class MarsWorldScene implements Scene {
     // welcome dialogue
     const welcome = () => {
       if (store.get().loading || store.get().fading) { this.welcomeT = window.setTimeout(welcome, 300); return; }
-      if (this.metAtStart) {
+      const mzw = store.get().marsZone;
+      if (mzw > 0) {
+        const zn = ZONES[mzw]!.name;
+        store.say({ en: `Welcome to ${zn}! Follow the gold beacon to meet the rover — tap the minimap or press M for the big map.`, bn: `${zn}-এ স্বাগতম! সোনালি আলো ধরে রোভারের কাছে যাও — বড় ম্যাপ দেখতে মিনি-ম্যাপে চাপো বা M চাপো।` } as any);
+      } else if (this.metAtStart) {
         this.startMeeting(true);
       } else {
         store.say(NOVA_WELCOME_MARS);
@@ -664,6 +668,7 @@ export class MarsWorldScene implements Scene {
 
   private sectorAt(x: number, z: number) {
     if (Math.hypot(x - SITE.x, z - SITE.z) < 30) return "ARES VALLIS · CARL SAGAN MEMORIAL STATION";
+    for (const m of MARS_SITES) if (Math.hypot(x - m.x, z - m.z) < 22) return `${m.en.toUpperCase()} · ${m.bn}`;
     const i = THREE.MathUtils.clamp(Math.floor((ZONE / 2 - z) / ZONE), 0, ZONES.length - 1);
     return ZONES[i]!.name;
   }
@@ -709,6 +714,15 @@ export class MarsWorldScene implements Scene {
       g.fillStyle = "#fff"; g.font = "bold 12px sans-serif"; g.textAlign = "center";
       g.fillText(label, toX(x), toY(z) - 12);
     };
+    g.font = "11px sans-serif"; g.textAlign = "center";
+    for (const m of MARS_SITES) {
+      g.fillStyle = "rgba(255,240,220,.85)"; g.beginPath(); g.arc(toX(m.x), toY(m.z), 3, 0, 6.29); g.fill();
+      g.fillStyle = "rgba(0,0,0,.55)"; const tw = g.measureText(m.en).width; g.fillRect(toX(m.x) - tw / 2 - 3, toY(m.z) + 5, tw + 6, 14);
+      g.fillStyle = "#ffe9cf"; g.fillText(m.en, toX(m.x), toY(m.z) + 16);
+    }
+    g.fillStyle = "rgba(0,0,0,.6)"; g.fillRect(W / 2 - 200, H - 34, 400, 24);
+    g.fillStyle = "#ffd97d"; g.font = "bold 12px sans-serif";
+    g.fillText("WASD walk · SPACE jump · E talk · M / tap = close map", W / 2, H - 18);
     pin(this.rover.position.x, this.rover.position.z, "#ffd97d", "SOJOURNER");
     pin(this.spirit.position.x, this.spirit.position.z, "#ff8a5c", "SPIRIT");
     pin(this.oppy.position.x, this.oppy.position.z, "#6cc6ff", "OPPY");
