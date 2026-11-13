@@ -83,6 +83,6 @@ public/            images, audio, videos, 3D models
 
 ## 👥 Team
 
-Made with ❤️ in Bangladesh for **NASA Space Apps Challenge 2026** by **Morsalin Rifat** and **Akib**.
+Built by **Team SpaceSync** 🇧🇩 for **NASA Space Apps Challenge 2026** — [▶ Play Astro Relic](https://astro-relic.lovable.app)
 
 <div align="center"><sub>Astro Relic is an educational fan project and is not endorsed by NASA.</sub></div>

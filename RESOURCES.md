@@ -34,7 +34,6 @@ Everything we used to build Astro Relic, for the NASA Space Apps judges.
 | Tailwind CSS v4, Radix UI, lucide-react | Interface and icons |
 | Vitest | Game-rule tests |
 | Google Fonts — Space Grotesk, IBM Plex Mono, Noto Sans Bengali, Hind Siliguri | Text |
-| Lovable | AI-assisted building and hosting |
 
 ## ⚖️ Note
 
