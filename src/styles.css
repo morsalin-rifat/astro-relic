@@ -816,3 +816,25 @@ body {
   .mars-actions-on-map > div:last-child { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .mars-map-summary { top: auto; bottom: 16px; left: 12px; width: calc(100% - 24px); max-height: 180px; }
 }
+
+/* ---- Mobile landscape fit (touch devices only; desktop untouched) ---- */
+.game-ui > * { pointer-events: auto; }
+.game-ui > .pointer-events-none { pointer-events: none; }
+.rotate-prompt { background: var(--expedition); backdrop-filter: blur(8px); }
+@keyframes rotatehint { 0%, 20% { transform: rotate(0deg); } 55%, 80% { transform: rotate(-90deg); } 100% { transform: rotate(0deg); } }
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
+  .game-ui { zoom: 0.72; }
+  .hub-console-wrap { zoom: 0.78; top: 54%; }
+  .hub-console-wrap .hub-console-panel { gap: 0.35rem; }
+  .badge-pill { top: auto !important; bottom: max(1rem, env(safe-area-inset-bottom)); left: 50%; right: auto !important; transform: translateX(-50%); }
+  .mars-actions:not(.mars-actions-on-map) { top: auto; bottom: max(14px, env(safe-area-inset-bottom)); right: max(14px, env(safe-area-inset-right)); width: auto; }
+  .mars-actions:not(.mars-actions-on-map) > div:first-child { padding-bottom: 4px; }
+  .mars-actions:not(.mars-actions-on-map) > div:last-child { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .mobile-joystick {
+    left: max(1.25rem, env(safe-area-inset-left)) !important;
+    bottom: max(1.25rem, env(safe-area-inset-bottom)) !important;
+  }
+}
+@media (pointer: coarse) and (orientation: landscape) and (min-height: 521px) and (max-height: 820px) {
+  .game-ui { zoom: 0.88; }
+}

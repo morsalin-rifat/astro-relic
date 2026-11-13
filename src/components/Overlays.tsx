@@ -1,3 +1,4 @@
+import { MobileLandscape } from "@/components/MobileLandscape";
 import { voice } from "../game/voice";
 import { useEffect, useRef, useState } from "react";
 import { store, useGame, t } from "../state/store";
@@ -520,7 +521,7 @@ function Joystick() {
   return (
     <div
       ref={ref}
-      className="absolute bottom-8 left-8 z-30 w-28 h-28 rounded-full border border-white/20 bg-black/30 touch-none [@media(pointer:fine)]:hidden"
+      className="mobile-joystick absolute bottom-8 left-8 z-30 w-28 h-28 rounded-full border border-white/20 bg-black/30 touch-none [@media(pointer:fine)]:hidden"
       onPointerDown={(e) => {
         active.current = true;
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -534,6 +535,12 @@ function Joystick() {
         const k = Math.min(len, 1) / len;
         setPos({ x: dx * k, y: dy * k });
         store.emit("joystick", { x: dx * k, y: -dy * k });
+      }}
+      onPointerCancel={(e) => (e.currentTarget as HTMLElement).dispatchEvent(new PointerEvent("pointerup", { bubbles: true }))}
+      onLostPointerCapture={() => {
+        active.current = false;
+        setPos({ x: 0, y: 0 });
+        store.emit("joystick", { x: 0, y: 0 });
       }}
       onPointerUp={() => {
         active.current = false;
@@ -767,7 +774,7 @@ function HubUI() {
 
       {/* Right-Side Mission Command Console Menu */}
       <div
-        className={`absolute right-3 sm:right-8 top-1/2 -translate-y-1/2 z-30 transition-all duration-700 pointer-events-none ${
+        className={`hub-console-wrap absolute right-3 sm:right-8 top-1/2 -translate-y-1/2 z-30 transition-all duration-700 pointer-events-none ${
           entered ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"
         }`}
       >
@@ -1053,6 +1060,7 @@ export function Overlays() {
       <TelemetryBar />
       <TopControls />
       <Joystick />
+      <MobileLandscape />
       <SojournerEncounter />
       <SpiritEncounter />
       <OppyEncounter />

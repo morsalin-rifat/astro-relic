@@ -13,11 +13,13 @@ export default function Game() {
 
   return (
     <div
-      className="relative h-screen w-screen select-none overflow-hidden"
+      className="relative h-[100dvh] w-screen select-none overflow-hidden"
       style={{ backgroundColor: "#030308" }}
     >
       <div ref={ref} className="absolute inset-0" />
-      <Overlays />
+      <div className="game-ui absolute inset-0 pointer-events-none">
+        <Overlays />
+      </div>
     </div>
   );
 }
