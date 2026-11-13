@@ -325,7 +325,7 @@ export class MoonWorldScene implements Scene {
     store.set({ objective: next
       ? { en: `Explore ${Z.en.split(" · ")[0]} — then walk south through the pass to ${next.en.split(" · ")[0]}`, bn: `${Z.bn.split(" · ")[0]} ঘুরে দেখো — তারপর দক্ষিণের গিরিপথ দিয়ে ${next.bn.split(" · ")[0]}-এ যাও` }
       : { en: `Explore ${Z.en.split(" · ")[0]} — the last place humans walked on the Moon`, bn: `${Z.bn.split(" · ")[0]} ঘুরে দেখো — চাঁদে মানুষের শেষ হাঁটার জায়গা` } });
-    if (z === 0 && !store.get().flags.includes("apollo11")) store.emit("a11:arrive"); else store.say([{ speaker: "nova", ...Z.nova }]);
+    if (z === 0 && !store.get().flags.includes("apollo11")) store.emit("a11:arrive"); else { if (z === 0) store.emit("a11:revisit"); store.say([{ speaker: "nova", ...Z.nova }]); }
     if (this.hud) (this.hud.querySelector("[data-coord]") as HTMLElement).textContent = `${Z.coord} · ${Z.year}`;
     this.nearSite = "-";
   }

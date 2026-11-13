@@ -78,6 +78,7 @@ export function Apollo11Mission() {
   const [wrong, setWrong] = useState<number | null>(null);
   const [right, setRight] = useState(false);
   const techIdx = useRef(0);
+  const museum = useRef(false);
   const stageRef = useRef(stage); stageRef.current = stage;
 
   const say = (clip: string | null, text: L, who: Who = "nova", then?: () => void) => {
@@ -97,6 +98,8 @@ export function Apollo11Mission() {
     objective({ en: "🦅 Walk to the shiny golden lander — Eagle!", bn: "🦅 চকচকে সোনালি ল্যান্ডার — ঈগলের কাছে হেঁটে যাও!" });
     window.setTimeout(() => say("arrival", LINE.arrival), 600);
   }), []);
+  // already finished: open "museum" mode so Eagle & relics stay explorable / replayable
+  useEffect(() => store.on("a11:revisit", () => { setStage("done"); museum.current = true; }), []);
   useEffect(() => { if (phase !== "moon") { setStage("idle"); setLine(null); hush(); freeze(false); } }, [phase]);
 
   // what the [E] button would do right now
@@ -107,6 +110,10 @@ export function Apollo11Mission() {
       const s = SPOTS.find((x) => x.id === near); if (!s) return null;
       return { label: { en: `Inspect: ${s.name.en}`, bn: `দেখো: ${s.name.bn}` }, run: () => openSpot(s) };
     }
+    if (stage === "done" && (near === "lm" || near === "plaque")) return { label: { en: "🔄 Replay with Eagle", bn: "🔄 ঈগলের সাথে আবার খেলো" }, run: () => {
+      museum.current = false; setSeen([]); setSlide(0); setQi(0); setSpot(null); setTech(null); setLaser("ready"); techIdx.current = 0;
+      freeze(true); setStage("welcome"); say("welcome", LINE.welcome, "eagle"); } };
+    if (stage === "done") { const s = SPOTS.find((x) => x.id === near); if (s) return { label: { en: `Look again: ${s.name.en}`, bn: `আবার দেখো: ${s.name.bn}` }, run: () => { museum.current = true; openSpot(s); } }; }
     if (stage === "return" && (near === "lm" || near === "plaque")) return { label: { en: "Touch the plaque", bn: "ফলকটা ছুঁয়ে দেখো" }, run: () => { freeze(true); setStage("memory"); audio.beep(520); say("reactivate", LINE.reactivate, "nova", () => setStage((s) => (s === "memory" ? "log" : s))); } };
     return null;
   })();
@@ -123,6 +130,7 @@ export function Apollo11Mission() {
   const huntObjective = (n: number) => objective({ en: `🔍 Find the ${7 - n} golden stars around Eagle (${n}/7)`, bn: `🔍 ঈগলের চারপাশে ${7 - n}টি সোনালি তারা খোঁজো (${n}/7)` });
   const closeSpot = () => {
     if (!spot) return;
+    if (museum.current) { setSpot(null); hush(); freeze(false); setLine(null); setStage("done"); return; }
     const n = seen.includes(spot.id) ? seen : [...seen, spot.id];
     setSeen(n); setSpot(null); hush(); freeze(false);
     if (n.length >= 7) {
@@ -161,7 +169,7 @@ export function Apollo11Mission() {
     say("badge", LINE.badge, "nova", () => say("outro", LINE.outro));
   };
   const finish = (hub: boolean) => {
-    hush(); setStage("done"); setLine(null); freeze(false);
+    hush(); setStage("done"); museum.current = true; setLine(null); freeze(false);
     if (hub) { store.emit("engine:goto", "hub"); return; }
     objective({ en: "🚶 Walk south through the glowing pass to Apollo 12 & Surveyor 3", bn: "🚶 আলো জ্বলা দক্ষিণের গিরিপথ দিয়ে অ্যাপোলো ১২ ও সার্ভেয়ার ৩-এ যাও" });
   };
