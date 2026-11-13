@@ -638,18 +638,18 @@ export class MarsWorldScene implements Scene {
     };
     trail(SITE.x, SITE.z, 11); trail(SPIRIT.x, SPIRIT.z, 22); trail(OPPY.x, OPPY.z, 33); trail(OPPY.x, OPPY.z, 34);
     const boot = tex((g) => { g.fillStyle = "rgba(50,20,8,.55)"; g.beginPath(); g.ellipse(32, 20, 14, 17, 0, 0, 6.3); g.ellipse(32, 48, 11, 13, 0, 0, 6.3); g.fill(); g.fillStyle = "rgba(25,10,4,.35)"; for (let y = 8; y < 60; y += 6) g.fillRect(20, y, 24, 2); });
-    this.prints = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.22, 0.42), new THREE.MeshBasicMaterial({ map: boot, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), 400);
-    this.prints.count = 0; this.prints.frustumCulled = false; this.scene.add(this.prints);
+    this.bootPrints = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.22, 0.42), new THREE.MeshBasicMaterial({ map: boot, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), 400);
+    this.bootPrints.count = 0; this.bootPrints.frustumCulled = false; this.scene.add(this.bootPrints);
   }
-  private prints: THREE.InstancedMesh | null = null;
+  private bootPrints: THREE.InstancedMesh | null = null;
   private printI = 0; private printN = 0; private printDist = 0; private printSide = 1;
   private dropPrint() {
-    if (!this.prints) return;
+    if (!this.bootPrints) return;
     const p = this.player.position, a = this.player.rotation.y, side = (this.printSide = -this.printSide) * 0.14;
     const x = p.x + Math.cos(a) * side, z = p.z - Math.sin(a) * side;
     const o = new THREE.Object3D(); o.position.set(x, this.groundHeight(x, z) + 0.03, z); o.rotation.set(-Math.PI / 2, 0, a); o.updateMatrix();
-    this.prints.setMatrixAt(this.printI, o.matrix); this.printI = (this.printI + 1) % 400; this.printN = Math.min(400, this.printN + 1);
-    this.prints.count = this.printN; this.prints.instanceMatrix.needsUpdate = true;
+    this.bootPrints.setMatrixAt(this.printI, o.matrix); this.printI = (this.printI + 1) % 400; this.printN = Math.min(400, this.printN + 1);
+    this.bootPrints.count = this.printN; this.bootPrints.instanceMatrix.needsUpdate = true;
   }
 
   private makeSky() {
@@ -1070,7 +1070,7 @@ export class MarsWorldScene implements Scene {
     // boot prints
     const pm = new THREE.InstancedMesh(new THREE.CircleGeometry(0.12, 8),
       new THREE.MeshBasicMaterial({ color: 0x4a2414, transparent: true, opacity: 0.45, depthWrite: false }), 120);
-    pm.count = 0; this.prints = pm; this.scene.add(pm);
+    pm.count = 0; void pm; // replaced by bootPrints
   }
   private updateLivingMars(dt: number) {
     const d = new THREE.Object3D();
