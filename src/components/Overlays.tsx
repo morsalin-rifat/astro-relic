@@ -10,6 +10,7 @@ import { SpiritEncounter } from "./SpiritUI";
 import { OppyEncounter } from "./OppyUI";
 import { InsightEncounter } from "./InsightUI";
 import { FinaleUI } from "./FinaleUI";
+import { MoonFinaleUI, MOON_PATCHES } from "./MoonFinaleUI";
 import { Apollo11Mission } from "./Apollo11UI";
 import { Apollo12Mission } from "./Apollo12UI";
 import { Apollo15Mission } from "./Apollo15UI";
@@ -1051,6 +1052,7 @@ export function Overlays() {
       <OppyEncounter />
       <InsightEncounter />
       <FinaleUI />
+      <MoonFinaleUI />
       <Apollo11Mission />
       <Apollo12Mission />
       <Apollo15Mission />
@@ -1097,6 +1099,7 @@ function TrophyHall({ lang, onClose }: { lang: "en" | "bn"; onClose: () => void 
             <div className="h-full bg-[#ffd97d] transition-all" style={{ width: `${(got / TROPHIES.length) * 100}%` }} />
           </div>
         </div>
+        <div className="text-[10px] tracking-[0.3em] text-white/60 font-mono mb-2">🔴 MARS</div>
         <div className="grid grid-cols-2 gap-3">
           {TROPHIES.map((x) => {
             const on = badges.includes(x.id);
@@ -1111,6 +1114,25 @@ function TrophyHall({ lang, onClose }: { lang: "en" | "bn"; onClose: () => void 
               </div>
             );
           })}
+        </div>
+        <div className="text-[10px] tracking-[0.3em] text-white/60 font-mono mt-6 mb-2">🌕 MOON · NASA MISSION PATCHES</div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {MOON_PATCHES.map((p) => {
+            const on = badges.includes(p.id);
+            return (
+              <div key={p.id} className={`rounded-xl p-3 text-center border ${on ? "border-[#ffd97d]/70 bg-[#ffd97d]/10" : "border-white/10 bg-white/5 opacity-60"}`}>
+                <img src={p.img} alt={`${p.name} patch`} className={`w-16 h-16 mx-auto object-contain ${on ? "drop-shadow-[0_0_10px_rgba(255,217,125,0.6)]" : "grayscale"}`} />
+                <div className={`mt-1 text-xs font-bold ${on ? "text-[#ffd97d]" : "text-white/60"}`}>{p.badge}</div>
+                <div className="text-[10px] text-white/50">{p.name.toUpperCase()} · {p.year}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div className={`mt-3 rounded-xl p-3 text-center border ${badges.includes("master-lunar") ? "border-[#ffd97d] bg-[#ffd97d]/10" : "border-white/10 bg-white/5 opacity-60"}`}>
+          <div className="text-sm font-bold text-[#ffd97d]">{badges.includes("master-lunar") ? "🌕 " : "🔒 "}{lang === "bn" ? "মাস্টার লুনার এক্সপ্লোরার" : "Master Lunar Explorer"}</div>
+          {badges.includes("master-lunar") && (
+            <button className="mt-2 text-xs underline text-white/80" onClick={() => { onClose(); store.emit("moonfinale:open"); }}>{lang === "bn" ? "🎓 সনদ ও সেলফি আবার খোলো" : "🎓 Reopen certificate & selfie"}</button>
+          )}
         </div>
       </div>
     </div>
