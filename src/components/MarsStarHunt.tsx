@@ -48,9 +48,7 @@ export function MarsStarHunt() {
   const take = () => {
     if (!card) return;
     const ids = collectStar(store.get().marsStars, card.id);
-    const award = zoneAward(ids,card.zone);
-    const badges = store.get().badges;
-    store.set({ marsStars: ids, badges: award && !badges.includes(award) ? [...badges,award] : badges });
+    store.set({ marsStars: ids });
     audio.beep(1320);
   };
   return <>

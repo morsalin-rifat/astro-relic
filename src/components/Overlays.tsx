@@ -1123,7 +1123,7 @@ function TrophyHall({ lang, onClose }: { lang: "en" | "bn"; onClose: () => void 
           })}
         </div>
         <h3 className="text-relic-gold text-sm font-bold mt-6 mb-2">★ {lang === "bn" ? "মঙ্গলের স্টার হান্ট" : "Mars Star Hunt"} · {marsStars.length}/28</h3>
-        <div className="grid grid-cols-2 gap-2">{MARS_REGIONS.map((r,zone)=><div key={r.en} className="rounded-lg border border-expedition-line bg-expedition text-expedition-ink p-3 text-center"><div>{badges.includes(`mars-stars-${zone}`) ? "🏅" : "★"}</div><div className="text-sm font-bold">{r[lang]}</div><div className="text-relic-gold text-xs mt-1">{zoneCount(marsStars,zone)}/7 {lang === "bn" ? "আবিষ্কার" : "discoveries"}</div></div>)}</div>
+        <div className="grid grid-cols-2 gap-2">{MARS_REGIONS.map((r,zone)=><div key={r.en} className="rounded-lg border border-expedition-line bg-expedition text-expedition-ink p-3 text-center"><div>{zoneCount(marsStars,zone) === 7 ? "🏅" : "★"}</div><div className="text-sm font-bold">{r[lang]}</div><div className="text-relic-gold text-xs mt-1">{zoneCount(marsStars,zone)}/7 {lang === "bn" ? "আবিষ্কার" : "discoveries"}</div></div>)}</div>
         <div className="text-[10px] tracking-[0.3em] text-white/60 font-mono mt-6 mb-2">🌕 MOON · NASA MISSION PATCHES</div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {MOON_PATCHES.map((p) => {
