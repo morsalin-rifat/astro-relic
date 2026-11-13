@@ -79,7 +79,7 @@ function Dialogue() {
   const lang = useGame((s) => s.lang);
   const phase = useGame((s) => s.phase);
 
-  if (phase === "home" || phase === "cinematic") return null;
+  if (phase === "home" || phase === "cinematic" || phase === "hub") return null;
 
   if (!current && choices) {
     return (
