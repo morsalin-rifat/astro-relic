@@ -16,6 +16,7 @@ const SPIRIT = new THREE.Vector3(-20, 0, -340);
 const OPPY = new THREE.Vector3(12, 0, -690);
 const INSIGHT = new THREE.Vector3(-6, 0, -1040);
 const WORLD = 320;
+const WALK_SPEED = 9; // metres/second on foot (Moon is 4.2; Mars ground is flatter, so we cover ground faster)
 const ZONE = 350; // metres per real NASA site
 const ZONES = [
   { url: "/models/zone1_ares.glb", name: "ZONE 1 · ARES VALLIS — SOJOURNER 1997", grade: [1.25, 0.82, 0.6] },
@@ -1171,7 +1172,7 @@ export class MarsWorldScene implements Scene {
     const moving = !this.meeting && !this.spiritMeeting && !this.oppyMeeting && !this.insightMeeting && input.lengthSq() > 0.001;
     if (moving) {
       input.normalize();
-      const speed = 6.5;
+      const speed = WALK_SPEED;
       const sin = Math.sin(this.camYaw);
       const cos = Math.cos(this.camYaw);
       const dir = new THREE.Vector3(
@@ -1208,7 +1209,7 @@ export class MarsWorldScene implements Scene {
     // walk animation
     const limbs = this.player.userData["limbs"];
     if (limbs) {
-      const speedK = Math.min(this.velocity.length() / 6.5, 1);
+      const speedK = Math.min(this.velocity.length() / WALK_SPEED, 1);
       const sw = Math.sin(t * 9) * 0.55 * speedK;
       limbs.legL.rotation.x = sw;
       limbs.legR.rotation.x = -sw;
@@ -1218,7 +1219,7 @@ export class MarsWorldScene implements Scene {
     }
 
     if (this.mixer && this.walkAction) {
-      const sk = Math.min(this.velocity.length() / 6.5, 1);
+      const sk = Math.min(this.velocity.length() / WALK_SPEED, 1);
       this.walkAction.setEffectiveWeight(1);
       this.walkAction.timeScale = sk < 0.05 ? 0 : 0.6 + sk * 0.8;
       this.mixer.update(dt);
