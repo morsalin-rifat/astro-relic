@@ -81,7 +81,7 @@ export function Apollo12Mission() {
     window.setTimeout(() => sayC("arrival"), 600);
   }), []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => store.on("a12:revisit", () => { setStage("done"); museum.current = true; }), []);
-  useEffect(() => { const off = ["a11:arrive", "a11:revisit", "a15:arrive", "a15:revisit"].map((ev) => store.on(ev, () => { setLine(null); setStage((st) => (st === "go" ? "idle" : st)); })); return () => off.forEach((o) => o()); }, []); // other zone entered
+  useEffect(() => { const off = ["a11:arrive", "a11:revisit", "a15:arrive", "a15:revisit", "a17:arrive", "a17:revisit"].map((ev) => store.on(ev, () => { setLine(null); setStage((st) => (st === "go" ? "idle" : st)); })); return () => off.forEach((o) => o()); }, []); // other zone entered
   useEffect(() => { if (phase !== "moon") { setStage("idle"); setLine(null); hush(); } }, [phase]);
 
   const action: { label: L; run: () => void } | null = (() => {

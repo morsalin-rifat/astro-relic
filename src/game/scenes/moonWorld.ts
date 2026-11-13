@@ -33,7 +33,8 @@ const LM_SPOTS: [number, number][] = [[0, 0], [30, -398], [0, -830], [0, -1255]]
 const A11_SPOTS = ["lm", "plaque", "flag", "boot", "lrrr", "psep", "memorial"];
 const A12_SPOTS = ["intrepid", "surveyor", "tvcam", "scoop", "rtg", "alsep12", "head"];
 const A15_SPOTS = ["falcon", "lrv15", "feather", "fallen", "genesis", "alsep15", "overlook"];
-const ZONE_SPOTS: Record<number, string[]> = { 0: A11_SPOTS, 1: A12_SPOTS, 2: A15_SPOTS };
+const A17_SPOTS = ["challenger", "lrv17", "orange", "tdc", "lastStep", "plaque17", "alsep17"];
+const ZONE_SPOTS: Record<number, string[]> = { 0: A11_SPOTS, 1: A12_SPOTS, 2: A15_SPOTS, 3: A17_SPOTS };
 const GRAVITY = 2.6; // gentle "1/6 g" feel
 const JUMP_V = 3.4;
 const SPEED = 4.2;
@@ -76,7 +77,10 @@ export const MOON_SITES: Site[] = [
   { id: "challenger", x: 0, z: -1255, en: "CHALLENGER · Apollo 17 LM", bn: "চ্যালেঞ্জার · অ্যাপোলো ১৭", info: "Last crewed landing · Dec 1972", r: 9, zone: 3 },
   { id: "lrv17", x: 12, z: -1268, en: "Lunar Rover LRV-3", bn: "লুনার রোভার LRV-3", info: "Fender fixed with a map & tape!", r: 4, zone: 3 },
   { id: "tdc", x: -8, z: -1270, en: "\"TDC\" in the dust", bn: "ধুলোয় লেখা \"TDC\"", info: "Cernan's daughter's initials", r: 3, zone: 3 },
-  { id: "lastStep", x: 3, z: -1247, en: "The Last Footprint", bn: "শেষ পদচিহ্ন", info: "Gene Cernan · 14 Dec 1972", r: 3, zone: 3 },
+  { id: "lastStep", x: 5, z: -1243, en: "The Last Footprint", bn: "শেষ পদচিহ্ন", info: "Gene Cernan · 14 Dec 1972", r: 3, zone: 3 },
+  { id: "orange", x: 22, z: -1278, en: "Orange Soil sample", bn: "কমলা মাটির নমুনা", info: "Found at Shorty Crater", r: 2, zone: 3 },
+  { id: "plaque17", x: 2, z: -1251, en: "Farewell Plaque", bn: "বিদায়ী ফলক", info: "On Challenger's ladder", r: 1.5, zone: 3 },
+  { id: "alsep17", x: -26, z: -1240, en: "ALSEP-17 Science Station", bn: "ALSEP-17 বিজ্ঞান কেন্দ্র", info: "Quakes, meteors & heat", r: 3, zone: 3 },
   { id: "shorty", x: 45, z: -1300, en: "Shorty Crater · Orange Soil", bn: "শর্টি ক্রেটার · কমলা মাটি", info: "Volcanic glass beads, 3.6 billion yrs", r: 12, zone: 3 },
   { id: "camelot", x: -55, z: -1215, en: "Camelot Crater", bn: "ক্যামেলট ক্রেটার", info: "Boulder field", r: 18, zone: 3 },
   { id: "smassif", x: -165, z: -1300, en: "South Massif", bn: "দক্ষিণ ম্যাসিফ", info: "2.3 km mountain wall", r: 60, zone: 3 },
@@ -282,14 +286,14 @@ export class MoonWorldScene implements Scene {
       for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 18 : 42; g.lineTo(64 + Math.cos(a) * rr, 64 + Math.sin(a) * rr); }
       g.closePath(); g.fill(); g.stroke();
     });
-    for (const id of [...A11_SPOTS, ...A12_SPOTS, ...A15_SPOTS]) {
+    for (const id of [...A11_SPOTS, ...A12_SPOTS, ...A15_SPOTS, ...A17_SPOTS]) {
       const site = MOON_SITES.find((x) => x.id === id); if (!site) continue;
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
       sp.scale.setScalar(1.3); sp.visible = false;
-      sp.position.set(site.x, this.groundHeight(site.x, site.z) + (id === "lm" || id === "intrepid" || id === "falcon" ? 5.2 : id === "head" ? 4 : 2.4), site.z);
+      sp.position.set(site.x, this.groundHeight(site.x, site.z) + (id === "lm" || id === "intrepid" || id === "falcon" || id === "challenger" ? 5.2 : id === "head" ? 4 : 2.4), site.z);
       sp.userData["y"] = sp.position.y; this.scene.add(sp); this.stars.set(id, sp);
     }
-    for (const [ev, set] of [["a11:stars", A11_SPOTS], ["a12:stars", A12_SPOTS], ["a15:stars", A15_SPOTS]] as const)
+    for (const [ev, set] of [["a11:stars", A11_SPOTS], ["a12:stars", A12_SPOTS], ["a15:stars", A15_SPOTS], ["a17:stars", A17_SPOTS]] as const)
       this.disposers.push(store.on(ev, (d) => { const ids = (d as string[]) || []; this.stars.forEach((sp, id) => { if (set.includes(id)) sp.visible = ids.includes(id); }); }));
   }
   private buildPassBeacons() {
@@ -339,7 +343,8 @@ export class MoonWorldScene implements Scene {
     if (z === 0 && !fl.includes("apollo11")) store.emit("a11:arrive");
     else if (z === 1 && !fl.includes("apollo12")) store.emit("a12:arrive");
     else if (z === 2 && !fl.includes("apollo15")) store.emit("a15:arrive");
-    else { if (z === 0) store.emit("a11:revisit"); if (z === 1) store.emit("a12:revisit"); if (z === 2) store.emit("a15:revisit"); store.say([{ speaker: "nova", ...Z.nova }]); }
+    else if (z === 3 && !fl.includes("apollo17")) store.emit("a17:arrive");
+    else { if (z === 0) store.emit("a11:revisit"); if (z === 1) store.emit("a12:revisit"); if (z === 2) store.emit("a15:revisit"); if (z === 3) store.emit("a17:revisit"); store.say([{ speaker: "nova", ...Z.nova }]); }
     if (this.hud) (this.hud.querySelector("[data-coord]") as HTMLElement).textContent = `${Z.coord} · ${Z.year}`;
     this.nearSite = "-";
   }
