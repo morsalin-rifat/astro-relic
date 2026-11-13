@@ -25,7 +25,7 @@ const STORY: { clip: string; icon: string; year: string; title: L }[] = [
 
 type Spot = { id: string; clip: string; icon: string; name: L; fact: L };
 const SPOTS: Spot[] = [
-  { id: "intrepid", clip: "spot_intrepid", icon: "🛸", name: { en: "Intrepid's Base", bn: "ইনট্রেপিডের ভিত্তি" }, fact: { en: "Still exactly where it landed", bn: "যেখানে নেমেছিল, আজও সেখানেই" } },
+  { id: "intrepid", clip: "spot_intrepid", icon: "🚀", name: { en: "Intrepid's Base", bn: "ইনট্রেপিডের ভিত্তি" }, fact: { en: "Still exactly where it landed", bn: "যেখানে নেমেছিল, আজও সেখানেই" } },
   { id: "surveyor", clip: "spot_surveyor", icon: "🤖", name: { en: "Surveyor 3 Robot", bn: "সার্ভেয়ার ৩ রোবট" }, fact: { en: "Landed April 1967", bn: "নেমেছিল এপ্রিল ১৯৬৭-তে" } },
   { id: "tvcam", clip: "spot_tv_camera", icon: "📷", name: { en: "The Missing Camera", bn: "হারানো ক্যামেরা" }, fact: { en: "Now in a museum on Earth!", bn: "এখন পৃথিবীর জাদুঘরে!" } },
   { id: "scoop", clip: "spot_scoop", icon: "🥄", name: { en: "The Robot Scoop", bn: "রোবটের চামচ" }, fact: { en: "Proved the ground was firm", bn: "প্রমাণ করেছিল মাটি শক্ত" } },
@@ -74,7 +74,7 @@ export function Apollo12Mission() {
 
   useEffect(() => store.on("a12:arrive", () => {
     reset(); setStage("go");
-    objective({ en: "🛸 Walk to the lander Intrepid", bn: "🛸 ল্যান্ডার ইনট্রেপিডের কাছে হেঁটে যাও" });
+    objective({ en: "🚀 Walk to the lander Intrepid", bn: "🚀 ল্যান্ডার ইনট্রেপিডের কাছে হেঁটে যাও" });
     window.setTimeout(() => sayC("arrival"), 600);
   }), []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => store.on("a12:revisit", () => { setStage("done"); museum.current = true; }), []);
@@ -169,7 +169,7 @@ export function Apollo12Mission() {
 
       {stage === "welcome" && card(<>
         {head("OCEAN OF STORMS · 1969", B("INTREPID meets SURVEYOR 3", "ইনট্রেপিড ও সার্ভেয়ার ৩"))}
-        {art("🛸", <div className="absolute bottom-3 right-4 text-5xl">🤖</div>)}
+        {art("🚀", <div className="absolute bottom-3 right-4 text-5xl">🤖</div>)}
         <div className="grid grid-cols-3 gap-2 text-center text-[10px] mt-3">
           {[["180 m", B("from the robot", "রোবট থেকে দূরে")], ["31", B("months alone", "মাস একা")], ["2", B("moonwalks", "বার হাঁটা")]].map(([a, b]) => (
             <div key={a} className="rounded-xl bg-white/5 border border-white/10 py-1.5"><div className="font-bold text-sm" style={{ color: ACC }}>{a}</div><div className="opacity-70">{b}</div></div>))}
