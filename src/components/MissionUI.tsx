@@ -14,6 +14,7 @@ export const BADGES: { id: string; icon: string; name: L; rover: L }[] = [
   { id: "gusev-fighter", icon: "🛡️", name: { en: "Gusev Fighter", bn: "গুসেভ যোদ্ধা" }, rover: { en: "Spirit · 2004", bn: "স্পিরিট · ২০০৪" } },
   { id: "meridiani-marathoner", icon: "🏃", name: { en: "Meridiani Marathoner", bn: "মেরিডিয়ানি ম্যারাথনার" }, rover: { en: "Opportunity · 2004", bn: "অপরচুনিটি · ২০০৪" } },
   { id: "silent-listener", icon: "🎧", name: { en: "Silent Listener", bn: "নীরব শ্রোতা" }, rover: { en: "InSight · 2018", bn: "ইনসাইট · ২০১৮" } },
+  { id: "eagle-guardian", icon: "🦅", name: { en: "Eagle Guardian", bn: "ঈগল গার্ডিয়ান" }, rover: { en: "Apollo 11 · 1969", bn: "অ্যাপোলো ১১ · ১৯৬৯" } },
   { id: "master-explorer", icon: "👑", name: { en: "Master Mars Explorer", bn: "মাস্টার মার্স এক্সপ্লোরার" }, rover: { en: "Grand Finale", bn: "গ্র্যান্ড ফিনালে" } },
 ];
 
@@ -145,7 +146,7 @@ function PhotoGallery({ lang, onClose }: { lang: "en" | "bn"; onClose: () => voi
 
 
 /* ---------- Hub-style left holo bubble with typewriter ---------- */
-export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker: "nova" | "sojourner" | "spirit" | "oppy" | "insight"; text: string; speaking?: boolean; onClick?: () => void; hint?: string }) {
+export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker: "nova" | "sojourner" | "spirit" | "oppy" | "insight" | "eagle"; text: string; speaking?: boolean; onClick?: () => void; hint?: string }) {
   const [n, setN] = useState(0);
   useEffect(() => {
     setN(0);
@@ -171,14 +172,14 @@ export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker
         {nova ? (
           <img src="/images/nova.png" alt="Nova" className="w-[72px] sm:w-[110px] md:w-[140px] h-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.65)]" draggable={false} />
         ) : (
-          <div className="w-[72px] h-[72px] sm:w-[104px] sm:h-[104px] rounded-full border-2 flex items-center justify-center text-4xl sm:text-6xl" style={{ borderColor: acc, background: `radial-gradient(circle, ${acc}33, #221a14)`, boxShadow: `0 0 ${speaking ? 26 : 14}px ${acc}${speaking ? "" : "66"}` }}>🤖</div>
+          <div className="w-[72px] h-[72px] sm:w-[104px] sm:h-[104px] rounded-full border-2 flex items-center justify-center text-4xl sm:text-6xl" style={{ borderColor: acc, background: `radial-gradient(circle, ${acc}33, #221a14)`, boxShadow: `0 0 ${speaking ? 26 : 14}px ${acc}${speaking ? "" : "66"}` }}>{speaker === "eagle" ? "🦅" : "🤖"}</div>
         )}
       </div>
       <div className="nova-bubble relative flex-1 md:flex-none md:w-[min(360px,calc(50vw-260px))] md:min-w-[260px] mb-3 cursor-pointer">
         <span className="nova-bubble-tail" aria-hidden />
         <div className={`nova-bubble-inner ${speaking ? "is-speaking" : ""}`} style={nova ? undefined : { borderColor: acc }}>
           <div className="flex items-center justify-between gap-2 mb-1.5">
-            <div className="nova-nameplate" style={nova ? undefined : speaker === "oppy" || speaker === "insight" ? { color: "#04121c", background: acc } : { color: acc }}><span className="nova-dot" />{nova ? "NOVA" : speaker === "spirit" ? "SPIRIT · 2004" : speaker === "oppy" ? "OPPY · 2004" : speaker === "insight" ? "INSIGHT · 2018" : "SOJOURNER · 1997"}</div>
+            <div className="nova-nameplate" style={nova ? undefined : speaker === "oppy" || speaker === "insight" ? { color: "#04121c", background: acc } : { color: acc }}><span className="nova-dot" />{nova ? "NOVA" : speaker === "spirit" ? "SPIRIT · 2004" : speaker === "oppy" ? "OPPY · 2004" : speaker === "insight" ? "INSIGHT · 2018" : speaker === "eagle" ? "EAGLE · 1969" : "SOJOURNER · 1997"}</div>
             {speaking && <div className="nova-wave" aria-hidden><i /><i /><i /><i /></div>}
           </div>
           <p className="nova-text min-h-[3.2rem]">{text.slice(0, n)}{!done && <span className="nova-caret" />}</p>
