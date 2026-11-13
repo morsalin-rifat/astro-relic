@@ -13,6 +13,7 @@ import { FinaleUI } from "./FinaleUI";
 import { Apollo11Mission } from "./Apollo11UI";
 import { Apollo12Mission } from "./Apollo12UI";
 import { Apollo15Mission } from "./Apollo15UI";
+import { Apollo17Mission } from "./Apollo17UI";
 import { MoonControls } from "./MoonControls";
 import { SojournerEncounter, Badges, BigMapClose, RoverLoader, HoloBubble } from "./MissionUI";
 
@@ -1053,6 +1054,7 @@ export function Overlays() {
       <Apollo11Mission />
       <Apollo12Mission />
       <Apollo15Mission />
+      <Apollo17Mission />
       <MoonControls />
       <Badges />
       <BigMapClose />
