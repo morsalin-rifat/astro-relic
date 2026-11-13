@@ -29,9 +29,9 @@ export function marsGuide(badges: string[], stars: string[]) {
       ? { en: `🏆 All 4 rovers met! Collect the last relic stars (${n}/28) — press M for the map`, bn: `🏆 চার রোভারের সাথেই দেখা হয়েছে! বাকি রিলিক তারাগুলো খোঁজো (${n}/28) — ম্যাপের জন্য M চাপো` }
       : { en: "🎉 Mars complete! Plant your flag and get your certificate", bn: "🎉 মঙ্গল সম্পূর্ণ! পতাকা ওড়াও আর সনদ নাও" };
   }
-  const r = ROVER_STEPS[z], reg = MARS_REGIONS[z];
+  const r = ROVER_STEPS[z]!, reg = MARS_REGIONS[z]!;
   if (z > 0) {
-    const prev = MARS_REGIONS[z - 1], n = zoneCount(stars, z - 1);
+    const prev = MARS_REGIONS[z - 1]!, n = zoneCount(stars, z - 1);
     if (n < 7) return { en: `🔍 Mission done! Find the golden relic stars of ${prev.en} (${n}/7), then walk south to ${r.en}`, bn: `🔍 মিশন শেষ! ${prev.bn}-এর সোনালি রিলিক তারা খোঁজো (${n}/7), তারপর দক্ষিণে ${r.bn}-এর কাছে যাও` };
     return { en: `🚶 Walk south through the glowing pass to ${r.en} in ${reg.en}`, bn: `🚶 আলো জ্বলা দক্ষিণের গিরিপথ দিয়ে ${reg.bn}-এ ${r.bn}-এর কাছে যাও` };
   }

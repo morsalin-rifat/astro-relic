@@ -74,7 +74,7 @@ function drawFlag(g: CanvasRenderingContext2D, id: string, x: number, y: number,
 }
 
 /** Face-in-helmet poster: kid's face inside the astronaut visor, chosen flag planted beside them. */
-async function makeSelfie(face: string, o: { zoom: number; dx: number; dy: number; flag: string; custom: string | null; name: string; mars?: boolean }): Promise<string> {
+async function makeSelfie(face: string, o: { zoom: number; dx: number; dy: number; flag: string; custom: string | null; name: string; mars?: boolean | undefined }): Promise<string> {
   const W = 1024, H = 1280;
   const c = document.createElement("canvas"); c.width = W; c.height = H;
   const g = c.getContext("2d")!;
@@ -155,7 +155,7 @@ async function drawCert(name: string, selfie: string | null): Promise<string> {
 }
 const download = (url: string, n: string) => { const a = document.createElement("a"); a.download = n; a.href = url; a.click(); };
 
-export function SelfieBooth({ tt, name, setName, onDone, onBack, mars }: { tt: (l: L) => string; name: string; setName: (n: string) => void; onDone: (url: string | null) => void; onBack: () => void; mars?: boolean }) {
+export function SelfieBooth({ tt, name, setName, onDone, onBack, mars }: { tt: (l: L) => string; name: string; setName: (n: string) => void; onDone: (url: string | null) => void; onBack: () => void; mars?: boolean | undefined }) {
   const video = useRef<HTMLVideoElement>(null);
   const stream = useRef<MediaStream | null>(null);
   const [live, setLive] = useState(false);
