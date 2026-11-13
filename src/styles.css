@@ -838,3 +838,9 @@ body {
 @media (pointer: coarse) and (orientation: landscape) and (min-height: 521px) and (max-height: 820px) {
   .game-ui { zoom: 0.88; }
 }
+
+/* Moon touch buttons (touch only) */
+.touch-actions { right: max(1.25rem, env(safe-area-inset-right)); bottom: max(1.25rem, env(safe-area-inset-bottom)); }
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
+  .badge-pill.badge-play { display: none; }
+}

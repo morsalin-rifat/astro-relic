@@ -511,6 +511,26 @@ function TopControls() {
   );
 }
 
+/* ---------------- Touch action buttons (moon) ---------------- */
+function pressKey(code: string) {
+  window.dispatchEvent(new KeyboardEvent("keydown", { code, key: code === "Space" ? " " : code.slice(3).toLowerCase(), bubbles: true }));
+  setTimeout(() => window.dispatchEvent(new KeyboardEvent("keyup", { code, key: code === "Space" ? " " : code.slice(3).toLowerCase(), bubbles: true })), 120);
+}
+function TouchActions() {
+  const phase = useGame((s) => s.phase);
+  const near = useGame((s) => s.moonNear);
+  const lang = useGame((s) => s.lang);
+  if (phase !== "moon") return null;
+  const btn = "touch-btn rounded-full border border-[#ffd97d]/60 bg-black/45 text-[#ffd97d] font-semibold touch-none select-none active:scale-90 transition-transform flex items-center justify-center";
+  return (
+    <div className="touch-actions absolute z-30 flex items-end gap-3 [@media(pointer:fine)]:hidden">
+      <button aria-label="Map (M)" className={btn + " w-12 h-12 text-lg"} onPointerDown={(e) => { e.preventDefault(); pressKey("KeyM"); }}>🗺️</button>
+      {near && <button aria-label="Action (E)" className={btn + " w-16 h-16 text-sm bg-[#ffd97d]/25 animate-pulse"} onPointerDown={(e) => { e.preventDefault(); pressKey("KeyE"); }}>{lang === "bn" ? "দেখো" : "Look"}</button>}
+      <button aria-label="Jump" className={btn + " w-20 h-20 text-base"} onPointerDown={(e) => { e.preventDefault(); pressKey("Space"); }}>{lang === "bn" ? "লাফ" : "Jump"}</button>
+    </div>
+  );
+}
+
 /* ---------------- Touch joystick ---------------- */
 function Joystick() {
   const phase = useGame((s) => s.phase);
@@ -549,7 +569,7 @@ function Joystick() {
       }}
     >
       <div
-        className="absolute w-10 h-10 rounded-full bg-[#ffd97d]/50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        className="absolute w-10 h-10 rounded-full bg-[#ffd97d]/50 left-1/2 top-1/2"
         style={{
           transform: `translate(calc(-50% + ${pos.x * 30}px), calc(-50% + ${pos.y * 30}px))`,
         }}
@@ -1060,6 +1080,7 @@ export function Overlays() {
       <TelemetryBar />
       <TopControls />
       <Joystick />
+      <TouchActions />
       <MobileLandscape />
       <SojournerEncounter />
       <SpiritEncounter />
