@@ -56,6 +56,9 @@ interface GameState {
   moonZone: number;
   /** which Mars landing region (0-3) to spawn at */
   marsZone: number;
+  marsStars: string[];
+  marsNear: string | null;
+  marsCard: string | null;
   moonNear: string | null;
   moonFreeze: boolean;
   showEncounter: boolean;
@@ -106,6 +109,9 @@ class Store {
     loading: false,
     moonZone: 0,
     marsZone: 0,
+    marsStars: Array.isArray(persisted.marsStars) ? persisted.marsStars.filter((id: unknown) => typeof id === "string") : [],
+    marsNear: null,
+    marsCard: null,
     moonNear: null,
     moonFreeze: false,
     showEncounter: false,
@@ -133,6 +139,7 @@ class Store {
       "tutorialDone" in partial ||
       "hasSeenHubIntro" in partial ||
       "badges" in partial
+      || "marsStars" in partial
     ) {
       try {
         localStorage.setItem(
@@ -142,6 +149,7 @@ class Store {
             lang: this.state.lang,
             tutorialDone: this.state.tutorialDone,
             badges: this.state.badges,
+            marsStars: this.state.marsStars,
           }),
         );
       } catch {
