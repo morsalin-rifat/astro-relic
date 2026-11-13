@@ -16,6 +16,9 @@ import { Apollo12Mission } from "./Apollo12UI";
 import { Apollo15Mission } from "./Apollo15UI";
 import { Apollo17Mission } from "./Apollo17UI";
 import { MoonControls } from "./MoonControls";
+import { MarsStarHunt } from "./MarsStarHunt";
+import { MARS_REGIONS } from "../data/marsDiscoveries";
+import { zoneCount } from "../game/sim/marsStarRules";
 import { SojournerEncounter, Badges, BigMapClose, RoverLoader, HoloBubble } from "./MissionUI";
 
 const POP = "cubic-bezier(.785, .135, .15, .01)";
@@ -1060,6 +1063,7 @@ export function Overlays() {
       <Apollo15Mission />
       <Apollo17Mission />
       <MoonControls />
+      <MarsStarHunt />
       <Badges />
       <BigMapClose />
       <RoverLoader />
@@ -1082,6 +1086,7 @@ const TROPHIES = [
 
 function TrophyHall({ lang, onClose }: { lang: "en" | "bn"; onClose: () => void }) {
   const badges = useGame((s) => s.badges);
+  const marsStars = useGame((s) => s.marsStars);
   const got = TROPHIES.filter((x) => badges.includes(x.id)).length;
   const master = got === TROPHIES.length;
   const L = (o: { en: string; bn: string }) => o[lang];
@@ -1117,6 +1122,8 @@ function TrophyHall({ lang, onClose }: { lang: "en" | "bn"; onClose: () => void 
             );
           })}
         </div>
+        <h3 className="text-relic-gold text-sm font-bold mt-6 mb-2">★ {lang === "bn" ? "মঙ্গলের স্টার হান্ট" : "Mars Star Hunt"} · {marsStars.length}/28</h3>
+        <div className="grid grid-cols-2 gap-2">{MARS_REGIONS.map((r,zone)=><div key={r.en} className="rounded-lg border border-expedition-line bg-expedition text-expedition-ink p-3 text-center"><div>{badges.includes(`mars-stars-${zone}`) ? "🏅" : "★"}</div><div className="text-sm font-bold">{r[lang]}</div><div className="text-relic-gold text-xs mt-1">{zoneCount(marsStars,zone)}/7 {lang === "bn" ? "আবিষ্কার" : "discoveries"}</div></div>)}</div>
         <div className="text-[10px] tracking-[0.3em] text-white/60 font-mono mt-6 mb-2">🌕 MOON · NASA MISSION PATCHES</div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {MOON_PATCHES.map((p) => {
