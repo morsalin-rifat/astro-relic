@@ -217,30 +217,30 @@ export const HUB = {
   marsExp: { en: "MARS EXPEDITION", bn: "মঙ্গল অভিযান" },
   moonExp: { en: "MOON EXPEDITION", bn: "চাঁদ অভিযান" },
   newGame: { en: "NEW GAME", bn: "নতুন গেম" },
-  newGameSub: { en: "Begin surface expedition", bn: "গ্রহ অভিযান শুরু করুন" },
+  newGameSub: { en: "Land and start exploring!", bn: "নেমে পড়ো, ঘুরে দেখো!" },
   chapters: { en: "CHAPTERS", bn: "অধ্যায়" },
-  chaptersSub: { en: "View sites & relics", bn: "মিশন ও ঐতিহাসিক স্মৃতি" },
-  howToPlay: { en: "HOW TO PLAY", bn: "কীভাবে খেলবেন" },
-  howtoSub: { en: "Controls & exploration", bn: "কন্ট্রোল ও নেভিগেশন" },
+  chaptersSub: { en: "Jump to any place", bn: "যেকোনো জায়গায় চলে যাও" },
+  howToPlay: { en: "HOW TO PLAY", bn: "কীভাবে খেলবে" },
+  howtoSub: { en: "Learn the game step by step", bn: "খেলাটা সহজে শিখে নাও" },
   resetGame: { en: "RESET GAME", bn: "গেম রিসেট" },
-  resetSub: { en: "Clear mission save", bn: "মিশন প্রগ্রেস রিসেট" },
+  resetSub: { en: "Start everything again", bn: "সব আবার নতুন করে শুরু" },
   home: { en: "HOME", bn: "হোম" },
-  homeSub: { en: "Return to star map", bn: "প্রধান মেনুতে প্রস্থান" },
+  homeSub: { en: "Go back to the start", bn: "শুরুর পাতায় ফিরে যাও" },
   cmdConsole: { en: "COMMAND CONSOLE", bn: "কমান্ড কনসোল" },
-  selectDirective: { en: "SELECT DIRECTIVE", bn: "অপারেশন নির্ধারণ করুন" },
+  selectDirective: { en: "WHAT DO YOU WANT TO DO?", bn: "কী করতে চাও বেছে নাও" },
   onlineStatus: { en: "ONLINE", bn: "সক্রিয়" },
   metricsTitle: { en: "TARGET TELEMETRY", bn: "টার্গেট টেলিমেট্রি" },
   gravity: { en: "GRAVITY", bn: "অভিকর্ষ" },
   temp: { en: "SURFACE TEMP", bn: "পৃষ্ঠ তাপমাত্রা" },
   atmosphere: { en: "ATMOSPHERE", bn: "বায়ুমণ্ডল" },
   chapterTrail: { en: "EXPEDITION TRAIL", bn: "অভিযানের পথ" },
-  launch: { en: "LAUNCH", bn: "শুরু করুন" },
+  launch: { en: "LAUNCH", bn: "শুরু করো" },
   done: { en: "COMPLETE", bn: "সম্পন্ন" },
   soon: { en: "SOON", bn: "শীঘ্রই" },
   moonSoon: { en: "MOON UNIVERSE — COMING SOON", bn: "চাঁদ ইউনিভার্স — শীঘ্রই আসছে" },
   inProduction: {
     en: "This chapter is still being built — finish Chapter 01 first!",
-    bn: "এই অধ্যায়টি এখনো তৈরি হচ্ছে — আগে অধ্যায় ০১ শেষ করুন!",
+    bn: "এই অধ্যায়টা এখনো বন্ধ — আগের মিশনটা শেষ করো!",
   },
   resetConfirm: { en: "Erase all mission progress?", bn: "সব মিশন প্রগ্রেস মুছে যাবে?" },
   resetWarn: {
@@ -253,40 +253,96 @@ export const HUB = {
     en: "All progress erased. A fresh journey awaits!",
     bn: "সব প্রগ্রেস মুছে গেছে। নতুন করে যাত্রা শুরু!",
   },
-  close: { en: "GOT IT", bn: "বুঝেছি" },
+  close: { en: "GOT IT, LET'S PLAY!", bn: "বুঝেছি, চলো খেলি!" },
 };
 
 export const HOWTO = [
   {
-    icon: "🚶",
-    title: { en: "Explore the surface", bn: "পৃষ্ঠ ঘোরাঘুরি" },
+    icon: "🚀",
+    title: { en: "1. Pick a planet", bn: "১. গ্রহ বেছে নাও" },
     body: {
-      en: "Walk with WASD or the on-screen joystick. Drag to look around.",
-      bn: "WASD বা স্ক্রিনের জয়স্টিক দিয়ে হাঁটুন। টেনে চারপাশ দেখুন।",
+      en: "Tap the Mars or Moon button at the top. Then press NEW GAME to land, or CHAPTERS to jump to any place you like.",
+      bn: "উপরের মঙ্গল বা চাঁদ বোতাম চাপো। তারপর নামতে চাপো নতুন গেম, আর যেকোনো জায়গায় সরাসরি যেতে চাপো অধ্যায়।",
+    },
+  },
+  {
+    icon: "🚶",
+    title: { en: "2. Walk around", bn: "২. হাঁটাহাঁটি করো" },
+    body: {
+      en: "On a computer, use W A S D (or the arrow keys) to walk and Space to jump. On a phone, push the round joystick at the bottom left.",
+      bn: "কম্পিউটারে W A S D (বা তীর চিহ্ন) চেপে হাঁটো, আর Space চেপে লাফ দাও। ফোনে নিচের বাম কোণের গোল জয়স্টিকটা আঙুল দিয়ে ঠেলো।",
+    },
+  },
+  {
+    icon: "👀",
+    title: { en: "3. Look around", bn: "৩. চারপাশে তাকাও" },
+    body: {
+      en: "Drag with your mouse or finger on the screen to turn your head and see everything around you.",
+      bn: "মাউস বা আঙুল দিয়ে স্ক্রিন টেনে মাথা ঘোরাও, চারপাশের সবকিছু দেখো।",
+    },
+  },
+  {
+    icon: "🎯",
+    title: { en: "4. Read the mission line", bn: "৪. উপরের নির্দেশ পড়ো" },
+    body: {
+      en: "Look at the top of the screen. Nova always tells you what to do next, like 'Walk south to meet Spirit'. Just follow it!",
+      bn: "স্ক্রিনের একদম উপরে দেখো। নোভা সবসময় বলে দেয় এরপর কী করতে হবে, যেমন 'দক্ষিণে হেঁটে স্পিরিটের কাছে যাও'। শুধু সেটা মেনে চলো!",
+    },
+  },
+  {
+    icon: "🗺️",
+    title: { en: "5. Use the map", bn: "৫. ম্যাপ দেখো" },
+    body: {
+      en: "The small map in the corner shows where you are. Press M (or the map button) to open the big map and see where to go.",
+      bn: "কোণের ছোট ম্যাপে দেখা যায় তুমি কোথায় আছো। M চাপো (বা ম্যাপ বোতাম) — বড় ম্যাপ খুলবে, কোথায় যেতে হবে দেখতে পাবে।",
     },
   },
   {
     icon: "🤖",
-    title: { en: "Meet the old machines", bn: "পুরনো যন্ত্রদের সাথে পরিচয়" },
+    title: { en: "6. Meet the sleeping robots", bn: "৬. ঘুমন্ত রোবটদের সাথে দেখা করো" },
     body: {
-      en: "Follow the beacon to find forgotten rovers and landers. They remember everything.",
-      bn: "বিকনের আলো অনুসরণ করে ভুলে যাওয়া রোভার-ল্যান্ডার খুঁজুন। তারা সব মনে রাখে।",
+      en: "Old rovers and landers were left behind long ago. Walk close and press E (or the glowing 'Look' button). They will wake up and tell you their real NASA story!",
+      bn: "অনেক আগে কিছু রোভার আর ল্যান্ডার একা পড়ে আছে। কাছে গিয়ে E চাপো (বা জ্বলজ্বলে 'দেখো' বোতাম)। ওরা জেগে উঠে নিজের আসল নাসা গল্প শোনাবে!",
     },
   },
   {
-    icon: "🔊",
-    title: { en: "Hear their true stories", bn: "তাদের আসল গল্প শুনুন" },
+    icon: "🔄",
+    title: { en: "7. Spin the rover", bn: "৭. রোভার ঘুরিয়ে দেখো" },
     body: {
-      en: "Click a machine to hear its real NASA story — in English or Bangla.",
-      bn: "যন্ত্রে ক্লিক করলেই তার আসল নাসা গল্প — ইংরেজি বা বাংলায়।",
+      en: "When a rover card opens, drag it to spin it all the way around. Tap the little dots to learn what each part does.",
+      bn: "রোভারের কার্ড খুললে টেনে পুরোটা ঘুরিয়ে দেখো। ছোট ছোট বিন্দুতে চাপলে জানবে কোন অংশ কী কাজ করে।",
     },
   },
   {
-    icon: "🚩",
-    title: { en: "Raise the flag", bn: "পতাকা উড়াও" },
+    icon: "⭐",
+    title: { en: "8. Collect golden stars", bn: "৮. সোনালি তারা জমাও" },
     body: {
-      en: "Finish a chapter to raise its flag and unlock the next mission.",
-      bn: "একটি অধ্যায় শেষ করলেই পতাকা উড়বে ও পরের মিশন খুলবে।",
+      en: "Shiny stars hide near rocks and craters. Walk into one to collect it and learn a fun fact. Mars has 28 stars — can you find them all?",
+      bn: "পাথর আর গর্তের পাশে ঝকঝকে তারা লুকিয়ে আছে। তারার কাছে হেঁটে গেলেই সেটা তোমার হবে, সাথে একটা মজার তথ্যও জানবে। মঙ্গলে আছে ২৮টা তারা — সবগুলো খুঁজে পাবে তো?",
+    },
+  },
+  {
+    icon: "🧠",
+    title: { en: "9. Answer the quiz", bn: "৯. কুইজের উত্তর দাও" },
+    body: {
+      en: "After a story, Nova asks easy questions. Don't worry if you get one wrong — you can try again!",
+      bn: "গল্প শেষে নোভা কিছু সহজ প্রশ্ন করবে। ভুল হলে ভয় নেই — আবার চেষ্টা করতে পারবে!",
+    },
+  },
+  {
+    icon: "🏅",
+    title: { en: "10. Win badges and your certificate", bn: "১০. ব্যাজ আর সনদ জেতো" },
+    body: {
+      en: "Every mission gives you a badge. Finish all four and take a selfie in a spacesuit, then download your own explorer certificate!",
+      bn: "প্রতিটা মিশন শেষে একটা ব্যাজ পাবে। চারটা মিশন শেষ করলে স্পেসস্যুটে সেলফি তুলে নিজের অভিযাত্রী সনদ ডাউনলোড করো!",
+    },
+  },
+  {
+    icon: "💡",
+    title: { en: "Stuck? No problem!", bn: "আটকে গেছো? চিন্তা নেই!" },
+    body: {
+      en: "Read Nova's message, open the big map, or press ⏩ to skip a long talk. You can also switch English / বাংলা anytime.",
+      bn: "নোভার কথা পড়ো, বড় ম্যাপ খোলো, বা লম্বা কথা টপকাতে ⏩ চাপো। যেকোনো সময় English / বাংলা বদলাতেও পারো।",
     },
   },
 ];
