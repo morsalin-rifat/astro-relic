@@ -15,6 +15,7 @@ export const BADGES: { id: string; icon: string; name: L; rover: L }[] = [
   { id: "meridiani-marathoner", icon: "🏃", name: { en: "Meridiani Marathoner", bn: "মেরিডিয়ানি ম্যারাথনার" }, rover: { en: "Opportunity · 2004", bn: "অপরচুনিটি · ২০০৪" } },
   { id: "silent-listener", icon: "🎧", name: { en: "Silent Listener", bn: "নীরব শ্রোতা" }, rover: { en: "InSight · 2018", bn: "ইনসাইট · ২০১৮" } },
   { id: "eagle-guardian", icon: "🦅", name: { en: "Eagle Guardian", bn: "ঈগল গার্ডিয়ান" }, rover: { en: "Apollo 11 · 1969", bn: "অ্যাপোলো ১১ · ১৯৬৯" } },
+  { id: "relic-recoverer", icon: "📷", name: { en: "Relic Recoverer", bn: "রিলিক রিকভারার" }, rover: { en: "Apollo 12 · 1969", bn: "অ্যাপোলো ১২ · ১৯৬৯" } },
   { id: "master-explorer", icon: "👑", name: { en: "Master Mars Explorer", bn: "মাস্টার মার্স এক্সপ্লোরার" }, rover: { en: "Grand Finale", bn: "গ্র্যান্ড ফিনালে" } },
 ];
 
