@@ -14,6 +14,30 @@ function inspectNearby() {
   store.set({ marsCard: s.marsNear, bigMap: false });
 }
 
+const ROVER_STEPS = [
+  { badge: "ares-pioneer", en: "Sojourner", bn: "সোজার্নার" },
+  { badge: "gusev-fighter", en: "Spirit", bn: "স্পিরিট" },
+  { badge: "meridiani-marathoner", en: "Opportunity", bn: "অপরচুনিটি" },
+  { badge: "silent-listener", en: "InSight", bn: "ইনসাইট" },
+];
+/** Moon-style step-by-step objective for Mars: meet rover → find its region's relics → walk south. */
+export function marsGuide(badges: string[], stars: string[]) {
+  const z = ROVER_STEPS.findIndex((r) => !badges.includes(r.badge));
+  if (z === -1) {
+    const n = stars.length;
+    return n < 28
+      ? { en: `🏆 All 4 rovers met! Collect the last relic stars (${n}/28) — press M for the map`, bn: `🏆 চার রোভারের সাথেই দেখা হয়েছে! বাকি রিলিক তারাগুলো খোঁজো (${n}/28) — ম্যাপের জন্য M চাপো` }
+      : { en: "🎉 Mars complete! Plant your flag and get your certificate", bn: "🎉 মঙ্গল সম্পূর্ণ! পতাকা ওড়াও আর সনদ নাও" };
+  }
+  const r = ROVER_STEPS[z]!, reg = MARS_REGIONS[z]!;
+  if (z > 0) {
+    const prev = MARS_REGIONS[z - 1]!, n = zoneCount(stars, z - 1);
+    if (n < 7) return { en: `🔍 Mission done! Find the golden relic stars of ${prev.en} (${n}/7), then walk south to ${r.en}`, bn: `🔍 মিশন শেষ! ${prev.bn}-এর সোনালি রিলিক তারা খোঁজো (${n}/7), তারপর দক্ষিণে ${r.bn}-এর কাছে যাও` };
+    return { en: `🚶 Walk south through the glowing pass to ${r.en} in ${reg.en}`, bn: `🚶 আলো জ্বলা দক্ষিণের গিরিপথ দিয়ে ${reg.bn}-এ ${r.bn}-এর কাছে যাও` };
+  }
+  return { en: `🛞 Walk to the rover ${r.en} at ${reg.en} and say hello`, bn: `🛞 ${reg.bn}-এ রোভার ${r.bn}-এর কাছে হেঁটে গিয়ে হ্যালো বলো` };
+}
+
 export function MarsStarHunt() {
   const s = useGame(s => s);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -27,6 +51,12 @@ export function MarsStarHunt() {
     closeRef.current?.focus();
     return () => previousFocus.current?.focus();
   }, [card?.id]);
+  const guide = marsGuide(s.badges, s.marsStars);
+  useEffect(() => {
+    if (s.phase !== "explore") return;
+    const cur = store.get().objective;
+    if (cur?.en !== guide.en) store.set({ objective: guide });
+  }, [s.phase, guide.en]);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       const st = store.get();

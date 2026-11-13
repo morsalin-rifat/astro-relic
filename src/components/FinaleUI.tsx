@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { store, useGame } from "../state/store";
+import { SelfieBooth } from "./MoonFinaleUI";
 
 type L = { en: string; bn: string };
 const GOLD = "#ffd97d";
@@ -16,6 +17,7 @@ const TX = {
   next: { en: "Continue ▸", bn: "এগিয়ে চলো ▸" },
   debrief: { en: "MISSION DEBRIEF", bn: "মিশন রিপোর্ট" },
   closing: { en: "They were abandoned, but never forgotten. Because of you, their stories live on. Welcome to the Hall of Mars Legends.", bn: "ওরা পরিত্যক্ত হয়েছিল, কিন্তু কখনো ভুলে যাওয়া হয়নি। তোমার কারণেই ওদের গল্প বেঁচে থাকবে। মঙ্গল কিংবদন্তিদের হলে স্বাগতম।" },
+  selfie: { en: "📸 Selfie on Mars", bn: "📸 মঙ্গলে সেলফি তোলো" },
   cert: { en: "🎓 Get My Certificate", bn: "🎓 আমার সনদ নাও" },
   name: { en: "Your name", bn: "তোমার নাম" },
   dl: { en: "⬇ Download Certificate", bn: "⬇ সনদ ডাউনলোড" },
@@ -24,7 +26,7 @@ const TX = {
   home: { en: "🏠 Go to Home", bn: "🏠 হোমে যাও" },
 };
 
-function drawCert(name: string) {
+async function drawCert(name: string, selfie: string | null) {
   const c = document.createElement("canvas");
   c.width = 1600; c.height = 1100;
   const g = c.getContext("2d")!;
@@ -48,6 +50,17 @@ function drawCert(name: string) {
     g.fillStyle = GOLD; g.font = "bold 26px sans-serif"; g.fillText(r.name, x, y + 140);
     g.fillStyle = "#f5e6d3"; g.font = "20px sans-serif"; g.fillText(r.badge, x, y + 172);
   });
+  if (selfie) {
+    const me = await new Promise<HTMLImageElement>((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(i); i.src = selfie; });
+    if (me.naturalWidth) {
+      g.save(); g.beginPath(); g.arc(1360, 330, 95, 0, Math.PI * 2); g.clip();
+      const sc = Math.max(190 / me.naturalWidth, 190 / me.naturalHeight); const w = me.naturalWidth * sc, h = me.naturalHeight * sc;
+      g.drawImage(me, 1360 - w / 2, 330 - h / 2, w, h); g.restore();
+      g.strokeStyle = GOLD; g.lineWidth = 5; g.beginPath(); g.arc(1360, 330, 95, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = "#f5e6d3"; g.font = "16px sans-serif"; g.fillText("EXPLORER PHOTO ID", 1360, 450);
+    }
+  }
+  g.fillStyle = GOLD; g.font = "italic 30px serif"; g.fillText("“Abandoned, but never forgotten.”", 800, 610);
   g.fillStyle = "#c9a88a"; g.font = "24px sans-serif";
   g.fillText(new Date().toLocaleDateString(), 800, 990);
   const a = document.createElement("a");
@@ -60,7 +73,8 @@ export function FinaleUI() {
   const flags = useGame((s) => s.flags);
   const lang = useGame((s) => s.lang);
   const showInsight = useGame((s) => s.showInsight);
-  const [step, setStep] = useState<"idle" | "ready" | "ceremony" | "debrief" | "cert">("idle");
+  const [step, setStep] = useState<"idle" | "ready" | "ceremony" | "debrief" | "selfie" | "cert">("idle");
+  const [selfie, setSelfie] = useState<string | null>(null);
   const [lit, setLit] = useState(0);
   const [typed, setTyped] = useState(0);
   const [name, setName] = useState("");
@@ -172,10 +186,12 @@ export function FinaleUI() {
               <div className="text-3xl">🤖</div>
               <p className="text-white/90 min-h-[4.5em]">{tt(TX.closing).slice(0, typed)}<span className="animate-pulse">▌</span></p>
             </div>
-            <div className="text-center"><button className={btn} style={{ background: GOLD, color: "#2a1205" }} onClick={() => setStep("cert")}>{tt(TX.cert)}</button></div>
+            <div className="text-center"><button className={btn} style={{ background: GOLD, color: "#2a1205" }} onClick={() => setStep("selfie")}>{tt(TX.selfie)}</button>
+              <button className={btn + " border ml-3"} style={{ borderColor: GOLD }} onClick={() => setStep("cert")}>{tt(TX.cert)}</button></div>
           </div>
         </div>
       )}
+      {step === "selfie" && <SelfieBooth mars tt={tt} name={name} setName={setName} onBack={() => setStep("debrief")} onDone={(u) => { setSelfie(u); setStep("cert"); }} />}
       {step === "cert" && (
         <div className="min-h-full flex items-center justify-center p-4">
           <div className="w-full max-w-lg rounded-2xl border-4 p-8 text-center" style={{ borderColor: GOLD, background: "linear-gradient(#1a0d14,#4a1d12)" }}>
@@ -183,9 +199,10 @@ export function FinaleUI() {
             <div className="text-3xl font-serif font-bold my-3" style={{ color: GOLD }}>Junior Mars Historian</div>
             <input value={name} onChange={(e) => setName(e.target.value.slice(0, 30))} placeholder={tt(TX.name)}
               className="w-full text-center text-2xl font-serif bg-transparent border-b-2 outline-none py-2 mb-4" style={{ borderColor: GOLD }} />
+            {selfie && <img src={selfie} alt="Your Mars astronaut photo" className="mx-auto mb-4 w-28 h-28 rounded-full object-cover border-4" style={{ borderColor: GOLD }} />}
             <div className="flex justify-center gap-2 text-3xl mb-6">{ROVERS.map((r) => <span key={r.id}>{r.icon}</span>)}</div>
             <div className="flex flex-col gap-3">
-              <button className={btn} style={{ background: GOLD, color: "#2a1205" }} onClick={() => drawCert(name)}>{tt(TX.dl)}</button>
+              <button className={btn} style={{ background: GOLD, color: "#2a1205" }} onClick={() => void drawCert(name, selfie)}>{tt(TX.dl)}</button>
               <div className="flex gap-3 justify-center flex-wrap">
                 <button className={btn + " border"} style={{ borderColor: GOLD }} onClick={() => finish(false)}>{tt(TX.keep)}</button>
                 <button className={btn + " border"} style={{ borderColor: GOLD }} onClick={() => finish(true)}>{tt(TX.hub)}</button>

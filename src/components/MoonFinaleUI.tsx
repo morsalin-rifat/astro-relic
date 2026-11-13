@@ -74,12 +74,16 @@ function drawFlag(g: CanvasRenderingContext2D, id: string, x: number, y: number,
 }
 
 /** Face-in-helmet poster: kid's face inside the astronaut visor, chosen flag planted beside them. */
-async function makeSelfie(face: string, o: { zoom: number; dx: number; dy: number; flag: string; custom: string | null; name: string }): Promise<string> {
+async function makeSelfie(face: string, o: { zoom: number; dx: number; dy: number; flag: string; custom: string | null; name: string; mars?: boolean | undefined }): Promise<string> {
   const W = 1024, H = 1280;
   const c = document.createElement("canvas"); c.width = W; c.height = H;
   const g = c.getContext("2d")!;
   const [bg, me, cu] = await Promise.all([loadImg("/images/selfie/astronaut.jpg"), loadImg(face), o.custom ? loadImg(o.custom) : Promise.resolve(null)]);
   cover(g, bg, 0, 0, W, H);
+  if (o.mars) { // red-planet tint: dusty butterscotch sky and rusty ground
+    g.save(); g.globalCompositeOperation = "multiply"; g.fillStyle = "#e8a070"; g.fillRect(0, 0, W, H);
+    g.globalCompositeOperation = "soft-light"; const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, "#d9925a"); sky.addColorStop(1, "#8a3a1a"); g.fillStyle = sky; g.fillRect(0, 0, W, H); g.restore();
+  }
   // face in visor
   const cx = 688, cy = 356, rx = 78, ry = 80;
   g.save(); g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, 7); g.clip();
@@ -151,7 +155,7 @@ async function drawCert(name: string, selfie: string | null): Promise<string> {
 }
 const download = (url: string, n: string) => { const a = document.createElement("a"); a.download = n; a.href = url; a.click(); };
 
-function SelfieBooth({ tt, name, setName, onDone, onBack }: { tt: (l: L) => string; name: string; setName: (n: string) => void; onDone: (url: string | null) => void; onBack: () => void }) {
+export function SelfieBooth({ tt, name, setName, onDone, onBack, mars }: { tt: (l: L) => string; name: string; setName: (n: string) => void; onDone: (url: string | null) => void; onBack: () => void; mars?: boolean | undefined }) {
   const video = useRef<HTMLVideoElement>(null);
   const stream = useRef<MediaStream | null>(null);
   const [live, setLive] = useState(false);
@@ -164,7 +168,7 @@ function SelfieBooth({ tt, name, setName, onDone, onBack }: { tt: (l: L) => stri
   const [custom, setCustom] = useState<string | null>(null);
   const stop = () => { stream.current?.getTracks().forEach((t) => t.stop()); stream.current = null; setLive(false); };
   useEffect(() => stop, []);
-  useEffect(() => { makeSelfie(face ?? "", { zoom, dx, dy, flag, custom, name }).then(setOut); }, [face, zoom, dx, dy, flag, custom, name]);
+  useEffect(() => { makeSelfie(face ?? "", { zoom, dx, dy, flag, custom, name, mars }).then(setOut); }, [face, zoom, dx, dy, flag, custom, name, mars]);
   const startCam = async () => {
     try {
       const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
@@ -227,7 +231,7 @@ function SelfieBooth({ tt, name, setName, onDone, onBack }: { tt: (l: L) => stri
           </div>
           <div className="flex flex-wrap gap-2 mt-auto">
             <button className={btn + " border"} style={{ borderColor: "#ffffff40" }} onClick={() => { stop(); onBack(); }}>← {tt({ en: "Back", bn: "পেছনে" })}</button>
-            {out && face && <button className={btn + " border"} style={{ borderColor: GOLD }} onClick={() => download(out, "astro-relic-moon-astronaut.jpg")}>{tt(TX.saveS)}</button>}
+            {out && face && <button className={btn + " border"} style={{ borderColor: GOLD }} onClick={() => download(out, mars ? "astro-relic-mars-astronaut.jpg" : "astro-relic-moon-astronaut.jpg")}>{tt(TX.saveS)}</button>}
             {face && <button className={btn} style={{ background: GOLD, color: "#1a1205" }} onClick={() => { stop(); onDone(out); }}>{tt(TX.done)}</button>}
           </div>
         </div>
