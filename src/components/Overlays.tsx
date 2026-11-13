@@ -518,15 +518,17 @@ function pressKey(code: string) {
 }
 function TouchActions() {
   const phase = useGame((s) => s.phase);
-  const near = useGame((s) => s.moonNear);
+  const moonNear = useGame((s) => s.moonNear);
+  const marsNear = useGame((s) => s.marsNear);
   const lang = useGame((s) => s.lang);
-  if (phase !== "moon") return null;
+  if (phase !== "moon" && phase !== "explore") return null;
+  const near = phase === "moon" ? moonNear : marsNear;
   const btn = "touch-btn rounded-full border border-[#ffd97d]/60 bg-black/45 text-[#ffd97d] font-semibold touch-none select-none active:scale-90 transition-transform flex items-center justify-center";
   return (
     <div className="touch-actions absolute z-30 flex items-end gap-3 [@media(pointer:fine)]:hidden">
       <button aria-label="Map (M)" className={btn + " w-12 h-12 text-lg"} onPointerDown={(e) => { e.preventDefault(); pressKey("KeyM"); }}>🗺️</button>
       {near && <button aria-label="Action (E)" className={btn + " w-16 h-16 text-sm bg-[#ffd97d]/25 animate-pulse"} onPointerDown={(e) => { e.preventDefault(); pressKey("KeyE"); }}>{lang === "bn" ? "দেখো" : "Look"}</button>}
-      <button aria-label="Jump" className={btn + " w-20 h-20 text-base"} onPointerDown={(e) => { e.preventDefault(); pressKey("Space"); }}>{lang === "bn" ? "লাফ" : "Jump"}</button>
+      {phase === "moon" && <button aria-label="Jump" className={btn + " w-20 h-20 text-base"} onPointerDown={(e) => { e.preventDefault(); pressKey("Space"); }}>{lang === "bn" ? "লাফ" : "Jump"}</button>}
     </div>
   );
 }

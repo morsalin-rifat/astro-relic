@@ -1,24 +1,88 @@
-# Astro Relic 2.0
+<div align="center">
 
-https://github.com/morsalin-rifat/astro-relic.git install this as a new project
+# 🚀 Astro Relic
+### *Abandoned, but never forgotten.*
 
-This project was built with [Lovable](https://lovable.dev).
+**An interactive 3D space adventure where kids meet the robots and astronauts humanity left behind — on Mars and the Moon.**
 
-## Build with Lovable
+[![Play Now](https://img.shields.io/badge/▶_PLAY_NOW-astro--relic.lovable.app-ff7a45?style=for-the-badge)](https://astro-relic.lovable.app)
+[![NASA Space Apps 2026](https://img.shields.io/badge/NASA_Space_Apps-2026-0b3d91?style=for-the-badge)](https://www.spaceappschallenge.org/)
+[![Theme](https://img.shields.io/badge/Theme-Abandoned-8b5cf6?style=for-the-badge)](#-the-idea)
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/bdea1987-519d-4696-8889-79baa5ac94ba).
+![React](https://img.shields.io/badge/React_19-20232a?logo=react&logoColor=61dafb)
+![Three.js](https://img.shields.io/badge/Three.js-000?logo=threedotjs)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178c6?logo=typescript&logoColor=fff)
+![Tailwind](https://img.shields.io/badge/Tailwind_v4-0f172a?logo=tailwindcss)
+![Languages](https://img.shields.io/badge/Languages-English_|_বাংলা-16a34a)
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+</div>
 
-## Development
+---
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+## 🌌 The Idea
+
+Sojourner, Spirit, Opportunity, InSight — and six Apollo landing sites full of rovers, flags and tools — are still out there, silent. **Astro Relic** turns these abandoned relics into characters. Kids walk real-inspired landscapes, *wake up* each machine, hear its story in its own voice, and learn the true history of every mission — without it ever feeling like a textbook.
+
+> *"Every machine has a mission. Every mission leaves a story."*
+
+## ✨ Highlights
+
+| | Feature | What kids do |
+|---|---|---|
+| 🔴 | **Mars — 4 regions** | Ares Vallis → Gusev Crater → Meridiani Planum → Elysium Planitia, joined by mountain passes |
+| 🌕 | **Moon — 4 Apollo sites** | Apollo 11, Apollo 12 + Surveyor 3, Apollo 15, Apollo 17 |
+| 🛞 | **Talking rovers** | Each rover tells its own story with voice, photos and a quiz |
+| 🔄 | **360° rover viewer** | Spin, zoom and tap glowing pins on real parts |
+| ⭐ | **28 relic stars** | Find golden stars on Mars, each opening a real NASA photo card |
+| 🧭 | **Nova, the AI guide** | Step-by-step hints — no tutorial needed |
+| 📸 | **Spacesuit selfie** | Put your own face inside a helmet, hold your flag |
+| 🏅 | **Badges & certificate** | Mission patches, Hall of Fame and a downloadable certificate |
+| 🌐 | **Bilingual** | Full English and Bangla text and voices, switch any time |
+| 📱 | **Phone ready** | Joystick, touch buttons, auto landscape |
+
+## 🎮 How to Play
+
+| Key | Action | Phone |
+|---|---|---|
+| `W A S D` | Walk | Joystick |
+| `Space` | Jump (Moon) | **Jump** button |
+| `E` | Talk / inspect | **Look** button |
+| `M` | Big map | 🗺️ button |
+| `Esc` | Back to hub | Hub button |
+
+## 🗺️ Journey
+
+```text
+ Intro ─► Hub ─┬─► MARS: Sojourner ─► Spirit ─► Opportunity ─► InSight ─► 28 stars ─► Selfie + Certificate
+               └─► MOON: Apollo 11 ─► Apollo 12 ─► Apollo 15 ─► Apollo 17 ─► Patch + Selfie + Certificate
+```
+
+## 🛠️ Built With
+
+React 19 · TanStack Start · Three.js (procedural terrain, no imported maps) · TypeScript · Tailwind CSS v4 · Vite · Vitest
+
+Full list of data, images, videos, audio and tools: **[RESOURCES.md](./RESOURCES.md)**
+
+## 💻 Run Locally
 
 ```sh
 git clone <this-repository-url>
 cd <repository-name>
-npm i
+npm install
 npm run dev
 ```
+
+```text
+src/
+ ├─ game/scenes/   marsWorld.ts, moonWorld.ts  (3D worlds)
+ ├─ components/    mission screens, Nova, maps, certificates
+ ├─ data/          mission scripts, discoveries
+ └─ state/         saved progress
+public/            images, audio, videos, 3D models
+```
+
+## 👥 Team
+
+Made with ❤️ in Bangladesh for **NASA Space Apps Challenge 2026** by **Morsalin Rifat** and **Akib**.
+
+<div align="center"><sub>Astro Relic is an educational fan project and is not endorsed by NASA.</sub></div>
