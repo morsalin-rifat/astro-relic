@@ -1,0 +1,110 @@
+{
+ "arrival": {
+  "en": "Whoa! Welcome to Hadley Rille! See the giant mountain and the deep canyon? Walk to the lander Falcon. It has a story for you!",
+  "bn": "ওয়াও! হ্যাডলি রিলে স্বাগতম! বিশাল পাহাড় আর গভীর গিরিখাতটা দেখছো? ল্যান্ডার ফ্যালকনের কাছে হেঁটে যাও। ও তোমাকে একটা গল্প বলবে!"
+ },
+ "welcome": {
+  "en": "Hello, young Explorer! I am Apollo 15's lander, Falcon. On July 31, 1971, I landed right beneath the 4,000-meter Mount Hadley. Humans brought their very first car to the Moon inside my belly!",
+  "bn": "হ্যালো তরুণ এক্সপ্লোরার! আমি অ্যাপোলো ১৫-এর ল্যান্ডার ফ্যালকন। ১৯৭১ সালের ৩১ জুলাই আমি ৪,০০০ মিটার উঁচু মাউন্ট হ্যাডলির ঠিক নিচে নেমেছিলাম। মানুষ প্রথমবারের মতো চাঁদে নিজের গাড়ি নিয়ে এসেছিল আমারই পেটে করে!"
+ },
+ "canyon_mountain": {
+  "en": "Look around! A sky-high mountain right above us and a colossal canyon right ahead, Hadley Rille! Billions of years ago, an ancient river of hot lava carved this giant trench.",
+  "bn": "চারপাশে তাকিয়ে দেখো! মাথার ওপরে আকাশছোঁয়া পর্বত আর ঠিক সামনেই এক সুবিশাল গিরিখাত, হ্যাডলি রিল! কোটি কোটি বছর আগে গরম লাভার নদী বয়ে গিয়ে এই গভীর খাদ তৈরি হয়েছিল।"
+ },
+ "unfolding_buggy": {
+  "en": "Space inside the lander was super tight! So the Moon car was folded up like an origami puzzle. Once on the Moon, astronauts pulled a few cords, and the car unfolded itself onto the dirt!",
+  "bn": "ল্যান্ডারের ভেতরে জায়গা খুব কম ছিল! তাই চাঁদের গাড়িটাকে ওরিগামির কাগজের মতো ভাঁজ করে রাখা হয়েছিল। নভোচারীরা দড়ি টানতেই গাড়িটা নিজে নিজে খুলে মাটিতে দাঁড়িয়ে গেল!"
+ },
+ "wire_wheels": {
+  "en": "Ordinary rubber tires would burst in the Moon's extreme heat and cold! So the rover's wheels were woven from zinc-coated steel wire mesh, so it could never get a flat tire!",
+  "bn": "চাঁদের তীব্র ঠান্ডা আর গরমে সাধারণ রবারের টায়ার ফেটে যেত! তাই রোভারের চাকা বানানো হয়েছিল স্টিলের তারের শক্ত জাল দিয়ে, যাতে কোনোদিন পাংচার না হয়!"
+ },
+ "driving_joy": {
+  "en": "This car had no steering wheel and no brake pedals! Just a small T-handle joystick in the middle. The astronauts pushed it with one hand and drove almost 28 kilometers!",
+  "bn": "এই গাড়িতে কোনো গোল স্টিয়ারিং বা ব্রেক প্যাডেল ছিল না! মাঝখানে ছিল শুধু একটা ছোট্ট জয়স্টিক। এক হাতে সেটা ঠেলে নভোচারীরা প্রায় ২৮ কিলোমিটার পথ ঘুরেছিলেন!"
+ },
+ "genesis_rock": {
+  "en": "On a mountain slope, the astronauts spotted a sparkling white rock! Scientists found it was about 4 billion years old, from the time when the Moon was very young!",
+  "bn": "পাহাড়ের ঢালে নভোচারীরা খুঁজে পেলেন একটা চকচকে সাদা পাথর! বিজ্ঞানীরা দেখলেন, এটা প্রায় ৪০০ কোটি বছরের পুরোনো, চাঁদ যখন একদম ছোট ছিল, সেই সময়কার!"
+ },
+ "fallen_astronaut": {
+  "en": "Before leaving, Commander Dave Scott quietly placed a tiny 8.5-centimeter aluminum astronaut and a plaque in the dust. A silent thank-you to 14 brave heroes who gave their lives reaching for the stars.",
+  "bn": "বিদায় নেওয়ার আগে কমান্ডার ডেভ স্কট চুপিচুপি ধুলোর ওপর রেখেছিলেন ৮.৫ সেন্টিমিটারের ছোট্ট একটা অ্যালুমিনিয়ামের নভোচারী আর একটা ফলক। তারার স্বপ্ন দেখতে গিয়ে যে ১৪ জন বীর প্রাণ হারিয়েছিলেন, তাঁদের প্রতি এক নীরব ধন্যবাদ।"
+ },
+ "spot_falcon": {
+  "en": "This is my golden lower half! It still stands here after more than 50 years. My top part blasted off from right here to take the astronauts home!",
+  "bn": "এটা আমার সোনালি নিচের অংশ! ৫০ বছরেরও বেশি সময় ধরে আজও এখানে দাঁড়িয়ে আছি। আমার ওপরের অংশটা এখান থেকেই উড়ে নভোচারীদের বাড়ি নিয়ে গিয়েছিল!"
+ },
+ "spot_lrv": {
+  "en": "Parked right here is humanity's very first Moon car, LRV-1! The astronauts left its TV camera on, so people on Earth could watch Falcon fly away!",
+  "bn": "এখানেই পার্ক করা আছে মানুষের প্রথম চাঁদের গাড়ি, LRV-1! নভোচারীরা এর ক্যামেরা চালু রেখে গিয়েছিলেন, যাতে পৃথিবী থেকে সবাই ফ্যালকনের উড়ে যাওয়া দেখতে পায়!"
+ },
+ "spot_galileo": {
+  "en": "Right here, Commander Scott held a hammer in one hand and a falcon feather in the other. Which one falls first on the Moon? Let's test it!",
+  "bn": "ঠিক এখানে কমান্ডার স্কট এক হাতে একটা হাতুড়ি আর অন্য হাতে একটা বাজপাখির পালক ধরেছিলেন। চাঁদে কোনটা আগে পড়বে? চলো পরীক্ষা করি!"
+ },
+ "spot_memorial": {
+  "en": "Here lies the tiny Fallen Astronaut. No fighting, no borders. American and Soviet space heroes are remembered side by side.",
+  "bn": "এখানে শুয়ে আছে ছোট্ট ফলেন অ্যাস্ট্রোনট। কোনো ঝগড়া নেই, কোনো সীমানা নেই। আমেরিকা আর সোভিয়েত দেশের মহাকাশ বীরদের এখানে পাশাপাশি মনে রাখা হয়েছে।"
+ },
+ "spot_genesis": {
+  "en": "Near here the astronauts picked up the white Genesis Rock. It helped scientists learn how old the Moon really is!",
+  "bn": "এর কাছেই নভোচারীরা সাদা জেনেসিস পাথরটা তুলেছিলেন। এটা দেখে বিজ্ঞানীরা জানতে পেরেছেন চাঁদের আসল বয়স কত!"
+ },
+ "spot_alsep15": {
+  "en": "This is the Apollo 15 science station. The astronauts drilled into the ground to take the Moon's temperature. The inside of the Moon is still a little warm!",
+  "bn": "এটা অ্যাপোলো ১৫-এর বিজ্ঞান কেন্দ্র। নভোচারীরা মাটিতে ড্রিল করে চাঁদের তাপমাত্রা মেপেছিলেন। চাঁদের ভেতরটা এখনো একটু গরম!"
+ },
+ "spot_rille_look": {
+  "en": "Careful! This is the edge of Hadley Rille. It is about 1 kilometer wide and 300 meters deep. That's deeper than a 90-floor building!",
+  "bn": "সাবধান! এটা হ্যাডলি রিলের কিনারা। প্রায় ১ কিলোমিটার চওড়া আর ৩০০ মিটার গভীর। একটা ৯০ তলা বিল্ডিংয়ের চেয়েও গভীর!"
+ },
+ "galileo_intro": {
+  "en": "Long ago, scientist Galileo said: without air, heavy and light things fall at the same speed. Press the drop button and see for yourself!",
+  "bn": "অনেক আগে বিজ্ঞানী গ্যালিলিও বলেছিলেন, বাতাস না থাকলে ভারী আর হালকা সব জিনিস একই গতিতে পড়ে। ফেলে দাও বোতামটা চাপো আর নিজেই দেখো!"
+ },
+ "galileo_success": {
+  "en": "Did you see that? The heavy hammer and the light feather hit the ground at the exact same time! Galileo was right!",
+  "bn": "দেখেছো? ভারী হাতুড়ি আর হালকা পালক ঠিক একই সময়ে মাটিতে পড়লো! গ্যালিলিও একদম ঠিক বলেছিলেন!"
+ },
+ "reactivate": {
+  "en": "Shhh, put your ear close to Falcon. Can you hear the old radio crackle? Let's read its last message!",
+  "bn": "শশশ, ফ্যালকনের কাছে কান পাতো। পুরোনো রেডিওর খসখস শুনতে পাচ্ছো? চলো ওর শেষ বার্তাটা পড়ি!"
+ },
+ "final_log": {
+  "en": "Falcon's final log, August 1971. Hadley Rille taught us that the wish to explore is the greatest human strength. Please keep my friends safe.",
+  "bn": "ফ্যালকনের শেষ বার্তা, আগস্ট ১৯৭১। হ্যাডলি রিল আমাদের শিখিয়েছে, অজানাকে জানার ইচ্ছাই মানুষের সবচেয়ে বড় শক্তি। আমার বন্ধুদের নিরাপদে রেখো।"
+ },
+ "heritage": {
+  "en": "The rover, the memorial and Falcon belong to everyone on Earth. Will you promise to protect them?",
+  "bn": "রোভার, স্মৃতিফলক আর ফ্যালকন পৃথিবীর সবার সম্পদ। তুমি কি এদের রক্ষা করার কথা দেবে?"
+ },
+ "quiz_1": {
+  "en": "Question 1: What were the wheels of the first Moon car made of?",
+  "bn": "প্রশ্ন ১: চাঁদের প্রথম গাড়ির চাকা কী দিয়ে তৈরি ছিল?"
+ },
+ "quiz_2": {
+  "en": "Question 2: Dropping a hammer and a feather proved the idea of which famous scientist?",
+  "bn": "প্রশ্ন ২: হাতুড়ি আর পালক একসাথে ফেলে কোন বিখ্যাত বিজ্ঞানীর কথা প্রমাণ হয়েছিল?"
+ },
+ "quiz_3": {
+  "en": "Question 3: How many space heroes are remembered on the Fallen Astronaut plaque?",
+  "bn": "প্রশ্ন ৩: ফলেন অ্যাস্ট্রোনট ফলকে কতজন মহাকাশ বীরের নাম আছে?"
+ },
+ "correct": {
+  "en": "Bingo! Spot on! You are a genius space explorer!",
+  "bn": "সাবাশ! একদম ঠিক! তুমি তো জিনিয়াস মহাকাশ অভিযাত্রী!"
+ },
+ "wrong": {
+  "en": "Oops, so close! Look at the hint and try again!",
+  "bn": "উফ, অল্পের জন্য হলো না! ইঙ্গিতটা দেখে আবার চেষ্টা করো!"
+ },
+ "badge": {
+  "en": "Congratulations! You earned your third Moon medal, the Lunar Buggy Driver!",
+  "bn": "অভিনন্দন! তুমি পেয়েছো তোমার ৩ নম্বর চাঁদের মেডেল, লুনার বাগি ড্রাইভার!"
+ },
+ "outro": {
+  "en": "Now to our last stop, Zone 4, Taurus-Littrow and Apollo 17, where humans made their very last footprints on the Moon. Let's go!",
+  "bn": "এবার আমাদের শেষ গন্তব্য, জোন ৪, টরাস-লিট্রো আর অ্যাপোলো ১৭, যেখানে মানুষ চাঁদে শেষবার পায়ের ছাপ রেখেছিল। চলো যাই!"
+ }
+}
