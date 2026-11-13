@@ -39,7 +39,7 @@ function MarsIntroVideo() {
     if (fading) return;
     setFading(true);
     const moon = store.get().universe === "moon";
-    if (moon) store.set({ moonZone: 0 });
+    store.set(moon ? { moonZone: 0 } : { marsZone: 0 });
     setTimeout(() => store.emit("engine:goto", moon ? "moon" : "explore"), 600);
   };
   return (
@@ -868,7 +868,7 @@ function HubUI() {
             </div>
             <div className="mt-4 space-y-2.5">
               {chapters.map((c, i) => {
-                const done = c.id === "ch1" && flags.includes("pathfinder");
+                const done = ({ ch1: "sojourner", ch2: "spirit", ch3: "oppy", ch8: "insight" } as Record<string, string>)[c.id] ? flags.includes(({ ch1: "sojourner", ch2: "spirit", ch3: "oppy", ch8: "insight" } as Record<string, string>)[c.id]!) || (c.id === "ch1" && flags.includes("pathfinder")) : false;
                 return (
                   <button
                     key={c.id}
@@ -880,7 +880,9 @@ function HubUI() {
                         store.emit("engine:goto", "moon");
                       } else if (c.ready) {
                         audio.beep();
-                        store.emit("hub:newgame");
+                        voice.stop();
+                        store.set({ marsZone: Math.max(0, ["ch1", "ch2", "ch3", "ch8"].indexOf(c.id)) });
+                        store.emit("engine:goto", "explore");
                       } else {
                         audio.beep(320);
                         showToast(t(HUB.inProduction, lang));

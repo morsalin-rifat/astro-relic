@@ -17,11 +17,129 @@ const ZONE = 350; // metres per real NASA site
 const ZONES = [
   { url: "/models/zone1_ares.glb", name: "ZONE 1 · ARES VALLIS — SOJOURNER 1997", grade: [1.25, 0.82, 0.6] },
   { url: "/models/zone2_gusev.glb", name: "ZONE 2 · GUSEV CRATER — SPIRIT 2004", grade: [1.2, 0.75, 0.55] },
-  { url: "/models/zone3_meridiani.glb", name: "ZONE 3 · PERSEVERANCE VALLEY ANALOGUE — OPPORTUNITY", grade: [1.05, 0.8, 0.7] },
+  { url: "/models/zone3_meridiani.glb", name: "ZONE 3 · MERIDIANI PLANUM — OPPORTUNITY 2004", grade: [1.05, 0.8, 0.7] },
   { url: "/models/zone4_elysium.glb", name: "ZONE 4 · ELYSIUM PLANITIA — INSIGHT 2018", grade: [1.15, 0.85, 0.68] },
 ];
 const loader = () => new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const MAP_DEPTH = 70; // vertical relief (exaggerated for drama)
+
+// ---------- Procedural Mars relief, shaped after NASA traverse maps ----------
+type Crater = { x: number; z: number; r: number; d: number; scal?: number };
+const rng = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+/** Named, real landmarks (scaled so kids can walk them). zone = 0 Ares · 1 Gusev · 2 Meridiani · 3 Elysium */
+export const MARS_SITES = [
+  { id: "twinpeaks", zone: 0, x: -82, z: -105, en: "Twin Peaks", bn: "টুইন পিকস" },
+  { id: "yogi", zone: 0, x: 52, z: -24, en: "Yogi Rock", bn: "যোগী পাথর" },
+  { id: "barnacle", zone: 0, x: 36, z: -38, en: "Barnacle Bill", bn: "বার্নাকল বিল" },
+  { id: "aresflood", zone: 0, x: 95, z: 60, en: "Ancient flood channel", bn: "প্রাচীন বন্যার নদীপথ" },
+  { id: "bonneville", zone: 1, x: 62, z: -300, en: "Bonneville Crater", bn: "বনভিল ক্রেটার" },
+  { id: "husband", zone: 1, x: -78, z: -455, en: "Husband Hill · Columbia Hills", bn: "হাসব্যান্ড হিল · কলম্বিয়া হিলস" },
+  { id: "homeplate", zone: 1, x: -18, z: -478, en: "Home Plate", bn: "হোম প্লেট" },
+  { id: "eagle", zone: 2, x: 0, z: -640, en: "Eagle Crater (hole-in-one)", bn: "ঈগল ক্রেটার (হোল-ইন-ওয়ান)" },
+  { id: "endurance", zone: 2, x: -78, z: -705, en: "Endurance Crater", bn: "এনডিউরেন্স ক্রেটার" },
+  { id: "victoria", zone: 2, x: 72, z: -780, en: "Victoria Crater", bn: "ভিক্টোরিয়া ক্রেটার" },
+  { id: "homestead", zone: 3, x: -6, z: -1040, en: "Homestead Hollow", bn: "হোমস্টেড হলো" },
+  { id: "heatshield", zone: 3, x: 70, z: -1000, en: "Heat-shield scar", bn: "হিট-শিল্ডের দাগ" },
+  { id: "elysiummons", zone: 3, x: -110, z: -1150, en: "Lava plains · Elysium", bn: "লাভা সমভূমি · এলিসিয়াম" },
+] as const;
+const BIG_CRATERS: Crater[] = [
+  { x: 62, z: -300, r: 36, d: 9 },            // Bonneville
+  { x: 0, z: -640, r: 11, d: 2.6 },           // Eagle
+  { x: -78, z: -705, r: 30, d: 8 },           // Endurance
+  { x: 72, z: -780, r: 48, d: 13, scal: 1 },  // Victoria (scalloped bays)
+  { x: -6, z: -1058, r: 14, d: 1.2 },         // Homestead hollow (filled)
+  { x: 70, z: -1000, r: 7, d: 1.4 },          // heat-shield impact
+];
+function extraCraters(): Crater[] {
+  const r = rng(1997), out: Crater[] = [];
+  const dens = [26, 30, 22, 60]; // Elysium is pocked with small hollows
+  for (let zi = 0; zi < 4; zi++) for (let k = 0; k < dens[zi]!; k++) {
+    const x = (r() - 0.5) * (ZONE - 30), z = -zi * ZONE + (r() - 0.5) * (ZONE - 40);
+    const rad = 2 + Math.pow(r(), 2.2) * (zi === 3 ? 9 : 14);
+    out.push({ x, z, r: rad, d: rad * (zi === 3 ? 0.1 : 0.18) });
+  }
+  return out;
+}
+const gauss = (x: number, z: number, cx: number, cz: number, sx: number, sz = sx) =>
+  Math.exp(-(((x - cx) / sx) ** 2 + ((z - cz) / sz) ** 2));
+function craterH(x: number, z: number, c: Crater) {
+  const dx = x - c.x, dz = z - c.z, dist = Math.hypot(dx, dz);
+  let rr = c.r;
+  if (c.scal) rr *= 1 + 0.07 * Math.sin(Math.atan2(dz, dx) * 9) + 0.03 * Math.sin(Math.atan2(dz, dx) * 23);
+  const d = dist / rr;
+  if (d > 1.8) return { h: 0, bowl: 0 };
+  const rim = c.d * 0.38 * Math.exp(-(((d - 1) / 0.22) ** 2));
+  if (d >= 1) return { h: rim, bowl: 0 };
+  // flat-ish floor with steeper walls + terraced layers for Victoria/Endurance
+  let bowl = -c.d * (1 - Math.pow(d, 2.6));
+  if (c.r > 25) bowl += Math.sin(d * 18) * 0.35 * d;
+  return { h: bowl + rim, bowl: 1 - d };
+}
+const smooth = (t: number) => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+function marsRelief(x: number, z: number, extra: Crater[]) {
+  const zt = Math.min(3, Math.max(0, -z / ZONE));
+  const w = [0, 1, 2, 3].map((i) => smooth(1 - Math.abs(zt - i)));
+  let h = (fbm(x * 0.008 + 7, z * 0.008 + 3, 4) - 0.5) * 8; // broad swells
+  h += (fbm(x * 0.05, z * 0.05, 3) - 0.5) * 1.2;            // small bumps
+  // Zone 1 · Ares Vallis: streamlined flood grooves (flow toward NE) + Twin Peaks + far channel walls
+  if (w[0]! > 0) {
+    const flow = (x * 0.55 + z * 0.83);
+    let a = Math.sin(flow * 0.09 + fbm(x * 0.02, z * 0.02) * 4) * 0.9 + Math.sin(flow * 0.31) * 0.25;
+    a += 24 * gauss(x, z, -82, -100, 16, 13) + 19 * gauss(x, z, -52, -122, 13, 11);  // Twin Peaks
+    a += 9 * gauss(x, z, -130, 30, 26, 60) + 7 * gauss(x, z, 140, -40, 22, 70);       // channel banks
+    a -= 3 * gauss(x, z, 95, 60, 30, 70);                                             // flood trough
+    h += a * w[0]!;
+  }
+  // Zone 2 · Gusev: flat crater floor rising into the Columbia Hills; Home Plate plateau
+  if (w[1]! > 0) {
+    let a = -1.5;
+    a += 32 * gauss(x, z, -78, -455, 30, 22) + 18 * gauss(x, z, -125, -430, 22, 30) + 14 * gauss(x, z, -40, -505, 20, 14);
+    const hp = Math.hypot(x + 18, z + 478); a += 2.2 * (1 - smooth((hp - 9) / 3));
+    h += a * w[1]!;
+  }
+  // Zone 3 · Meridiani: smooth plains striped with sand ripples (Opportunity's "blueberry" fields)
+  if (w[2]! > 0) {
+    h = h * (1 - 0.6 * w[2]!) + (Math.sin(x * 0.9 + Math.sin(z * 0.05) * 3) * 0.18 + Math.sin(z * 0.23 + x * 0.1) * 0.35) * w[2]!;
+  }
+  // Zone 4 · Elysium: very flat lava plain, far volcanic rise on the horizon
+  if (w[3]! > 0) {
+    h = h * (1 - 0.75 * w[3]!) + (16 * gauss(x, z, -150, -1180, 50, 60) + 6 * gauss(x, z, 150, -1120, 40, 50)) * w[3]!;
+  }
+  let bowl = 0;
+  for (const c of BIG_CRATERS) { if (Math.abs(z - c.z) > c.r * 1.9) continue; const r = craterH(x, z, c); h += r.h; bowl = Math.max(bowl, r.bowl); }
+  for (const c of extra) { if (Math.abs(z - c.z) > c.r * 1.9 || Math.abs(x - c.x) > c.r * 1.9) continue; const r = craterH(x, z, c); h += r.h; bowl = Math.max(bowl, r.bowl * 0.6); }
+  // ridges between zones with a central pass (like the Moon corridor)
+  for (let s = 1; s < 4; s++) {
+    const zr = -s * ZONE + ZONE / 2;
+    const ridge = Math.exp(-(((z - zr) / 14) ** 2)) * (14 + fbm(x * 0.04, s * 9) * 10);
+    h += ridge * (1 - Math.exp(-((x / 24) ** 2)));
+  }
+  return { h, zt, bowl };
+}
+/** [dust low, dust high, rock] per zone */
+const MARS_PALETTE = [
+  [0x8a4a2a, 0xb66a40, 0x5e3a2a], // Ares: rocky rust
+  [0x9a5a36, 0xc0835a, 0x6a4632], // Gusev: lighter dust
+  [0x6e3c28, 0x9a5a3e, 0xc9a27a], // Meridiani: dark sand, pale outcrops
+  [0xa8683f, 0xcf9466, 0x7a4a30], // Elysium: bright fine dust
+];
+function makeGrainTexture(bump = false) {
+  const S = 256, c = document.createElement("canvas"); c.width = c.height = S;
+  const g = c.getContext("2d")!, img = g.createImageData(S, S), r = rng(bump ? 77 : 42);
+  for (let i = 0; i < S * S; i++) {
+    const v = bump ? 110 + r() * 110 : 205 + r() * 50;
+    img.data[i * 4] = v; img.data[i * 4 + 1] = v * (bump ? 1 : 0.97); img.data[i * 4 + 2] = v * (bump ? 1 : 0.93); img.data[i * 4 + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  for (let k = 0; k < 140; k++) { // pebbles
+    g.fillStyle = bump ? `rgba(255,255,255,${0.3 + r() * 0.5})` : `rgba(90,50,30,${0.15 + r() * 0.25})`;
+    g.beginPath(); g.arc(r() * S, r() * S, 0.6 + r() * 2.2, 0, 6.29); g.fill();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
+  if (!bump) t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
 
 export class MarsWorldScene implements Scene {
   private renderer: THREE.WebGLRenderer;
@@ -325,9 +443,14 @@ export class MarsWorldScene implements Scene {
 
     // player
     this.player = buildExplorer();
-    const startPos = this.metAtStart
-      ? new THREE.Vector3(SITE.x + 7, 0, SITE.z + 7)
-      : new THREE.Vector3(0, 0, 0);
+    const mz = store.get().marsZone;
+    const ZSPAWN = [null, SPIRIT, OPPY, INSIGHT][mz] ?? null;
+    if (mz > 0) this.metAtStart = false;
+    const startPos = ZSPAWN
+      ? new THREE.Vector3(ZSPAWN.x + 4, 0, ZSPAWN.z + 26)
+      : this.metAtStart
+        ? new THREE.Vector3(SITE.x + 7, 0, SITE.z + 7)
+        : new THREE.Vector3(0, 0, 0);
     this.player.position.set(startPos.x, this.groundHeight(startPos.x, startPos.z), startPos.z);
     this.scene.add(this.player);
 
@@ -368,7 +491,11 @@ export class MarsWorldScene implements Scene {
     // welcome dialogue
     const welcome = () => {
       if (store.get().loading || store.get().fading) { this.welcomeT = window.setTimeout(welcome, 300); return; }
-      if (this.metAtStart) {
+      const mzw = store.get().marsZone;
+      if (mzw > 0) {
+        const zn = ZONES[mzw]!.name;
+        store.say([{ speaker: "nova", en: `Welcome to ${zn}! Follow the gold beacon to meet the rover — tap the minimap or press M for the big map.`, bn: `${zn}-এ স্বাগতম! সোনালি আলো ধরে রোভারের কাছে যাও — বড় ম্যাপ দেখতে মিনি-ম্যাপে চাপো বা M চাপো।` }]);
+      } else if (this.metAtStart) {
         this.startMeeting(true);
       } else {
         store.say(NOVA_WELCOME_MARS);
@@ -379,163 +506,73 @@ export class MarsWorldScene implements Scene {
     this.disposers.push(() => window.clearTimeout(this.welcomeT));
   }
 
-  /** 4 real NASA sites laid end-to-end along -Z, each cropped to the same ZONE x ZONE square
-   *  with the same relief; seams get offset-matched heights + a visible sand ramp. */
+  /** Procedural "Mars Heritage Corridor": 4 real landing regions along -Z (like the Moon),
+   *  shaped after NASA traverse maps — one continuous heightfield, so visible ground == walkable ground. */
   private loadNasaMap() {
-    const NX = 256, NZ = 1024, N = ZONES.length, B = 15; // B = seam half-width (m)
+    const N = ZONES.length, STEP = 2;
     const minX = -ZONE / 2, minZ = -ZONE * (N - 0.5);
+    const NX = Math.round(ZONE / STEP) + 1, NZ = Math.round((ZONE * N) / STEP) + 1;
     const sx = ZONE / (NX - 1), sz = (ZONE * N) / (NZ - 1);
-    const data = new Float32Array(NX * NZ).fill(-1e9);
-    const wraps: THREE.Group[] = new Array(N);
-    this.renderer.localClippingEnabled = true;
-    let left = N;
-    const a = new THREE.Vector3(), b = new THREE.Vector3(), d = new THREE.Vector3();
-    const rowOf = (z: number) => Math.round((z - minZ) / sz);
-    ZONES.forEach((zone, zi) => loader().load(zone.url, (gltf) => {
-      if (this.disposed) return;
-      const root = gltf.scene;
-      root.updateMatrixWorld(true);
-      const box = new THREE.Box3().setFromObject(root);
-      const size = box.getSize(new THREE.Vector3());
-      const k = ZONE / Math.max(Math.min(size.x, size.z), 0.001); // crop to centred square
-      const kv = MAP_DEPTH / Math.max(size.y, 0.001);
-      const c = box.getCenter(new THREE.Vector3());
-      const wrap = new THREE.Group();
-      wrap.add(root);
-      root.position.set(-c.x, -c.y, -c.z);
-      wrap.scale.set(k, kv, k);
-      const zc = -zi * ZONE;
-      wrap.position.z = zc;
-      wrap.updateMatrixWorld(true);
-      const zTop = zc + ZONE / 2 - (zi > 0 ? B : 0), zBot = zc - ZONE / 2 + (zi < N - 1 ? B : 0);
-      const planes = [
-        new THREE.Plane(new THREE.Vector3(-1, 0, 0), ZONE / 2),
-        new THREE.Plane(new THREE.Vector3(1, 0, 0), ZONE / 2),
-        new THREE.Plane(new THREE.Vector3(0, 0, -1), zTop),
-        new THREE.Plane(new THREE.Vector3(0, 0, 1), -zBot),
-      ];
-      const r0 = Math.max(0, rowOf(zc - ZONE / 2)), r1 = Math.min(NZ - 1, rowOf(zc + ZONE / 2));
-      wrap.traverse((o) => {
-        const m = o as THREE.Mesh;
-        if (!m.isMesh) return;
-        if (/comparison/i.test(m.name)) { m.visible = false; return; } // reference copy, not terrain
-        m.receiveShadow = true;
-        const mat = m.material as THREE.MeshStandardMaterial;
-        mat.color = new THREE.Color(...(zone.grade as [number, number, number]));
-        mat.roughness = 0.95;
-        mat.metalness = 0;
-        mat.clippingPlanes = planes;
-        if (mat.map) mat.map.anisotropy = 8;
-        const g = m.geometry;
-        const pos = g.attributes["position"] as THREE.BufferAttribute;
-        const idx = g.index;
-        const tri = idx ? idx.count / 3 : pos.count / 3;
-        for (let t = 0; t < tri; t++) {
-          const i0 = idx ? idx.getX(t * 3) : t * 3;
-          const i1 = idx ? idx.getX(t * 3 + 1) : t * 3 + 1;
-          const i2 = idx ? idx.getX(t * 3 + 2) : t * 3 + 2;
-          a.fromBufferAttribute(pos, i0).applyMatrix4(m.matrixWorld);
-          b.fromBufferAttribute(pos, i1).applyMatrix4(m.matrixWorld);
-          d.fromBufferAttribute(pos, i2).applyMatrix4(m.matrixWorld);
-          const x0 = Math.max(0, Math.floor((Math.min(a.x, b.x, d.x) - minX) / sx));
-          const x1 = Math.min(NX - 1, Math.ceil((Math.max(a.x, b.x, d.x) - minX) / sx));
-          const z0 = Math.max(r0, Math.floor((Math.min(a.z, b.z, d.z) - minZ) / sz));
-          const z1 = Math.min(r1, Math.ceil((Math.max(a.z, b.z, d.z) - minZ) / sz));
-          if (z0 > z1 || x0 > x1) continue;
-          const den = (b.z - d.z) * (a.x - d.x) + (d.x - b.x) * (a.z - d.z);
-          if (Math.abs(den) < 1e-9) continue;
-          for (let gz = z0; gz <= z1; gz++) {
-            for (let gx = x0; gx <= x1; gx++) {
-              const px = minX + gx * sx, pz = minZ + gz * sz;
-              const w0 = ((b.z - d.z) * (px - d.x) + (d.x - b.x) * (pz - d.z)) / den;
-              const w1 = ((d.z - a.z) * (px - d.x) + (a.x - d.x) * (pz - d.z)) / den;
-              const w2 = 1 - w0 - w1;
-              if (w0 < -1e-4 || w1 < -1e-4 || w2 < -1e-4) continue;
-              const h = w0 * a.y + w1 * b.y + w2 * d.y;
-              const ii = gz * NX + gx;
-              if (h > (data[ii] ?? -Infinity)) data[ii] = h;
-            }
-          }
-        }
-      });
-      wraps[zi] = wrap;
-      this.scene.add(wrap);
-      this.zoneWraps.push(wrap);
-      if (--left > 0) return;
+    const data = new Float32Array(NX * NZ);
+    const zoneT = new Float32Array(NX * NZ); // continuous zone index for colouring
+    const craterK = new Float32Array(NX * NZ); // 0..1 inside bowls (darker)
+    const extra = extraCraters();
+    for (let gz = 0; gz < NZ; gz++) for (let gx = 0; gx < NX; gx++) {
+      const x = minX + gx * sx, z = minZ + gz * sz, i = gz * NX + gx;
+      const r = marsRelief(x, z, extra);
+      data[i] = r.h; zoneT[i] = r.zt; craterK[i] = r.bowl;
+    }
+    this.hf = { data, nx: NX, nz: NZ, minX, minZ, sx, sz };
 
-      // 1) fill holes from neighbours along each row (then whole-row fallback)
-      for (let gz = 0; gz < NZ; gz++) {
-        let last = NaN;
-        for (let gx = 0; gx < NX; gx++) { const v = data[gz * NX + gx]!; if (v > -1e8) last = v; else if (!isNaN(last)) data[gz * NX + gx] = last; }
-        last = NaN;
-        for (let gx = NX - 1; gx >= 0; gx--) { const v = data[gz * NX + gx]!; if (v > -1e8) last = v; else if (!isNaN(last)) data[gz * NX + gx] = last; }
-      }
-      for (let gz = 1; gz < NZ; gz++) if (data[gz * NX]! < -1e8) for (let gx = 0; gx < NX; gx++) data[gz * NX + gx] = data[(gz - 1) * NX + gx]!;
-      for (let gz = NZ - 2; gz >= 0; gz--) if (data[gz * NX]! < -1e8) for (let gx = 0; gx < NX; gx++) data[gz * NX + gx] = data[(gz + 1) * NX + gx]!;
-      for (let i = 0; i < data.length; i++) if (data[i]! < -1e8) data[i] = 0;
-
-      // 2) vertical offsets so neighbouring sites meet at the same mean height
-      const w = Math.round(B / sz);
-      const rowAvg = (r: number) => { let s = 0; for (let gx = 0; gx < NX; gx++) s += data[r * NX + gx]!; return s / NX; };
-      const off = new Array(N).fill(0);
-      for (let s = 1; s < N; s++) {
-        const zr = rowOf(-s * ZONE + ZONE / 2);
-        off[s] = off[s - 1] + rowAvg(zr + w) - rowAvg(zr - w); // zr+w is in zone s-1 (higher z)
-      }
-      for (let zi2 = 0; zi2 < N; zi2++) {
-        wraps[zi2]!.position.y = off[zi2];
-        const zc2 = -zi2 * ZONE;
-        const ra = Math.max(0, rowOf(zc2 - ZONE / 2)), rb = Math.min(NZ - 1, rowOf(zc2 + ZONE / 2));
-        for (let gz = ra; gz <= rb; gz++) {
-          const zr = minZ + gz * sz; if (Math.abs(zr - zc2) > ZONE / 2 + 1e-3) continue;
-          for (let gx = 0; gx < NX; gx++) data[gz * NX + gx] = data[gz * NX + gx]! + off[zi2];
-        }
-      }
-      // 3) smooth sand ramp across each seam (visible mesh == walkable height)
-      const sandA = new THREE.Color(0x8e5a3e), sandB = new THREE.Color(0xc08a66);
-      for (let s = 1; s < N; s++) {
-        const zr = rowOf(-s * ZONE + ZONE / 2);
-        for (let gx = 0; gx < NX; gx++) {
-          const lo = data[(zr - w) * NX + gx]!, hi = data[(zr + w) * NX + gx]!;
-          for (let o = -w + 1; o < w; o++) {
-            const t = (o + w) / (2 * w);
-            data[(zr + o) * NX + gx] = THREE.MathUtils.lerp(lo, hi, t * t * (3 - 2 * t));
-          }
-        }
-        const rows = 2 * w + 1, verts = new Float32Array(NX * rows * 3), cols = new Float32Array(NX * rows * 3);
-        const ga = new THREE.Color(...(ZONES[s]!.grade as [number, number, number]));
-        const gb = new THREE.Color(...(ZONES[s - 1]!.grade as [number, number, number]));
-        for (let r = 0; r < rows; r++) for (let gx = 0; gx < NX; gx++) {
-          const gz = zr - w + r, i = r * NX + gx;
-          const px = minX + gx * sx, pz = minZ + gz * sz;
-          verts[i * 3] = px; verts[i * 3 + 1] = data[gz * NX + gx]! + 0.05; verts[i * 3 + 2] = pz;
-          const col = sandA.clone().lerp(sandB, fbm(px * 0.15, pz * 0.15, 4)).multiply(ga.clone().lerp(gb, r / (rows - 1)).multiplyScalar(0.85));
-          cols[i * 3] = col.r; cols[i * 3 + 1] = col.g; cols[i * 3 + 2] = col.b;
-        }
-        const ind: number[] = [];
-        for (let r = 0; r < rows - 1; r++) for (let gx = 0; gx < NX - 1; gx++) {
-          const p0 = r * NX + gx, p1 = p0 + 1, p2 = p0 + NX, p3 = p2 + 1;
-          ind.push(p0, p2, p1, p1, p2, p3);
-        }
-        const sg = new THREE.BufferGeometry();
-        sg.setAttribute("position", new THREE.BufferAttribute(verts, 3));
-        sg.setAttribute("color", new THREE.BufferAttribute(cols, 3));
-        sg.setIndex(ind);
-        sg.computeVertexNormals();
-        if ((sg.attributes["normal"] as THREE.BufferAttribute).getY(0) < 0) { ind.reverse(); sg.setIndex(ind); sg.computeVertexNormals(); }
-        const strip = new THREE.Mesh(sg, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0 }));
-        strip.receiveShadow = true;
-        this.scene.add(strip);
-      }
-      this.hf = { data, nx: NX, nz: NZ, minX, minZ, sx, sz };
-      this.buildMapEdges();
-      this.scene.remove(this.terrain);
-      this.terrain.geometry.dispose();
-      this.resnap();
-      this.bakeMinimap();
-      store.set({ loading: false });
-      window.setTimeout(() => { if (!this.disposed) voice.play("01_nova_landing"); }, 900);
+    // ground mesh straight from the heightfield
+    const verts = new Float32Array(NX * NZ * 3), cols = new Float32Array(NX * NZ * 3), uvs = new Float32Array(NX * NZ * 2);
+    const pal = MARS_PALETTE.map((p) => p.map((c) => new THREE.Color(c)));
+    const ca = new THREE.Color(), cb = new THREE.Color(), cc = new THREE.Color();
+    for (let gz = 0; gz < NZ; gz++) for (let gx = 0; gx < NX; gx++) {
+      const i = gz * NX + gx, x = minX + gx * sx, z = minZ + gz * sz, y = data[i]!;
+      verts[i * 3] = x; verts[i * 3 + 1] = y; verts[i * 3 + 2] = z;
+      uvs[i * 2] = x / 6; uvs[i * 2 + 1] = z / 6;
+      const hx = data[gz * NX + Math.min(NX - 1, gx + 1)]! - data[gz * NX + Math.max(0, gx - 1)]!;
+      const hz = data[Math.min(NZ - 1, gz + 1) * NX + gx]! - data[Math.max(0, gz - 1) * NX + gx]!;
+      const slope = Math.min(1, Math.hypot(hx, hz) / (4 * STEP) * 1.6);
+      const zt = zoneT[i]!, z0 = Math.floor(zt), z1 = Math.min(N - 1, z0 + 1), k = zt - z0;
+      const A = pal[z0]!, B = pal[z1]!;
+      const n = fbm(x * 0.07, z * 0.07, 4);
+      ca.copy(A[0]!).lerp(A[1]!, n); cb.copy(B[0]!).lerp(B[1]!, n); ca.lerp(cb, k);
+      cc.copy(A[2]!).lerp(B[2]!, k); // rock / bedrock tone on slopes
+      ca.lerp(cc, slope * 0.85);
+      ca.multiplyScalar(1 - craterK[i]! * 0.22 + (fbm(x * 0.4 + 9, z * 0.4, 2) - 0.5) * 0.12);
+      cols[i * 3] = ca.r; cols[i * 3 + 1] = ca.g; cols[i * 3 + 2] = ca.b;
+    }
+    const ind = new Uint32Array((NX - 1) * (NZ - 1) * 6);
+    let q = 0;
+    for (let gz = 0; gz < NZ - 1; gz++) for (let gx = 0; gx < NX - 1; gx++) {
+      const p0 = gz * NX + gx, p1 = p0 + 1, p2 = p0 + NX, p3 = p2 + 1;
+      ind[q++] = p0; ind[q++] = p2; ind[q++] = p1; ind[q++] = p1; ind[q++] = p2; ind[q++] = p3;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(verts, 3));
+    g.setAttribute("color", new THREE.BufferAttribute(cols, 3));
+    g.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
+    g.setIndex(new THREE.BufferAttribute(ind, 1));
+    g.computeVertexNormals();
+    if ((g.attributes["normal"] as THREE.BufferAttribute).getY(Math.floor(NX * NZ / 2)) < 0) {
+      for (let t = 0; t < ind.length; t += 3) { const s = ind[t]!; ind[t] = ind[t + 2]!; ind[t + 2] = s; }
+      g.index!.needsUpdate = true; g.computeVertexNormals();
+    }
+    const ground = new THREE.Mesh(g, new THREE.MeshStandardMaterial({
+      vertexColors: true, roughness: 0.97, metalness: 0, map: makeGrainTexture(), bumpMap: makeGrainTexture(true), bumpScale: 1.4,
     }));
+    ground.receiveShadow = true;
+    this.scene.add(ground);
+    this.scene.remove(this.terrain);
+    this.terrain.geometry.dispose();
+    this.terrain = ground;
+    this.buildMapEdges();
+    this.resnap();
+    this.bakeMinimap();
+    store.set({ loading: false });
+    if (store.get().marsZone === 0) window.setTimeout(() => { if (!this.disposed) voice.play("01_nova_landing"); }, 900);
     // real Mars rock model replaces the procedural dodecahedrons
     loader().load("/models/rock.glb", (gltf) => {
       if (this.disposed) return;
@@ -631,6 +668,7 @@ export class MarsWorldScene implements Scene {
 
   private sectorAt(x: number, z: number) {
     if (Math.hypot(x - SITE.x, z - SITE.z) < 30) return "ARES VALLIS · CARL SAGAN MEMORIAL STATION";
+    for (const m of MARS_SITES) if (Math.hypot(x - m.x, z - m.z) < 22) return `${m.en.toUpperCase()} · ${m.bn}`;
     const i = THREE.MathUtils.clamp(Math.floor((ZONE / 2 - z) / ZONE), 0, ZONES.length - 1);
     return ZONES[i]!.name;
   }
@@ -676,6 +714,15 @@ export class MarsWorldScene implements Scene {
       g.fillStyle = "#fff"; g.font = "bold 12px sans-serif"; g.textAlign = "center";
       g.fillText(label, toX(x), toY(z) - 12);
     };
+    g.font = "11px sans-serif"; g.textAlign = "center";
+    for (const m of MARS_SITES) {
+      g.fillStyle = "rgba(255,240,220,.85)"; g.beginPath(); g.arc(toX(m.x), toY(m.z), 3, 0, 6.29); g.fill();
+      g.fillStyle = "rgba(0,0,0,.55)"; const tw = g.measureText(m.en).width; g.fillRect(toX(m.x) - tw / 2 - 3, toY(m.z) + 5, tw + 6, 14);
+      g.fillStyle = "#ffe9cf"; g.fillText(m.en, toX(m.x), toY(m.z) + 16);
+    }
+    g.fillStyle = "rgba(0,0,0,.6)"; g.fillRect(W / 2 - 200, H - 34, 400, 24);
+    g.fillStyle = "#ffd97d"; g.font = "bold 12px sans-serif";
+    g.fillText("WASD walk · SPACE jump · E talk · M / tap = close map", W / 2, H - 18);
     pin(this.rover.position.x, this.rover.position.z, "#ffd97d", "SOJOURNER");
     pin(this.spirit.position.x, this.spirit.position.z, "#ff8a5c", "SPIRIT");
     pin(this.oppy.position.x, this.oppy.position.z, "#6cc6ff", "OPPY");
