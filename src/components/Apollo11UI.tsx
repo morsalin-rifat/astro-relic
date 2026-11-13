@@ -100,6 +100,7 @@ export function Apollo11Mission() {
   }), []);
   // already finished: open "museum" mode so Eagle & relics stay explorable / replayable
   useEffect(() => store.on("a11:revisit", () => { setStage("done"); museum.current = true; }), []);
+  useEffect(() => { const off = ["a12:arrive", "a12:revisit", "a15:arrive", "a15:revisit"].map((ev) => store.on(ev, () => { setLine(null); setStage((st) => (st === "go" ? "idle" : st)); })); return () => off.forEach((o) => o()); }, []); // other zone entered
   useEffect(() => { if (phase !== "moon") { setStage("idle"); setLine(null); hush(); freeze(false); } }, [phase]);
 
   // what the [E] button would do right now
