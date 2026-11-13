@@ -149,7 +149,7 @@ function PhotoGallery({ lang, onClose }: { lang: "en" | "bn"; onClose: () => voi
 /* ---------- Hub-style left holo bubble with typewriter ---------- */
 const bubblePos = { x: 0, y: 0 };
 let bubbleHidden = false;
-export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker: "nova" | "sojourner" | "spirit" | "oppy" | "insight" | "eagle"; text: string; speaking?: boolean; onClick?: () => void; hint?: string }) {
+export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker: "nova" | "sojourner" | "spirit" | "oppy" | "insight" | "eagle" | "intrepid"; text: string; speaking?: boolean; onClick?: () => void; hint?: string }) {
   const [n, setN] = useState(0);
   const [pos, setPos] = useState({ ...bubblePos });
   const [hidden, setHidden] = useState(false);
@@ -187,7 +187,7 @@ export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker
       <button onClick={() => { bubbleHidden = false; setHidden(false); }} title="Show Nova"
         className="fixed z-[56] left-3 bottom-24 md:bottom-auto md:top-[18%] w-14 h-14 rounded-full border-2 bg-black/60 flex items-center justify-center pointer-events-auto animate-float-gentle"
         style={{ borderColor: acc, boxShadow: `0 0 ${speaking ? 22 : 10}px ${acc}` }}>
-        {nova ? <img src="/images/nova.png" alt="Nova" className="w-11 h-11 object-contain" draggable={false} /> : <span className="text-2xl">{speaker === "eagle" ? "🦅" : "🤖"}</span>}
+        {nova ? <img src="/images/nova.png" alt="Nova" className="w-11 h-11 object-contain" draggable={false} /> : <span className="text-2xl">{speaker === "eagle" ? "🦅" : speaker === "intrepid" ? "🚀" : "🤖"}</span>}
         {speaking && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full animate-ping" style={{ background: acc }} />}
       </button>
     );
@@ -200,14 +200,14 @@ export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker
         {nova ? (
           <img src="/images/nova.png" alt="Nova" className="w-[72px] sm:w-[110px] md:w-[140px] h-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.65)]" draggable={false} />
         ) : (
-          <div className="w-[72px] h-[72px] sm:w-[104px] sm:h-[104px] rounded-full border-2 flex items-center justify-center text-4xl sm:text-6xl" style={{ borderColor: acc, background: `radial-gradient(circle, ${acc}33, #221a14)`, boxShadow: `0 0 ${speaking ? 26 : 14}px ${acc}${speaking ? "" : "66"}` }}>{speaker === "eagle" ? "🦅" : "🤖"}</div>
+          <div className="w-[72px] h-[72px] sm:w-[104px] sm:h-[104px] rounded-full border-2 flex items-center justify-center text-4xl sm:text-6xl" style={{ borderColor: acc, background: `radial-gradient(circle, ${acc}33, #221a14)`, boxShadow: `0 0 ${speaking ? 26 : 14}px ${acc}${speaking ? "" : "66"}` }}>{speaker === "eagle" ? "🦅" : speaker === "intrepid" ? "🚀" : "🤖"}</div>
         )}
       </div>
       <div className="nova-bubble relative flex-1 md:flex-none md:w-[min(360px,calc(50vw-260px))] md:min-w-[260px] mb-3 cursor-pointer">
         <span className="nova-bubble-tail" aria-hidden />
         <div className={`nova-bubble-inner ${speaking ? "is-speaking" : ""}`} style={nova ? undefined : { borderColor: acc }}>
           <div className="flex items-center justify-between gap-2 mb-1.5">
-            <div className="nova-nameplate" style={nova ? undefined : speaker === "oppy" || speaker === "insight" ? { color: "#04121c", background: acc } : { color: acc }}><span className="nova-dot" />{nova ? "NOVA" : speaker === "spirit" ? "SPIRIT · 2004" : speaker === "oppy" ? "OPPY · 2004" : speaker === "insight" ? "INSIGHT · 2018" : speaker === "eagle" ? "EAGLE · 1969" : "SOJOURNER · 1997"}</div>
+            <div className="nova-nameplate" style={nova ? undefined : speaker === "oppy" || speaker === "insight" ? { color: "#04121c", background: acc } : { color: acc }}><span className="nova-dot" />{nova ? "NOVA" : speaker === "spirit" ? "SPIRIT · 2004" : speaker === "oppy" ? "OPPY · 2004" : speaker === "insight" ? "INSIGHT · 2018" : speaker === "eagle" ? "EAGLE · 1969" : speaker === "intrepid" ? "INTREPID · 1969" : "SOJOURNER · 1997"}</div>
             <div className="flex items-center gap-1.5">
               {speaking && <div className="nova-wave" aria-hidden><i /><i /><i /><i /></div>}
               {(speaking || !done) && <button onPointerDown={(e) => e.stopPropagation()} onPointerUp={(e) => e.stopPropagation()} onClick={skip} title="Skip" className="text-[11px] font-bold px-2 py-0.5 rounded-full border border-white/30 bg-white/10 hover:bg-white/25">⏩</button>}
