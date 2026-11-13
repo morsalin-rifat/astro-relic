@@ -184,7 +184,7 @@ export function RoverTurntable({ model = "/models/sojourner.glb", accent = "#ffd
       r.domElement.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [model, big]);
+  }, [model, big, list.length]);
 
   useEffect(() => {
     if (!big) return;
