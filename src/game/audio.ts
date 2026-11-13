@@ -67,8 +67,9 @@ class AmbientAudio {
       this.nodes = [src, filt, g];
       g.gain.value = 0.14;
     }
-    if (mode === "mars") this.startTrack("/audio/music/mars_ambient.mp3");
-    else this.startMusic(mode);
+    // Main background music (uploaded track) plays in every scene; the synth
+    // layers above stay as a soft drone/wind bed underneath it.
+    this.startTrack("/audio/music/game_bg.mp3");
     this.fadeTo(1, 2.5);
   }
 
