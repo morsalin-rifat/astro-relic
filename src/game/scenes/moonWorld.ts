@@ -31,6 +31,8 @@ const win = (z: number, zc: number, half = 190) => { const d = Math.abs(z - zc) 
 const rilleX = (z: number) => -60 + Math.sin((z + 840) * 0.018) * 14;
 const LM_SPOTS: [number, number][] = [[0, 0], [30, -398], [0, -830], [0, -1255]];
 const A11_SPOTS = ["lm", "plaque", "flag", "boot", "lrrr", "psep", "memorial"];
+const A12_SPOTS = ["intrepid", "surveyor", "tvcam", "scoop", "rtg", "alsep12", "head"];
+const ZONE_SPOTS: Record<number, string[]> = { 0: A11_SPOTS, 1: A12_SPOTS };
 const GRAVITY = 2.6; // gentle "1/6 g" feel
 const JUMP_V = 3.4;
 const SPEED = 4.2;
@@ -52,6 +54,9 @@ export const MOON_SITES: Site[] = [
   { id: "intrepid", x: 30, z: -398, en: "INTREPID · Apollo 12 LM", bn: "ইনট্রেপিড · অ্যাপোলো ১২", info: "Pinpoint landing · 19 Nov 1969", r: 9, zone: 1 },
   { id: "surveyor", x: -8, z: -430, en: "Surveyor 3 Robot", bn: "সার্ভেয়ার ৩ রোবট", info: "Waiting here since April 1967", r: 4, zone: 1 },
   { id: "svc", x: 10, z: -430, en: "Surveyor Crater", bn: "সার্ভেয়ার ক্রেটার", info: "200 m wide · robot on its slope", r: 34, zone: 1 },
+  { id: "tvcam", x: -5, z: -427, en: "Camera mount (cut)", bn: "ক্যামেরার জায়গা (কাটা)", info: "TV camera taken home by Apollo 12", r: 1.5, zone: 1 },
+  { id: "scoop", x: -11, z: -433, en: "Surveyor soil scoop", bn: "সার্ভেয়ারের মাটির চামচ", info: "First robot digger on the Moon", r: 1.5, zone: 1 },
+  { id: "rtg", x: 56, z: -407, en: "SNAP-27 power battery", bn: "SNAP-27 ব্যাটারি", info: "Heat-powered electricity", r: 2, zone: 1 },
   { id: "alsep12", x: 62, z: -412, en: "ALSEP Science Station", bn: "ALSEP বিজ্ঞান কেন্দ্র", info: "Apollo 12 experiments", r: 4, zone: 1 },
   { id: "head", x: -45, z: -395, en: "Head Crater", bn: "হেড ক্রেটার", info: "Named after the 'head' of the snowman", r: 15, zone: 1 },
   { id: "bench", x: 55, z: -370, en: "Bench Crater", bn: "বেঞ্চ ক্রেটার", info: "Bench-shaped floor", r: 12, zone: 1 },
@@ -273,14 +278,15 @@ export class MoonWorldScene implements Scene {
       for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 18 : 42; g.lineTo(64 + Math.cos(a) * rr, 64 + Math.sin(a) * rr); }
       g.closePath(); g.fill(); g.stroke();
     });
-    for (const id of A11_SPOTS) {
+    for (const id of [...A11_SPOTS, ...A12_SPOTS]) {
       const site = MOON_SITES.find((x) => x.id === id); if (!site) continue;
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
       sp.scale.setScalar(1.3); sp.visible = false;
-      sp.position.set(site.x, this.groundHeight(site.x, site.z) + (id === "lm" ? 5.2 : 2.4), site.z);
+      sp.position.set(site.x, this.groundHeight(site.x, site.z) + (id === "lm" || id === "intrepid" ? 5.2 : id === "head" ? 4 : 2.4), site.z);
       sp.userData["y"] = sp.position.y; this.scene.add(sp); this.stars.set(id, sp);
     }
-    this.disposers.push(store.on("a11:stars", (d) => { const ids = (d as string[]) || []; this.stars.forEach((sp, id) => (sp.visible = ids.includes(id))); }));
+    for (const [ev, set] of [["a11:stars", A11_SPOTS], ["a12:stars", A12_SPOTS]] as const)
+      this.disposers.push(store.on(ev, (d) => { const ids = (d as string[]) || []; this.stars.forEach((sp, id) => { if (set.includes(id)) sp.visible = ids.includes(id); }); }));
   }
   private buildPassBeacons() {
     const passes = [-210, -630, -1050];
@@ -325,7 +331,10 @@ export class MoonWorldScene implements Scene {
     store.set({ objective: next
       ? { en: `Explore ${Z.en.split(" · ")[0]} — then walk south through the pass to ${next.en.split(" · ")[0]}`, bn: `${Z.bn.split(" · ")[0]} ঘুরে দেখো — তারপর দক্ষিণের গিরিপথ দিয়ে ${next.bn.split(" · ")[0]}-এ যাও` }
       : { en: `Explore ${Z.en.split(" · ")[0]} — the last place humans walked on the Moon`, bn: `${Z.bn.split(" · ")[0]} ঘুরে দেখো — চাঁদে মানুষের শেষ হাঁটার জায়গা` } });
-    if (z === 0 && !store.get().flags.includes("apollo11")) store.emit("a11:arrive"); else { if (z === 0) store.emit("a11:revisit"); store.say([{ speaker: "nova", ...Z.nova }]); }
+    const fl = store.get().flags;
+    if (z === 0 && !fl.includes("apollo11")) store.emit("a11:arrive");
+    else if (z === 1 && !fl.includes("apollo12")) store.emit("a12:arrive");
+    else { if (z === 0) store.emit("a11:revisit"); if (z === 1) store.emit("a12:revisit"); store.say([{ speaker: "nova", ...Z.nova }]); }
     if (this.hud) (this.hud.querySelector("[data-coord]") as HTMLElement).textContent = `${Z.coord} · ${Z.year}`;
     this.nearSite = "-";
   }
@@ -353,7 +362,7 @@ export class MoonWorldScene implements Scene {
     this.buildPassBeacons();
     this.buildStars();
     this.disposers.push(store.on("joystick", (d) => { this.joy = d as { x: number; y: number }; }));
-    const onKey = (e: KeyboardEvent) => { if (e.code === "Escape") store.emit("engine:goto", "hub"); };
+    const onKey = (e: KeyboardEvent) => { if (e.code === "Escape") store.emit("engine:goto", "hub"); if (e.code === "KeyM") this.bigOpen = !this.bigOpen; };
     window.addEventListener("keydown", onKey);
     this.disposers.push(() => window.removeEventListener("keydown", onKey));
     if (import.meta.env.DEV) (window as any).__moonZone = (z: number) => { const [x, zz] = LM_SPOTS[z]!; this.player.position.set(x + 7, this.groundHeight(x + 7, zz + 10), zz + 10); };
@@ -882,7 +891,7 @@ export class MoonWorldScene implements Scene {
     for (const { s, site } of this.labels) {
       const d = Math.hypot(site.x - p.x, site.z - p.z);
       (s.material as THREE.SpriteMaterial).opacity = THREE.MathUtils.clamp(1.3 - d / (site.r > 15 ? 260 : 60), 0, 1);
-      if (this.zone === 0 && A11_SPOTS.includes(site.id) && d < (site.r === 9 ? 8 : site.r + 2.5) && d - Math.min(site.r, 3) < nearD) { nearD = d - Math.min(site.r, 3); nearId = site.id; }
+      if ((ZONE_SPOTS[this.zone] ?? []).includes(site.id) && d < (site.r === 9 ? 8 : site.r + 2.5) && d - Math.min(site.r, 3) < nearD) { nearD = d - Math.min(site.r, 3); nearId = site.id; }
       if (d < site.r + 4 && d - site.r < bestD) { bestD = d - site.r; best = `${site.en} — ${site.bn}`; }
     }
     if (nearId !== store.get().moonNear) store.set({ moonNear: nearId });
