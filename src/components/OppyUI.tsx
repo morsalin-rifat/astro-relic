@@ -3,7 +3,8 @@ import { createPortal } from "react-dom";
 import { store, useGame, t } from "../state/store";
 import { voice } from "../game/voice";
 import { audio } from "../game/audio";
-import { HoloBubble, RoverTurntable } from "./MissionUI";
+import { HoloBubble } from "./MissionUI";
+import { RoverTurntable, SPOTS } from "./RoverTurntable";
 
 type L = { en: string; bn: string };
 type Who = "oppy" | "nova";
@@ -183,7 +184,7 @@ export function OppyEncounter() {
         <div className="relative mx-auto w-[min(260px,70vw)] mt-1">
           <div className="absolute inset-0 rounded-full border-2 border-dashed animate-[spin_30s_linear_infinite]" style={{ borderColor: `${ACC}55` }} />
           <div className="absolute inset-4 rounded-full" style={{ background: `radial-gradient(circle, ${step === "memory" || step === "done" ? GOLD + "66" : "rgba(108,198,255,.25)"}, transparent 70%)` }} />
-          <RoverTurntable model="/models/spirit.glb" accent={ACC} />
+          <RoverTurntable model="/models/spirit.glb" accent={ACC} spots={step === "explore" ? SPOTS.oppy : undefined} />
         </div>
         <div className="grid grid-cols-3 gap-2 text-center text-[10px] mt-1">
           {[["90 → 5352", lang === "bn" ? "সল কাজ" : "sols worked"], ["45.16 km", lang === "bn" ? "রেকর্ড পথ" : "record drive"], ["217k+", lang === "bn" ? "ছবি" : "photos"]].map(([a, b]) => (
@@ -204,7 +205,7 @@ export function OppyEncounter() {
           <>
             <div className="grid grid-cols-2 gap-2 mt-3">
               {TOPICS.map((tp) => (
-                <button key={tp.id} onClick={() => {
+                <button key={tp.id} data-topic={tp.id} onClick={() => {
                   setActive(tp.id); setSeen((s) => (s.includes(tp.id) ? s : [...s, tp.id])); say(tp.id, tp.text, tp.who ?? "oppy");
                   setPanel(tp.id === "04_oppy_photo_gallery" ? "gallery" : tp.id === "03_oppy_part_blueberries" ? "berries" : null);
                 }}

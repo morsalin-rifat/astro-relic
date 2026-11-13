@@ -3,7 +3,8 @@ import { createPortal } from "react-dom";
 import { store, useGame, t } from "../state/store";
 import { voice } from "../game/voice";
 import { audio } from "../game/audio";
-import { HoloBubble, RoverTurntable } from "./MissionUI";
+import { HoloBubble } from "./MissionUI";
+import { RoverTurntable, SPOTS } from "./RoverTurntable";
 
 type L = { en: string; bn: string };
 type Who = "insight" | "nova";
@@ -252,7 +253,7 @@ export function InsightEncounter() {
             <div key={k} className="pointer-events-none absolute inset-8 rounded-full border animate-[ping_2.4s_ease-out_infinite]" style={{ borderColor: `${ACC}88`, animationDelay: `${k * 0.8}s` }} />
           ))}
           <div style={{ filter: step === "farewell" ? `sepia(${dust}) brightness(${1 - dust * 0.55})` : undefined, transition: "filter .3s" }}>
-            <RoverTurntable model="/models/insight.glb" accent={ACC} />
+            <RoverTurntable model="/models/insight.glb" accent={ACC} spots={step === "explore" ? SPOTS.insight : undefined} />
           </div>
         </div>
         <div className="grid grid-cols-3 gap-2 text-center text-[10px] mt-1">
@@ -275,7 +276,7 @@ export function InsightEncounter() {
           <>
             <div className="grid grid-cols-2 gap-2 mt-3">
               {TOPICS.map((tp) => (
-                <button key={tp.id} onClick={() => {
+                <button key={tp.id} data-topic={tp.id} onClick={() => {
                   setActive(tp.id); setSeen((s) => (s.includes(tp.id) ? s : [...s, tp.id])); say(tp.id, tp.text, tp.who ?? "insight");
                   setPanel(tp.panel ?? null);
                 }}

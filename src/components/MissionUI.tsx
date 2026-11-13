@@ -44,76 +44,8 @@ const SOURCES = [
   { icon: "🖼️", en: "Real Sojourner photos (NASA Photojournal)", bn: "সোজার্নারের আসল ছবি (নাসা ফটোজার্নাল)", url: "https://photojournal.jpl.nasa.gov/mission/Mars%20Pathfinder" },
 ];
 
-/* ---------- 3D turntable inside the card ---------- */
-export function RoverTurntable({ model = "/models/sojourner.glb", accent = "#ffd97d" }: { model?: string; accent?: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const r = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    r.setPixelRatio(Math.min(devicePixelRatio, 2));
-    const size = el.clientWidth;
-    r.setSize(size, size);
-    r.outputColorSpace = THREE.SRGBColorSpace;
-    el.appendChild(r.domElement);
-    const scene = new THREE.Scene();
-    scene.add(new THREE.HemisphereLight(0xfff0e0, 0x553322, 1.4));
-    const d = new THREE.DirectionalLight(0xffffff, 2.2);
-    d.position.set(3, 4, 2);
-    scene.add(d);
-    const cam = new THREE.PerspectiveCamera(35, 1, 0.01, 50);
-    cam.position.set(0, 1.1, 3.4);
-    cam.lookAt(0, 0.35, 0);
-    let dead = false;
-    const pivot = new THREE.Group();
-    scene.add(pivot);
-    MeshoptDecoder.ready.then(() => { if (!dead) new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load(model, (g) => {
-      const m = g.scene;
-      const box = new THREE.Box3().setFromObject(m);
-      const s = box.getSize(new THREE.Vector3());
-      const k = 1.5 / Math.max(s.x, s.y, s.z, 0.001);
-      const c = box.getCenter(new THREE.Vector3());
-      m.scale.setScalar(k);
-      m.position.set(-c.x * k, -box.min.y * k, -c.z * k);
-      pivot.add(m);
-      setReady(true);
-    }, undefined, () => setReady(true)); });
-    let yaw = 0.6, vel = 0.4, drag = false, lx = 0, raf = 0, last = performance.now();
-    const down = (e: PointerEvent) => { drag = true; lx = e.clientX; el.setPointerCapture(e.pointerId); };
-    const move = (e: PointerEvent) => { if (!drag) return; vel = (e.clientX - lx) * 0.6; yaw += (e.clientX - lx) * 0.012; lx = e.clientX; };
-    const up = () => { drag = false; };
-    el.addEventListener("pointerdown", down);
-    el.addEventListener("pointermove", move);
-    el.addEventListener("pointerup", up);
-    const loop = (now: number) => {
-      const dt = Math.min((now - last) / 1000, 0.05);
-      last = now;
-      if (!drag) { yaw += vel * dt; vel += (0.4 - vel) * Math.min(1, dt * 1.5); }
-      pivot.rotation.y = yaw;
-      r.render(scene, cam);
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    return () => {
-      dead = true;
-      cancelAnimationFrame(raf);
-      r.dispose();
-      r.domElement.remove();
-    };
-  }, [model]);
-  return (
-    <div className="relative w-full aspect-square">
-      <div ref={ref} className="w-full h-full cursor-grab active:cursor-grabbing touch-none" />
-      {!ready && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <div className="w-14 h-14 rounded-full border-4 border-white/10 animate-spin" style={{ borderTopColor: accent }} />
-          <div className="mt-2 text-[10px] tracking-[0.3em] text-[#ffd97d]/80">WAKING UP…</div>
-        </div>
-      )}
-    </div>
-  );
-}
+export { RoverTurntable } from "./RoverTurntable";
+import { RoverTurntable, SPOTS } from "./RoverTurntable";
 
 const PHOTOS: { src: string; title: L; text: L }[] = [
   { src: "/images/sojourner/PIA00766.jpg", title: { en: "Me & Yogi Rock", bn: "আমি ও যোগী পাথর" }, text: { en: "I touched this big rock with my APXS 'nose' to learn what it was made of.", bn: "এই বড় পাথরটা আমার APXS 'নাক' দিয়ে ছুঁয়ে বুঝেছিলাম এটা কী দিয়ে তৈরি।" } },
@@ -277,7 +209,7 @@ export function SojournerEncounter() {
         <div className="relative mx-auto w-[min(260px,70vw)] mt-1">
           <div className="absolute inset-0 rounded-full border-2 border-dashed border-[#ffd97d]/40 animate-[spin_30s_linear_infinite]" />
           <div className="absolute inset-4 rounded-full bg-[radial-gradient(circle,rgba(255,200,120,.25),transparent_70%)]" />
-          <RoverTurntable />
+          <RoverTurntable spots={step === "explore" ? SPOTS.sojourner : undefined} />
         </div>
         {gallery && <PhotoGallery lang={lang} onClose={() => setGallery(false)} />}
         {createPortal(<HoloBubble key={t(caption, lang)} speaker="sojourner" text={t(caption, lang)} speaking={speaking} />, document.body)}
@@ -292,7 +224,7 @@ export function SojournerEncounter() {
           <>
             <div className="grid grid-cols-2 gap-2 mt-3">
               {TOPICS.map((tp) => (
-                <button key={tp.id} onClick={() => { setActive(tp.id); setSeen((s) => (s.includes(tp.id) ? s : [...s, tp.id])); say(tp.id); if (tp.id === "04_photo_gallery") setGallery(true); }}
+                <button key={tp.id} data-topic={tp.id} onClick={() => { setActive(tp.id); setSeen((s) => (s.includes(tp.id) ? s : [...s, tp.id])); say(tp.id); if (tp.id === "04_photo_gallery") setGallery(true); }}
                   className={`text-left text-xs rounded-2xl px-3 py-2 border transition-all ${active === tp.id ? "bg-[#ffd97d] text-black border-[#ffd97d]" : "bg-white/5 border-white/15 hover:border-[#ffd97d]/70"}`}>
                   <span className="text-lg mr-1">{tp.icon}</span>{t(tp.label, lang)}{seen.includes(tp.id) && active !== tp.id ? " ✓" : ""}
                 </button>
