@@ -1403,7 +1403,7 @@ export class MarsWorldScene implements Scene {
 
     this.stars.rotation.y += dt * 0.002;
     this.renderer.render(this.scene, this.camera);
-    if (!store.get().loading) this.renderer.domElement.dataset.sceneReady = "mars";
+    if (!store.get().loading) this.renderer.domElement.dataset["sceneReady"] = "mars";
   }
 
   dispose() {
