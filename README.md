@@ -5,7 +5,9 @@
 
 **An interactive 3D space adventure where kids meet the robots and astronauts humanity left behind — on Mars and the Moon.**
 
-[![Play Now](https://img.shields.io/badge/▶_PLAY_NOW-astro--relic.lovable.app-ff7a45?style=for-the-badge)](https://astro-relic.lovable.app)
+[![Play Now](https://img.shields.io/badge/▶_PLAY_NOW-astro--relic.vercel.app-ff7a45?style=for-the-badge)](https://astro-relic.vercel.app/)
+[![Watch Video](https://img.shields.io/badge/🎬_WATCH_VIDEO-YouTube-ff0000?style=for-the-badge&logo=youtube&logoColor=fff)](https://youtu.be/e5UdytSphmI)
+[![GitHub](https://img.shields.io/badge/GitHub-astro--relic-181717?style=for-the-badge&logo=github)](https://github.com/morsalin-rifat/astro-relic)
 [![YouTube](https://img.shields.io/badge/YouTube-@TeamSpacesync-ff0000?style=for-the-badge&logo=youtube&logoColor=fff)](https://www.youtube.com/@TeamSpacesync)
 [![NASA Space Apps 2026](https://img.shields.io/badge/NASA_Space_Apps-2026-0b3d91?style=for-the-badge)](https://www.spaceappschallenge.org/)
 [![Theme](https://img.shields.io/badge/Theme-Abandoned-8b5cf6?style=for-the-badge)](#-the-idea)
@@ -67,8 +69,8 @@ Full list of data, images, videos, audio and tools: **[RESOURCES.md](./RESOURCES
 ## 💻 Run Locally
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
+git clone https://github.com/morsalin-rifat/astro-relic.git
+cd astro-relic
 npm install
 npm run dev
 ```
@@ -84,6 +86,6 @@ public/            images, audio, videos, 3D models
 
 ## 👥 Team
 
-Built by **Team SpaceSync** 🇧🇩 for **NASA Space Apps Challenge 2026** — [▶ YouTube: @TeamSpacesync](https://www.youtube.com/@TeamSpacesync)
+Built by **Team SpaceSync** 🇧🇩 for **NASA Space Apps Challenge 2026** — [▶ YouTube: @TeamSpacesync](https://www.youtube.com/@TeamSpacesync) · [🎬 Project video](https://youtu.be/e5UdytSphmI) · [🌐 Play live](https://astro-relic.vercel.app/)
 
 <div align="center"><sub>Astro Relic is an educational fan project and is not endorsed by NASA.</sub></div>
