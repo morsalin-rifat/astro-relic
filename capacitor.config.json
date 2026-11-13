@@ -1,0 +1,5 @@
+{
+  "appId": "com.teamspacesync.astrorelic",
+  "appName": "Astro Relic",
+  "webDir": "dist/client"
+}
