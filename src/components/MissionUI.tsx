@@ -19,6 +19,7 @@ export const BADGES: { id: string; icon: string; name: L; rover: L }[] = [
   { id: "final-stargazer", icon: "🌌", name: { en: "Final Stargazer", bn: "ফাইনাল স্টারগেজার" }, rover: { en: "Apollo 17 · 1972", bn: "অ্যাপোলো ১৭ · ১৯৭২" } },
   { id: "buggy-driver", icon: "🏎️", name: { en: "Lunar Buggy Driver", bn: "লুনার বাগি ড্রাইভার" }, rover: { en: "Apollo 15 · 1971", bn: "অ্যাপোলো ১৫ · ১৯৭১" } },
   { id: "master-explorer", icon: "👑", name: { en: "Master Mars Explorer", bn: "মাস্টার মার্স এক্সপ্লোরার" }, rover: { en: "Grand Finale", bn: "গ্র্যান্ড ফিনালে" } },
+  { id: "master-lunar", icon: "🌕", name: { en: "Master Lunar Explorer", bn: "মাস্টার লুনার এক্সপ্লোরার" }, rover: { en: "Lunar Grand Finale", bn: "চাঁদের গ্র্যান্ড ফিনালে" } },
 ];
 
 const TOPICS: { id: string; icon: string; label: L; text: L }[] = [
