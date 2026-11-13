@@ -4,6 +4,7 @@ import { audio } from "./audio";
 /** Plays the team's recorded Sojourner/Nova voice clips (EN/BN), ducking the music. */
 class VoicePlayer {
   private el: HTMLAudioElement | null = null;
+  private end: (() => void) | null = null;
 
   play(name: string, onEnd?: () => void) {
     this.stop();
@@ -17,10 +18,11 @@ class VoicePlayer {
     audio.duck(true);
     const done = () => {
       if (this.el !== el) return;
-      this.el = null;
+      this.el = null; this.end = null;
       audio.duck(false);
       onEnd?.();
     };
+    this.end = done;
     el.onended = done;
     el.onerror = done;
     el.play().catch(done);
@@ -33,7 +35,13 @@ class VoicePlayer {
     return Math.min(1, el.currentTime / el.duration);
   }
 
+  /** Fast-forward: end the clip now and run its onEnd (story continues). */
+  skip() { const f = this.end; if (f) f(); else this.stop(); if (this.el) { this.el.pause(); } }
+
+  isPlaying() { return !!this.el; }
+
   stop() {
+    this.end = null;
     if (this.el) {
       this.el.onended = null;
       this.el.pause();

@@ -265,6 +265,23 @@ export class MoonWorldScene implements Scene {
   private zone = 0;
 
   private bannerEl?: HTMLDivElement; private bannerT = 0; private beacons: THREE.Object3D[] = [];
+  private stars = new Map<string, THREE.Sprite>();
+  private buildStars() {
+    const tex = canvasTex(128, 128, (g) => {
+      const r = g.createRadialGradient(64, 64, 4, 64, 64, 64); r.addColorStop(0, "rgba(255,230,150,.9)"); r.addColorStop(1, "rgba(255,217,125,0)"); g.fillStyle = r; g.fillRect(0, 0, 128, 128);
+      g.fillStyle = "#ffd23f"; g.strokeStyle = "#fff6c8"; g.lineWidth = 3; g.beginPath();
+      for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 18 : 42; g.lineTo(64 + Math.cos(a) * rr, 64 + Math.sin(a) * rr); }
+      g.closePath(); g.fill(); g.stroke();
+    });
+    for (const id of A11_SPOTS) {
+      const site = MOON_SITES.find((x) => x.id === id); if (!site) continue;
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+      sp.scale.setScalar(1.3); sp.visible = false;
+      sp.position.set(site.x, this.groundHeight(site.x, site.z) + (id === "lm" ? 5.2 : 2.4), site.z);
+      sp.userData["y"] = sp.position.y; this.scene.add(sp); this.stars.set(id, sp);
+    }
+    this.disposers.push(store.on("a11:stars", (d) => { const ids = (d as string[]) || []; this.stars.forEach((sp, id) => (sp.visible = ids.includes(id))); }));
+  }
   private buildPassBeacons() {
     const passes = [-210, -630, -1050];
     passes.forEach((zb, i) => {
@@ -334,6 +351,7 @@ export class MoonWorldScene implements Scene {
     this.player.position.set(sx, this.groundHeight(sx, sz), sz);
     this.camYaw = 0; this.player.rotation.y = Math.PI; // face south, toward the next site
     this.buildPassBeacons();
+    this.buildStars();
     this.disposers.push(store.on("joystick", (d) => { this.joy = d as { x: number; y: number }; }));
     const onKey = (e: KeyboardEvent) => { if (e.code === "Escape") store.emit("engine:goto", "hub"); };
     window.addEventListener("keydown", onKey);
@@ -781,7 +799,8 @@ export class MoonWorldScene implements Scene {
       if ((site.zone ?? 0) !== this.zone) continue;
       let [x, y] = toScreen(site.x, site.z); const d = Math.hypot(x - S / 2, y - S / 2); const edge = d > S / 2 - 12;
       if (edge) { x = S / 2 + ((x - S / 2) / d) * (S / 2 - 12); y = S / 2 + ((y - S / 2) / d) * (S / 2 - 12); }
-      g.fillStyle = site.r === 9 ? "#ffd97d" : "#9fd0ff"; g.beginPath(); g.arc(x, y, site.r === 9 ? 5 : 3.5, 0, 7); g.fill();
+      if (this.stars.get(site.id)?.visible) { g.fillStyle = "#ffd23f"; g.font = `bold ${14 + Math.sin(performance.now() / 200) * 2}px system-ui`; g.fillText("★", x, y + 5); g.font = "bold 10px system-ui"; }
+      else { g.fillStyle = site.r === 9 ? "#ffd97d" : "#9fd0ff"; g.beginPath(); g.arc(x, y, site.r === 9 ? 5 : 3.5, 0, 7); g.fill(); }
       const near = Math.hypot(site.x - p.x, site.z - p.z) < 18 || site.r > 15;
       if (!edge && near) { g.fillStyle = "rgba(0,0,0,.6)"; const w = g.measureText(site.en.split(" ·")[0]!).width; g.fillRect(x - w / 2 - 2, y - 17, w + 4, 12); g.fillStyle = "#fff"; g.fillText(site.en.split(" ·")[0]!.split(" (")[0]!, x, y - 8); }
     }
@@ -857,6 +876,7 @@ export class MoonWorldScene implements Scene {
     }
     if (this.mixer && this.walk) { this.walk.timeScale = this.grounded ? Math.min(this.vel.length() / SPEED, 1) * 0.8 : 0.1; this.mixer.update(dt); }
 
+    this.stars.forEach((sp, id) => { if (!sp.visible) return; sp.position.y = sp.userData["y"] + Math.sin(t * 2 + id.length) * 0.25; (sp.material as THREE.SpriteMaterial).rotation = Math.sin(t * 1.5 + id.length) * 0.3; });
     // labels: fade by distance, nearest site name in HUD
     let best = "", bestD = Infinity, nearId: string | null = null, nearD = Infinity;
     for (const { s, site } of this.labels) {
