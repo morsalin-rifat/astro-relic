@@ -6,6 +6,7 @@
 **An interactive 3D space adventure where kids meet the robots and astronauts humanity left behind — on Mars and the Moon.**
 
 [![Play Now](https://img.shields.io/badge/▶_PLAY_NOW-astro--relic.vercel.app-ff7a45?style=for-the-badge)](https://astro-relic.vercel.app/)
+[![Demo Link](https://img.shields.io/badge/🔗_DEMO_LINK_(optional)-astro--relic--2--0-6b7280?style=for-the-badge)](https://astro-relic-2-0demolink.vercel.app/)
 [![Watch Video](https://img.shields.io/badge/🎬_WATCH_VIDEO-YouTube-ff0000?style=for-the-badge&logo=youtube&logoColor=fff)](https://youtu.be/e5UdytSphmI)
 [![GitHub](https://img.shields.io/badge/GitHub-astro--relic-181717?style=for-the-badge&logo=github)](https://github.com/morsalin-rifat/astro-relic)
 [![YouTube](https://img.shields.io/badge/YouTube-@TeamSpacesync-ff0000?style=for-the-badge&logo=youtube&logoColor=fff)](https://www.youtube.com/@TeamSpacesync)
@@ -86,6 +87,6 @@ public/            images, audio, videos, 3D models
 
 ## 👥 Team
 
-Built by **Team SpaceSync** 🇧🇩 for **NASA Space Apps Challenge 2026** — [▶ YouTube: @TeamSpacesync](https://www.youtube.com/@TeamSpacesync) · [🎬 Project video](https://youtu.be/e5UdytSphmI) · [🌐 Play live](https://astro-relic.vercel.app/)
+Built by **Team SpaceSync** 🇧🇩 for **NASA Space Apps Challenge 2026** — [▶ YouTube: @TeamSpacesync](https://www.youtube.com/@TeamSpacesync) · [🎬 Project video](https://youtu.be/e5UdytSphmI) · [🌐 Play live](https://astro-relic.vercel.app/) · [🔗 Optional demo link](https://astro-relic-2-0demolink.vercel.app/)
 
 <div align="center"><sub>Astro Relic is an educational fan project and is not endorsed by NASA.</sub></div>
