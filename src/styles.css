@@ -812,5 +812,7 @@ body {
 .mars-card-shade { background: oklch(0.08 0 0 / .72); }
 @media(max-width: 640px) {
   .mars-actions { top: 232px; right: 12px; }
+  .mars-actions-on-map { top: auto; bottom: 205px; width: 210px; }
+  .mars-actions-on-map > div:last-child { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .mars-map-summary { top: auto; bottom: 16px; left: 12px; width: calc(100% - 24px); max-height: 180px; }
 }

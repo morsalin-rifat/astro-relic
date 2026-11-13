@@ -52,7 +52,7 @@ export function MarsStarHunt() {
     audio.beep(1320);
   };
   return <>
-    {!busy && !card && <aside className="mars-actions rounded-lg border border-expedition-line bg-expedition text-expedition-ink p-2 pointer-events-auto" aria-label={bn ? "ম্যাপের কাজ" : "Mars map actions"}>
+    {!busy && !card && <aside className={`mars-actions ${s.bigMap ? "mars-actions-on-map" : ""} rounded-lg border border-expedition-line bg-expedition text-expedition-ink p-2 pointer-events-auto`} aria-label={bn ? "ম্যাপের কাজ" : "Mars map actions"}>
       <div className="flex items-center justify-center gap-1 text-relic-gold text-sm font-bold pb-2"><Star size={14}/>{s.marsStars.length}/28</div>
       <div className="grid grid-cols-2 gap-1">
         <Button variant="ghost" title={bn ? "ম্যাপ (M)" : "Map (M)"} aria-label="Map (M)" onClick={()=>store.set({bigMap:!s.bigMap})}><Map/><kbd>M</kbd></Button>

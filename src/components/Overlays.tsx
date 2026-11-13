@@ -1034,11 +1034,12 @@ function HubUI() {
 /* ---------------- Root overlays ---------------- */
 export function Overlays() {
   const fading = useGame((s) => s.fading);
+  const marsMapOpen = useGame((s) => s.phase === "explore" && s.bigMap);
   return (
     <>
       <HomeUI />
       <HubUI />
-      <NovaGuide />
+      <div className={marsMapOpen ? "hidden" : "contents"}><NovaGuide /></div>
       <Caption />
       <MarsIntroVideo />
       <Dialogue />

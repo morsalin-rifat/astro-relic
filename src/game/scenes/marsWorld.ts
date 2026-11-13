@@ -783,15 +783,17 @@ export class MarsWorldScene implements Scene {
       const unlocked = i === 0 || badges.length >= i;
       g.fillStyle = "rgba(0,0,0,.6)"; g.fillRect(ox + 6, y0 + 6, Math.min(ZONE * sc - 12, 330), 24);
       g.fillStyle = unlocked ? "#ffd97d" : "#9a8a80"; g.font = "bold 12px sans-serif"; g.textAlign = "left";
-      g.fillText((unlocked ? "" : "🔒 ") + zn.name, ox + 12, y0 + 22);
+      const label = mobile ? ["1 · ARES VALLIS", "2 · GUSEV", "3 · MERIDIANI", "4 · ELYSIUM"][i] ?? zn.name : zn.name;
+      g.save(); g.beginPath(); g.rect(ox+6,y0+6,ZONE*sc-12,24); g.clip();
+      g.fillText((unlocked ? "" : "🔒 ") + label, ox + 12, y0 + 22); g.restore();
     });
     const pin = (x: number, z: number, col: string, label: string) => {
       g.fillStyle = col; g.strokeStyle = "#000"; g.lineWidth = 2;
       g.beginPath(); g.arc(toX(x), toY(z), 7, 0, 6.29); g.fill(); g.stroke();
-      g.fillStyle = "#fff"; g.font = "bold 12px sans-serif"; g.textAlign = "center";
+      g.fillStyle = "#fff"; g.font = mobile ? "bold 9px sans-serif" : "bold 12px sans-serif"; g.textAlign = "center";
       g.fillText(label, toX(x), toY(z) - 12);
     };
-    g.font = "11px sans-serif"; g.textAlign = "center";
+    g.font = mobile ? "8px sans-serif" : "11px sans-serif"; g.textAlign = "center";
     for (const m of MARS_SITES) {
       g.fillStyle = "rgba(255,240,220,.85)"; g.beginPath(); g.arc(toX(m.x), toY(m.z), 3, 0, 6.29); g.fill();
       g.fillStyle = "rgba(0,0,0,.55)"; const tw = g.measureText(m.en).width; g.fillRect(toX(m.x) - tw / 2 - 3, toY(m.z) + 5, tw + 6, 14);
