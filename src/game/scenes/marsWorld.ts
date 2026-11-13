@@ -79,21 +79,32 @@ const smooth = (t: number) => { t = Math.min(1, Math.max(0, t)); return t * t * 
 function marsRelief(x: number, z: number, extra: Crater[]) {
   const zt = Math.min(3, Math.max(0, -z / ZONE));
   const w = [0, 1, 2, 3].map((i) => smooth(1 - Math.abs(zt - i)));
-  let h = (fbm(x * 0.008 + 7, z * 0.008 + 3, 4) - 0.5) * 8; // broad swells
+  let river = 0;
+  let h = (fbm(x * 0.008 + 7, z * 0.008 + 3, 4) - 0.5) * 10; // broad swells
   h += (fbm(x * 0.05, z * 0.05, 3) - 0.5) * 1.2;            // small bumps
   // Zone 1 · Ares Vallis: streamlined flood grooves (flow toward NE) + Twin Peaks + far channel walls
   if (w[0]! > 0) {
     const flow = (x * 0.55 + z * 0.83);
     let a = Math.sin(flow * 0.09 + fbm(x * 0.02, z * 0.02) * 4) * 0.9 + Math.sin(flow * 0.31) * 0.25;
-    a += 24 * gauss(x, z, -82, -100, 16, 13) + 19 * gauss(x, z, -52, -122, 13, 11);  // Twin Peaks
-    a += 9 * gauss(x, z, -130, 30, 26, 60) + 7 * gauss(x, z, 140, -40, 22, 70);       // channel banks
+    a += 52 * gauss(x, z, -82, -100, 15, 12) + 40 * gauss(x, z, -52, -122, 12, 10);  // Twin Peaks (taller)
+    a += 26 * gauss(x, z, -140, 30, 22, 70) + 22 * gauss(x, z, 150, -40, 20, 80);       // channel banks
     a -= 3 * gauss(x, z, 95, 60, 30, 70);                                             // flood trough
+    // dry meandering riverbed of the ancient Ares flood
+    const cx = 70 + Math.sin(z * 0.022) * 28 + Math.sin(z * 0.061) * 9;
+    const rd = Math.abs(x - cx);
+    const rv = 1 - smooth((rd - 7) / 6);
+    a -= 5.5 * rv; a += 1.2 * Math.exp(-(((rd - 2) / 2) ** 2)) * rv; // channel + sandbar
+    river = Math.max(river, rv * w[0]!);
     h += a * w[0]!;
   }
   // Zone 2 · Gusev: flat crater floor rising into the Columbia Hills; Home Plate plateau
   if (w[1]! > 0) {
     let a = -1.5;
-    a += 32 * gauss(x, z, -78, -455, 30, 22) + 18 * gauss(x, z, -125, -430, 22, 30) + 14 * gauss(x, z, -40, -505, 20, 14);
+    a += 62 * gauss(x, z, -78, -455, 26, 20) + 38 * gauss(x, z, -125, -430, 20, 28) + 28 * gauss(x, z, -40, -505, 18, 13);
+    a += (fbm(x * 0.03 + 4, z * 0.03, 4) - 0.5) * 10 * smooth((Math.hypot(x + 85, z + 455) < 90 ? 1 : 0));
+    // ancient Gusev lakebed: flattened silt floor in the east
+    const lk = 1 - smooth((Math.hypot((x - 70) / 1.4, z + 380) - 45) / 15);
+    a = a * (1 - lk) - 1.2 * lk; river = Math.max(river, lk * 0.7 * w[1]!);
     const hp = Math.hypot(x + 18, z + 478); a += 2.2 * (1 - smooth((hp - 9) / 3));
     h += a * w[1]!;
   }
@@ -103,7 +114,7 @@ function marsRelief(x: number, z: number, extra: Crater[]) {
   }
   // Zone 4 · Elysium: very flat lava plain, far volcanic rise on the horizon
   if (w[3]! > 0) {
-    h = h * (1 - 0.75 * w[3]!) + (16 * gauss(x, z, -150, -1180, 50, 60) + 6 * gauss(x, z, 150, -1120, 40, 50)) * w[3]!;
+    h = h * (1 - 0.75 * w[3]!) + (38 * gauss(x, z, -150, -1180, 45, 55) + 16 * gauss(x, z, 150, -1120, 36, 45)) * w[3]!;
   }
   let bowl = 0;
   for (const c of BIG_CRATERS) { if (Math.abs(z - c.z) > c.r * 1.9) continue; const r = craterH(x, z, c); h += r.h; bowl = Math.max(bowl, r.bowl); }
@@ -111,10 +122,10 @@ function marsRelief(x: number, z: number, extra: Crater[]) {
   // ridges between zones with a central pass (like the Moon corridor)
   for (let s = 1; s < 4; s++) {
     const zr = -s * ZONE + ZONE / 2;
-    const ridge = Math.exp(-(((z - zr) / 14) ** 2)) * (14 + fbm(x * 0.04, s * 9) * 10);
+    const ridge = Math.exp(-(((z - zr) / 14) ** 2)) * (28 + fbm(x * 0.04, s * 9) * 22);
     h += ridge * (1 - Math.exp(-((x / 24) ** 2)));
   }
-  return { h, zt, bowl };
+  return { h, zt, bowl, river };
 }
 /** [dust low, dust high, rock] per zone */
 const MARS_PALETTE = [
@@ -224,9 +235,10 @@ export class MarsWorldScene implements Scene {
     this.sun.shadow.camera.right = 45;
     this.sun.shadow.camera.top = 45;
     this.sun.shadow.camera.bottom = -45;
-    this.sun.shadow.bias = -0.0004;
-    this.scene.add(this.sun);
-    this.scene.add(new THREE.AmbientLight(0x4a2418, 0.85));
+    this.sun.shadow.bias = -0.0004; this.sun.shadow.normalBias = 0.04;
+    this.sun.shadow.camera.far = 320;
+    this.scene.add(this.sun, this.sun.target);
+    this.scene.add(new THREE.AmbientLight(0x4a2418, 0.55));
     const rim = new THREE.DirectionalLight(0x6f86b8, 0.5);
     rim.position.set(-40, 20, 40);
     this.scene.add(rim);
@@ -516,18 +528,19 @@ export class MarsWorldScene implements Scene {
     const data = new Float32Array(NX * NZ);
     const zoneT = new Float32Array(NX * NZ); // continuous zone index for colouring
     const craterK = new Float32Array(NX * NZ); // 0..1 inside bowls (darker)
+    const riverK = new Float32Array(NX * NZ);
     const extra = extraCraters();
     for (let gz = 0; gz < NZ; gz++) for (let gx = 0; gx < NX; gx++) {
       const x = minX + gx * sx, z = minZ + gz * sz, i = gz * NX + gx;
       const r = marsRelief(x, z, extra);
-      data[i] = r.h; zoneT[i] = r.zt; craterK[i] = r.bowl;
+      data[i] = r.h; zoneT[i] = r.zt; craterK[i] = r.bowl; riverK[i] = r.river;
     }
     this.hf = { data, nx: NX, nz: NZ, minX, minZ, sx, sz };
 
     // ground mesh straight from the heightfield
     const verts = new Float32Array(NX * NZ * 3), cols = new Float32Array(NX * NZ * 3), uvs = new Float32Array(NX * NZ * 2);
     const pal = MARS_PALETTE.map((p) => p.map((c) => new THREE.Color(c)));
-    const ca = new THREE.Color(), cb = new THREE.Color(), cc = new THREE.Color();
+    const ca = new THREE.Color(), cb = new THREE.Color(), cc = new THREE.Color(), silt = new THREE.Color();
     for (let gz = 0; gz < NZ; gz++) for (let gx = 0; gx < NX; gx++) {
       const i = gz * NX + gx, x = minX + gx * sx, z = minZ + gz * sz, y = data[i]!;
       verts[i * 3] = x; verts[i * 3 + 1] = y; verts[i * 3 + 2] = z;
@@ -542,6 +555,7 @@ export class MarsWorldScene implements Scene {
       cc.copy(A[2]!).lerp(B[2]!, k); // rock / bedrock tone on slopes
       ca.lerp(cc, slope * 0.85);
       ca.multiplyScalar(1 - craterK[i]! * 0.22 + (fbm(x * 0.4 + 9, z * 0.4, 2) - 0.5) * 0.12);
+      if (riverK[i]! > 0) ca.lerp(silt.setRGB(0.62, 0.42, 0.3).multiplyScalar(0.85 + fbm(x * 0.3, z * 0.3) * 0.3), riverK[i]! * 0.55);
       cols[i * 3] = ca.r; cols[i * 3 + 1] = ca.g; cols[i * 3 + 2] = ca.b;
     }
     const ind = new Uint32Array((NX - 1) * (NZ - 1) * 6);
@@ -573,34 +587,69 @@ export class MarsWorldScene implements Scene {
     this.bakeMinimap();
     store.set({ loading: false });
     if (store.get().marsZone === 0) window.setTimeout(() => { if (!this.disposed) voice.play("01_nova_landing"); }, 900);
-    // real Mars rock model replaces the procedural dodecahedrons
-    loader().load("/models/rock.glb", (gltf) => {
-      if (this.disposed) return;
-      let mesh: THREE.Mesh | null = null;
-      gltf.scene.traverse((o) => { if (!mesh && (o as THREE.Mesh).isMesh) mesh = o as THREE.Mesh; });
-      if (!mesh) return;
-      const src = mesh as THREE.Mesh;
-      const geo = src.geometry.clone();
-      geo.computeBoundingBox();
-      const bb = geo.boundingBox!;
-      const sc = 1 / Math.max(bb.max.x - bb.min.x, bb.max.y - bb.min.y, bb.max.z - bb.min.z, 1e-3);
-      geo.translate(-(bb.min.x + bb.max.x) / 2, -bb.min.y, -(bb.min.z + bb.max.z) / 2);
-      geo.scale(sc * 2, sc * 2, sc * 2);
-      this.scene.remove(this.rocks);
-      const count = 700;
-      const rocks = new THREE.InstancedMesh(geo, src.material as THREE.Material, count);
-      rocks.castShadow = rocks.receiveShadow = true;
-      this.rocks = rocks;
-      this.rockData = [];
-      for (let i = 0; i < count; i++) {
-        const x = (Math.random() - 0.5) * (ZONE - 30);
-        const z = ZONE / 2 - 15 - Math.random() * (ZONE * ZONES.length - 30);
-        const s = 0.3 + Math.pow(Math.random(), 2.6) * 3;
-        this.rockData.push({ x, z, s, r: new THREE.Euler(0, Math.random() * 6.28, 0) });
-      }
-      this.scene.add(rocks);
-      this.resnap();
-    });
+    this.buildNaturalRocks();
+    this.buildTracks();
+  }
+
+  /** wind-sculpted boulders: noisy icosahedrons, per-instance tint, clustered + scatter along the whole corridor */
+  private buildNaturalRocks() {
+    const geo = new THREE.IcosahedronGeometry(1, 2);
+    const pa = geo.attributes["position"] as THREE.BufferAttribute; const v = new THREE.Vector3();
+    for (let i = 0; i < pa.count; i++) {
+      v.fromBufferAttribute(pa, i);
+      const n = 0.72 + fbm(v.x * 1.7 + 3, v.z * 1.7 + v.y * 1.3, 3) * 0.55;
+      v.multiplyScalar(n); if (v.y < -0.1) v.y *= 0.35; // flat buried bottoms
+      v.x *= 1.15; pa.setXYZ(i, v.x, v.y * 0.7, v.z);
+    }
+    geo.computeVertexNormals();
+    const mat = new THREE.MeshStandardMaterial({ roughness: 0.93, metalness: 0, map: makeGrainTexture(), bumpMap: makeGrainTexture(true), bumpScale: 2, flatShading: true });
+    const count = 2400, rnd = rng(4242);
+    const rocks = new THREE.InstancedMesh(geo, mat, count);
+    rocks.castShadow = rocks.receiveShadow = true;
+    const col = new THREE.Color(); const pal = MARS_PALETTE.map((p) => new THREE.Color(p[2]!));
+    this.scene.remove(this.rocks); this.rocks = rocks; this.rockData = [];
+    const clusters = MARS_SITES.map((m) => [m.x, m.z] as const);
+    const total = ZONE * ZONES.length;
+    for (let i = 0; i < count; i++) {
+      let x: number, z: number;
+      if (i < 700) { const c = clusters[i % clusters.length]!; const a = rnd() * 6.28, r = 6 + rnd() * 40; x = c[0] + Math.cos(a) * r; z = c[1] + Math.sin(a) * r; }
+      else { x = (rnd() - 0.5) * (ZONE - 30); z = ZONE / 2 - 15 - rnd() * (total - 30); }
+      if ([SITE, SPIRIT, OPPY, INSIGHT].some((q) => Math.hypot(x - q.x, z - q.z) < 9)) { x += 20; }
+      const big = rnd() < 0.08;
+      const s = big ? 1.4 + rnd() * 2.6 : 0.12 + Math.pow(rnd(), 3) * 1.1;
+      this.rockData.push({ x, z, s, r: new THREE.Euler(rnd() * 0.4, rnd() * 6.28, rnd() * 0.4) });
+      const zi = Math.min(3, Math.max(0, Math.round(-z / ZONE)));
+      col.copy(pal[zi]!).lerp(new THREE.Color(0xa8623c), rnd() * 0.5).multiplyScalar(0.75 + rnd() * 0.45);
+      rocks.setColorAt(i, col);
+    }
+    this.scene.add(rocks);
+    this.resnap();
+  }
+
+  /** old rover tyre trails around each landing site + live boot prints buffer */
+  private buildTracks() {
+    const tex = (draw: (g: CanvasRenderingContext2D) => void) => { const c = document.createElement("canvas"); c.width = c.height = 64; draw(c.getContext("2d")!); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; };
+    const tyre = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, map: tex((g) => { g.fillStyle = "rgba(45,18,8,.4)"; for (const x of [4, 48]) for (let y = 0; y < 64; y += 8) g.fillRect(x, y, 12, 5); }) });
+    const trail = (cx: number, cz: number, seed: number) => {
+      const r = rng(seed), n = 220; const im = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.4, 0.75), tyre, n); const o = new THREE.Object3D();
+      let x = cx, z = cz, a = r() * 6.28;
+      for (let k = 0; k < n; k++) { a += (r() - 0.5) * 0.25; x += Math.sin(a) * 0.7; z += Math.cos(a) * 0.7; o.position.set(x, this.groundHeight(x, z) + 0.03, z); o.rotation.set(-Math.PI / 2, 0, a); o.updateMatrix(); im.setMatrixAt(k, o.matrix); }
+      this.scene.add(im);
+    };
+    trail(SITE.x, SITE.z, 11); trail(SPIRIT.x, SPIRIT.z, 22); trail(OPPY.x, OPPY.z, 33); trail(OPPY.x, OPPY.z, 34);
+    const boot = tex((g) => { g.fillStyle = "rgba(50,20,8,.55)"; g.beginPath(); g.ellipse(32, 20, 14, 17, 0, 0, 6.3); g.ellipse(32, 48, 11, 13, 0, 0, 6.3); g.fill(); g.fillStyle = "rgba(25,10,4,.35)"; for (let y = 8; y < 60; y += 6) g.fillRect(20, y, 24, 2); });
+    this.prints = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.22, 0.42), new THREE.MeshBasicMaterial({ map: boot, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), 400);
+    this.prints.count = 0; this.prints.frustumCulled = false; this.scene.add(this.prints);
+  }
+  private prints: THREE.InstancedMesh | null = null;
+  private printI = 0; private printN = 0; private printDist = 0; private printSide = 1;
+  private dropPrint() {
+    if (!this.prints) return;
+    const p = this.player.position, a = this.player.rotation.y, side = (this.printSide = -this.printSide) * 0.14;
+    const x = p.x + Math.cos(a) * side, z = p.z - Math.sin(a) * side;
+    const o = new THREE.Object3D(); o.position.set(x, this.groundHeight(x, z) + 0.03, z); o.rotation.set(-Math.PI / 2, 0, a); o.updateMatrix();
+    this.prints.setMatrixAt(this.printI, o.matrix); this.printI = (this.printI + 1) % 400; this.printN = Math.min(400, this.printN + 1);
+    this.prints.count = this.printN; this.prints.instanceMatrix.needsUpdate = true;
   }
 
   private makeSky() {
@@ -1089,6 +1138,8 @@ export class MarsWorldScene implements Scene {
     }
     this.fallV = gy < prevY - 0.05 && !this.snapNext ? this.fallV + 25 * dt : 0;
     this.player.position.y = this.fallV > 0 ? Math.max(gy, prevY - this.fallV * dt) : gy;
+    this.printDist += Math.hypot(this.player.position.x - prevX, this.player.position.z - prevZ);
+    if (this.printDist > 0.75) { this.printDist = 0; this.dropPrint(); }
 
     // walk animation
     const limbs = this.player.userData["limbs"];
@@ -1292,7 +1343,7 @@ export class MarsWorldScene implements Scene {
     // sun follows player for tight shadows
     const sxp = Math.round(this.player.position.x / 8) * 8, szp = Math.round(this.player.position.z / 8) * 8;
     this.sun.target.position.set(sxp, this.player.position.y, szp);
-    this.sun.position.set(sxp + 60, this.player.position.y + 40, szp - 30);
+    this.sun.position.set(sxp + 80, this.player.position.y + 34, szp - 45);
     this.sun.target.updateMatrixWorld();
 
     this.stars.rotation.y += dt * 0.002;
