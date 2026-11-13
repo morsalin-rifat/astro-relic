@@ -494,7 +494,7 @@ export class MarsWorldScene implements Scene {
       const mzw = store.get().marsZone;
       if (mzw > 0) {
         const zn = ZONES[mzw]!.name;
-        store.say({ en: `Welcome to ${zn}! Follow the gold beacon to meet the rover — tap the minimap or press M for the big map.`, bn: `${zn}-এ স্বাগতম! সোনালি আলো ধরে রোভারের কাছে যাও — বড় ম্যাপ দেখতে মিনি-ম্যাপে চাপো বা M চাপো।` } as any);
+        store.say([{ speaker: "nova", en: `Welcome to ${zn}! Follow the gold beacon to meet the rover — tap the minimap or press M for the big map.`, bn: `${zn}-এ স্বাগতম! সোনালি আলো ধরে রোভারের কাছে যাও — বড় ম্যাপ দেখতে মিনি-ম্যাপে চাপো বা M চাপো।` }]);
       } else if (this.metAtStart) {
         this.startMeeting(true);
       } else {
