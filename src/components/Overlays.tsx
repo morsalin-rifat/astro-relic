@@ -528,7 +528,7 @@ function TouchActions() {
     <div className="touch-actions absolute z-30 flex items-end gap-3 [@media(pointer:fine)]:hidden">
       <button aria-label="Map (M)" className={btn + " w-12 h-12 text-lg"} onPointerDown={(e) => { e.preventDefault(); pressKey("KeyM"); }}>🗺️</button>
       {near && <button aria-label="Action (E)" className={btn + " w-16 h-16 text-sm bg-[#ffd97d]/25 animate-pulse"} onPointerDown={(e) => { e.preventDefault(); pressKey("KeyE"); }}>{lang === "bn" ? "দেখো" : "Look"}</button>}
-      <button aria-label="Jump" className={btn + " w-20 h-20 text-base"} onPointerDown={(e) => { e.preventDefault(); pressKey("Space"); }}>{lang === "bn" ? "লাফ" : "Jump"}</button>
+      {phase === "moon" && <button aria-label="Jump" className={btn + " w-20 h-20 text-base"} onPointerDown={(e) => { e.preventDefault(); pressKey("Space"); }}>{lang === "bn" ? "লাফ" : "Jump"}</button>}
     </div>
   );
 }
