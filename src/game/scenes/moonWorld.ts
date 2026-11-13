@@ -32,7 +32,8 @@ const rilleX = (z: number) => -60 + Math.sin((z + 840) * 0.018) * 14;
 const LM_SPOTS: [number, number][] = [[0, 0], [30, -398], [0, -830], [0, -1255]];
 const A11_SPOTS = ["lm", "plaque", "flag", "boot", "lrrr", "psep", "memorial"];
 const A12_SPOTS = ["intrepid", "surveyor", "tvcam", "scoop", "rtg", "alsep12", "head"];
-const ZONE_SPOTS: Record<number, string[]> = { 0: A11_SPOTS, 1: A12_SPOTS };
+const A15_SPOTS = ["falcon", "lrv15", "feather", "fallen", "genesis", "alsep15", "overlook"];
+const ZONE_SPOTS: Record<number, string[]> = { 0: A11_SPOTS, 1: A12_SPOTS, 2: A15_SPOTS };
 const GRAVITY = 2.6; // gentle "1/6 g" feel
 const JUMP_V = 3.4;
 const SPEED = 4.2;
@@ -65,6 +66,9 @@ export const MOON_SITES: Site[] = [
   { id: "lrv15", x: -14, z: -846, en: "Lunar Rover LRV-1", bn: "লুনার রোভার LRV-1", info: "First car on the Moon · 27.8 km driven", r: 4, zone: 2 },
   { id: "fallen", x: -7, z: -818, en: "Fallen Astronaut", bn: "ফলেন অ্যাস্ট্রোনট", info: "Memorial to 14 lost space explorers", r: 3, zone: 2 },
   { id: "feather", x: 8, z: -842, en: "Hammer & Feather Drop", bn: "হাতুড়ি ও পালক পরীক্ষা", info: "Both hit the ground together!", r: 3, zone: 2 },
+  { id: "genesis", x: 22, z: -858, en: "Genesis Rock spot", bn: "জেনেসিস পাথরের জায়গা", info: "4.1 billion-year-old white rock", r: 2, zone: 2 },
+  { id: "alsep15", x: 24, z: -816, en: "ALSEP-15 Science Station", bn: "ALSEP-15 বিজ্ঞান কেন্দ্র", info: "Measured the Moon's inner heat", r: 3, zone: 2 },
+  { id: "overlook", x: -34, z: -840, en: "Hadley Rille Overlook", bn: "হ্যাডলি রিলের কিনারা", info: "1 km wide lava canyon", r: 3, zone: 2 },
   { id: "rille", x: -60, z: -860, en: "Hadley Rille", bn: "হ্যাডলি রিল", info: "Ancient lava canyon · 300 m deep (real)", r: 40, zone: 2 },
   { id: "mhadley", x: 165, z: -800, en: "Mount Hadley", bn: "মাউন্ট হ্যাডলি", info: "4.5 km high", r: 60, zone: 2 },
   { id: "delta", x: 40, z: -985, en: "Hadley Delta", bn: "হ্যাডলি ডেল্টা", info: "Where the Genesis Rock was found", r: 40, zone: 2 },
@@ -278,14 +282,14 @@ export class MoonWorldScene implements Scene {
       for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 18 : 42; g.lineTo(64 + Math.cos(a) * rr, 64 + Math.sin(a) * rr); }
       g.closePath(); g.fill(); g.stroke();
     });
-    for (const id of [...A11_SPOTS, ...A12_SPOTS]) {
+    for (const id of [...A11_SPOTS, ...A12_SPOTS, ...A15_SPOTS]) {
       const site = MOON_SITES.find((x) => x.id === id); if (!site) continue;
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
       sp.scale.setScalar(1.3); sp.visible = false;
-      sp.position.set(site.x, this.groundHeight(site.x, site.z) + (id === "lm" || id === "intrepid" ? 5.2 : id === "head" ? 4 : 2.4), site.z);
+      sp.position.set(site.x, this.groundHeight(site.x, site.z) + (id === "lm" || id === "intrepid" || id === "falcon" ? 5.2 : id === "head" ? 4 : 2.4), site.z);
       sp.userData["y"] = sp.position.y; this.scene.add(sp); this.stars.set(id, sp);
     }
-    for (const [ev, set] of [["a11:stars", A11_SPOTS], ["a12:stars", A12_SPOTS]] as const)
+    for (const [ev, set] of [["a11:stars", A11_SPOTS], ["a12:stars", A12_SPOTS], ["a15:stars", A15_SPOTS]] as const)
       this.disposers.push(store.on(ev, (d) => { const ids = (d as string[]) || []; this.stars.forEach((sp, id) => { if (set.includes(id)) sp.visible = ids.includes(id); }); }));
   }
   private buildPassBeacons() {
@@ -334,7 +338,8 @@ export class MoonWorldScene implements Scene {
     const fl = store.get().flags;
     if (z === 0 && !fl.includes("apollo11")) store.emit("a11:arrive");
     else if (z === 1 && !fl.includes("apollo12")) store.emit("a12:arrive");
-    else { if (z === 0) store.emit("a11:revisit"); if (z === 1) store.emit("a12:revisit"); store.say([{ speaker: "nova", ...Z.nova }]); }
+    else if (z === 2 && !fl.includes("apollo15")) store.emit("a15:arrive");
+    else { if (z === 0) store.emit("a11:revisit"); if (z === 1) store.emit("a12:revisit"); if (z === 2) store.emit("a15:revisit"); store.say([{ speaker: "nova", ...Z.nova }]); }
     if (this.hud) (this.hud.querySelector("[data-coord]") as HTMLElement).textContent = `${Z.coord} · ${Z.year}`;
     this.nearSite = "-";
   }
