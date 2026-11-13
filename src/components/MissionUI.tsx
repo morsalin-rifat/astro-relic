@@ -283,7 +283,7 @@ export function Badges() {
   return (
     <>
       {showButton && (
-        <button onClick={() => setOpen(true)} className={`badge-pill ${phase === "explore" || phase === "moon" ? "badge-play" : ""} absolute top-[232px] right-4 z-40 w-[150px] rounded-full bg-black/60 border border-[#ffd97d]/60 text-[#ffd97d] text-xs py-1.5 tracking-widest`}>
+        <button onClick={() => setOpen(true)} className={`badge-pill absolute top-[232px] right-4 z-40 w-[150px] rounded-full bg-black/60 border border-[#ffd97d]/60 text-[#ffd97d] text-xs py-1.5 tracking-widest`}>
           🎖️ {badges.length}/{BADGES.length} {lang === "bn" ? "ব্যাজ" : "BADGES"}
         </button>
       )}
