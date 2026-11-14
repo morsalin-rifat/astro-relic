@@ -4,12 +4,12 @@ import { audio } from "../game/audio";
 /** Game settings: language, music/voice volume, camera drag speed. Opened from hub menu or in-game ⚙️. */
 export function SettingsButton() {
   const phase = useGame((s) => s.phase);
-  if (phase === "home" || phase === "hub") return null;
+  if (phase === "hub") return null;
   return (
     <button
       aria-label="Settings"
       onClick={() => { audio.beep(); store.set({ showSettings: true }); }}
-      className="absolute top-5 right-[8.5rem] z-50 px-3 py-1.5 border border-white/20 text-[13px] text-white/80 hover:border-[#ffd97d] hover:text-[#ffd97d] transition-colors pointer-events-auto"
+      className="px-3 py-1.5 border border-white/20 text-[13px] text-white/80 hover:border-[#ffd97d] hover:text-[#ffd97d] transition-colors pointer-events-auto"
     >⚙️</button>
   );
 }

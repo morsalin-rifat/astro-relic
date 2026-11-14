@@ -492,6 +492,7 @@ function TopControls() {
   if (phase === "home") return null;
   return (
     <div className="absolute top-5 right-5 z-50 flex gap-2">
+      <SettingsButton />
       <button
         onClick={() => store.set({ lang: lang === "en" ? "bn" : "en" })}
         className="px-3 py-1.5 border border-white/20 text-[11px] tracking-[0.2em] text-white/70 hover:border-[#ffd97d] hover:text-[#ffd97d] transition-colors"
@@ -1085,7 +1086,6 @@ export function Overlays() {
       <HUD />
       <TelemetryBar />
       <TopControls />
-      <SettingsButton />
       <SettingsPanel />
       <Joystick />
       <TouchActions />
