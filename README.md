@@ -3,6 +3,8 @@
 # 🚀 Astro Relic
 ### *Abandoned, but never forgotten.*
 
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Orbitron&weight=700&size=22&duration=3000&pause=800&color=FF7A45&center=true&vCenter=true&width=640&lines=Walk+Mars+and+the+Moon+in+3D;Drive+the+Apollo+Lunar+Rover;Wake+up+abandoned+rovers;Take+a+selfie+in+a+spacesuit;Built+by+Team+SpaceSync)](https://astro-relic.vercel.app/)
+
 **An interactive 3D space adventure where kids meet the robots and astronauts humanity left behind — on Mars and the Moon.**
 
 [![Play Now](https://img.shields.io/badge/▶_PLAY_NOW-astro--relic.vercel.app-ff7a45?style=for-the-badge)](https://astro-relic.vercel.app/)
@@ -23,6 +25,8 @@
 
 ---
 
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%">
+
 ## 🌌 The Idea
 
 Sojourner, Spirit, Opportunity, InSight — and six Apollo landing sites full of rovers, flags and tools — are still out there, silent. **Astro Relic** turns these abandoned relics into characters. Kids walk real-inspired landscapes, *wake up* each machine, hear its story in its own voice, and learn the true history of every mission — without it ever feeling like a textbook.
@@ -42,7 +46,13 @@ Sojourner, Spirit, Opportunity, InSight — and six Apollo landing sites full of
 | 📸 | **Spacesuit selfie** | Put your own face inside a helmet, hold your flag |
 | 🏅 | **Badges & certificate** | Mission patches, Hall of Fame and a downloadable certificate |
 | 🌐 | **Bilingual** | Full English and Bangla text and voices, switch any time |
-| 📱 | **Phone ready** | Joystick, touch buttons, auto landscape |
+| 🏎️ | **Drive the Lunar Rover** | Hop in on Apollo 15 & 17 — real 3D model, seated astronaut, speedometer, Go/Brake pedals, flying dust and tire tracks |
+| 🔇 | **Real space science** | Soft seat-vibration hum while driving + on-screen note: no air on the Moon, so no outside sound |
+| 🤖 | **Rover buddies** | Our own cute cartoon Sojourner, Oppy, InSight and Lunar Rover talk in dialogues, chapters and the guide |
+| 📷 | **Space Selfie booth** | Always open in the hub — Mars or Moon, your face, flag and rover sticker, downloadable poster |
+| 🪨 | **Solid worlds** | Big rocks block players and rovers — no walking through boulders |
+| ⚙️ | **Settings** | Language, music & voice volume, camera speed |
+| 📱 | **Phone ready** | Joystick, touch buttons, auto landscape, bigger text, smooth camera |
 
 ## 🎮 How to Play
 
@@ -51,6 +61,8 @@ Sojourner, Spirit, Opportunity, InSight — and six Apollo landing sites full of
 | `W A S D` | Walk | Joystick |
 | `Space` | Jump (Moon) | **Jump** button |
 | `E` | Talk / inspect | **Look** button |
+| `F` | Get in / out of rover | 🏎️ / 🚪 button |
+| `W / S` while driving | Go / Brake | 🚀 / 🛑 pedals |
 | `M` | Big map | 🗺️ button |
 | `Esc` | Back to hub | Hub button |
 
@@ -58,7 +70,7 @@ Sojourner, Spirit, Opportunity, InSight — and six Apollo landing sites full of
 
 ```text
  Intro ─► Hub ─┬─► MARS: Sojourner ─► Spirit ─► Opportunity ─► InSight ─► 28 stars ─► Selfie + Certificate
-               └─► MOON: Apollo 11 ─► Apollo 12 ─► Apollo 15 ─► Apollo 17 ─► Patch + Selfie + Certificate
+               └─► MOON: Apollo 11 ─► Apollo 12 ─► Apollo 15 🏎️ ─► Apollo 17 🏎️ ─► Patch + Selfie + Certificate
 ```
 
 ## 🛠️ Built With
