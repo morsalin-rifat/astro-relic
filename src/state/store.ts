@@ -70,6 +70,7 @@ interface GameState {
   /** true while the player drives a Lunar Rover */
   moonDriving: boolean;
   moonSpeed: number;
+  moonRoverDist: number;
   showEncounter: boolean;
   showSpirit: boolean;
   showOppy: boolean;
@@ -130,6 +131,7 @@ class Store {
     moonRover: null,
     moonDriving: false,
     moonSpeed: 0,
+  moonRoverDist: -1,
     showEncounter: false,
     showSpirit: false,
     showOppy: false,
