@@ -1,4 +1,5 @@
 import { MobileLandscape } from "@/components/MobileLandscape";
+import { SettingsButton, SettingsPanel } from "./SettingsPanel";
 import { voice } from "../game/voice";
 import { useEffect, useRef, useState } from "react";
 import { store, useGame, t } from "../state/store";
@@ -625,8 +626,9 @@ const HUB_ACTIONS: {
   { id: "chapters", icon: "🚩", label: HUB.chapters, desc: HUB.chaptersSub, num: "02" },
   { id: "trophy", icon: "🎖️", label: { en: "HALL OF FAME", bn: "হল অফ ফেম" }, desc: { en: "Your rover medals", bn: "তোমার রোভার মেডেল" }, num: "03" },
   { id: "howto", icon: "🤖", label: HUB.howToPlay, desc: HUB.howtoSub, num: "04" },
-  { id: "reset", icon: "🔄", label: HUB.resetGame, desc: HUB.resetSub, num: "05" },
-  { id: "home", icon: "⌂", label: HUB.home, desc: HUB.homeSub, num: "06" },
+  { id: "settings", icon: "⚙️", label: { en: "SETTINGS", bn: "সেটিংস" }, desc: { en: "Language, sound, controls", bn: "ভাষা, শব্দ, কন্ট্রোল" }, num: "05" },
+  { id: "reset", icon: "🔄", label: HUB.resetGame, desc: HUB.resetSub, num: "06" },
+  { id: "home", icon: "⌂", label: HUB.home, desc: HUB.homeSub, num: "07" },
 ];
 
 function FlagMark({ tone }: { tone: "gold" | "locked" }) {
@@ -678,6 +680,8 @@ function HubUI() {
       store.emit("hub:newgame");
     } else if (id === "home") {
       store.emit("engine:goto", "home");
+    } else if (id === "settings") {
+      store.set({ showSettings: true });
     } else {
       setPanel((p) => (p === id ? null : (id as HubPanel)));
     }
@@ -1081,6 +1085,8 @@ export function Overlays() {
       <HUD />
       <TelemetryBar />
       <TopControls />
+      <SettingsButton />
+      <SettingsPanel />
       <Joystick />
       <TouchActions />
       <MobileLandscape />
