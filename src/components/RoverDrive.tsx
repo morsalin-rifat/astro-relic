@@ -31,8 +31,19 @@ export function RoverDrive() {
   const driving = useGame((s) => s.moonDriving);
   const speed = useGame((s) => s.moonSpeed);
   const freeze = useGame((s) => s.moonFreeze);
+  const dist = useGame((s) => s.moonRoverDist);
   const bn = useGame((s) => s.lang) === "bn";
   useRoverHum(driving && phase === "moon", speed);
+  if (phase === "moon" && !freeze && !near && !driving && dist > 0) {
+    const far = dist > 35;
+    return (
+      <div className="rover-tip absolute z-40 left-1/2 -translate-x-1/2 bottom-24 pointer-events-none max-w-[86vw] rounded-2xl border border-[#ffd97d]/60 bg-black/70 px-4 py-2 text-center text-sm text-[#ffd97d] font-semibold">
+        {far
+          ? (bn ? `💡 রোভার মিস করেছ! ${dist} মিটার পেছনে আছে — ফিরে গিয়ে চড়ে বসো, দ্রুত পৌঁছাবে।` : `💡 You missed the rover! It's ${dist} m back — go ride it, it's much faster.`)
+          : (bn ? `🏎️ লুনার রোভার ${dist} মিটার দূরে — কাছে গিয়ে চড়ে বসো!` : `🏎️ The Lunar Rover is ${dist} m away — walk up and hop in!`)}
+      </div>
+    );
+  }
   if (phase !== "moon" || freeze || (!near && !driving)) return null;
   const hold = (k: "gas" | "brake", on: boolean) => (e: React.PointerEvent) => { e.preventDefault(); e.stopPropagation(); store.emit("drive", { [k]: on }); };
   const pedal = "touch-none select-none rounded-full border-2 font-bold flex flex-col items-center justify-center active:scale-90 transition-transform shadow-lg";

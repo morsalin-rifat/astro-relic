@@ -268,6 +268,8 @@ export class MoonWorldScene implements Scene {
   private dustLife = 0;
   private mixer: THREE.AnimationMixer | null = null;
   private walk: THREE.AnimationAction | null = null;
+  private bones: Record<string, THREE.Object3D> = {};
+  private sitK = 0;
   private hud!: HTMLDivElement;
   private mini!: HTMLCanvasElement;
   private miniBg!: HTMLCanvasElement;
@@ -751,6 +753,22 @@ export class MoonWorldScene implements Scene {
     store.set({ moonDriving: true, moonRover: null });
   }
 
+  /** Seated driving pose: blend hips/knees/arms toward a sitting posture (bones are in the model's rest frame, forward = +Z). */
+  private applySeat(dt: number) {
+    this.sitK = THREE.MathUtils.damp(this.sitK, this.driving ? 1 : 0, 8, dt);
+    const k = this.sitK; if (k < 0.002) return;
+    const B = this.bones, e = new THREE.Euler(), q = new THREE.Quaternion();
+    const pose: [string, number, number, number][] = [
+      ["L_Hip", -1.55, 0, -0.12], ["R_Hip", -1.55, 0, 0.12],
+      ["L_Knee", 1.6, 0, 0], ["R_Knee", 1.6, 0, 0],
+      ["L_Ankle", -0.2, 0, 0], ["R_Ankle", -0.2, 0, 0],
+      ["Spine1", 0.12, 0, 0],
+      ["L_Shoulder", -0.9, 0, 0.35], ["R_Shoulder", -0.9, 0, -0.35],
+      ["L_Elbow", -0.7, 0, 0], ["R_Elbow", -0.7, 0, 0],
+    ];
+    for (const [n, x, y, z] of pose) { const b = B[n]; if (!b) continue; q.setFromEuler(e.set(x * k, y * k, z * k)); b.quaternion.multiply(q); }
+  }
+
   private updateRover(dt: number, k: Set<string>) {
     const R = this.driving!; const g = R.g; const frozen = store.get().moonFreeze;
     const steer = frozen ? 0 : THREE.MathUtils.clamp((k.has("KeyD") || k.has("ArrowRight") ? 1 : 0) - (k.has("KeyA") || k.has("ArrowLeft") ? 1 : 0) + this.joy.x, -1, 1);
@@ -774,7 +792,7 @@ export class MoonWorldScene implements Scene {
     g.rotation.set(0, 0, 0); g.rotateY(this.rHead); g.rotateX(-Math.atan2(hF - hB, 2.6)); g.rotateZ(Math.atan2(hL - hR, 1.6));
     for (const w of R.wheels) w.rotateX(this.rSpeed * dt / 0.45);
     // driver sits on the seat
-    const seat = new THREE.Vector3(-0.3, 0.05, -0.1).applyQuaternion(g.quaternion).add(g.position);
+    const seat = new THREE.Vector3(-0.3, -0.32 * this.sitK, -0.1).applyQuaternion(g.quaternion).add(g.position);
     this.player.position.copy(seat); this.player.rotation.set(0, this.rHead, 0); this.vel.set(0, 0, 0); this.grounded = true;
     // camera chases behind the rover
     this.camYaw = THREE.MathUtils.lerp(this.camYaw, this.rHead + Math.PI, Math.min(1, dt * 2.5 * (Math.abs(this.rSpeed) > 0.5 ? 1 : 0)));
@@ -821,6 +839,7 @@ export class MoonWorldScene implements Scene {
       m.scale.setScalar(k); m.position.y = -box.min.y * k;
       m.traverse((o) => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.frustumCulled = false; } });
       suit.visible = false; this.player.add(m);
+      m.traverse((o) => { if (o.name) this.bones[o.name] = o; });
       if (gltf.animations[0]) { this.mixer = new THREE.AnimationMixer(m); this.walk = this.mixer.clipAction(gltf.animations[0]); this.walk.play(); }
     });
   }
@@ -990,6 +1009,7 @@ export class MoonWorldScene implements Scene {
     const gyNow = this.groundHeight(p.x, p.z);
     const zn2 = zoneOf(p.z); if (zn2 !== this.zone) this.enterZone(zn2);
     if (!this.driving) { const rv = this.rovers.find((v) => Math.hypot(v.g.position.x - p.x, v.g.position.z - p.z) < 4.5); const id = rv ? rv.id : null; if (id !== store.get().moonRover) store.set({ moonRover: id }); }
+    { const zr = this.zone === 2 ? this.rovers[0] : this.zone === 3 ? this.rovers[1] : null; const d = zr && !this.driving ? Math.round(Math.hypot(zr.g.position.x - p.x, zr.g.position.z - p.z)) : -1; if (d !== store.get().moonRoverDist) store.set({ moonRoverDist: d }); }
 
     // persistent bootprints — no wind on the Moon, they stay forever
     if (!this.driving && this.grounded && p.distanceTo(this.lastPrint) > 0.55) {
@@ -1003,6 +1023,7 @@ export class MoonWorldScene implements Scene {
       pos.needsUpdate = true; (this.dust.material as THREE.PointsMaterial).opacity = Math.max(0, this.dustLife / 1.6) * 0.8;
     }
     if (this.mixer && this.walk) { this.walk.timeScale = this.driving ? 0 : this.grounded ? Math.min(this.vel.length() / SPEED, 1) * 0.8 : 0.1; this.mixer.update(dt); }
+    this.applySeat(dt);
 
     this.stars.forEach((sp, id) => { if (!sp.visible) return; sp.position.y = sp.userData["y"] + Math.sin(t * 2 + id.length) * 0.25; (sp.material as THREE.SpriteMaterial).rotation = Math.sin(t * 1.5 + id.length) * 0.3; });
     // labels: fade by distance, nearest site name in HUD
@@ -1034,7 +1055,7 @@ export class MoonWorldScene implements Scene {
     this.disposed = true;
     this.hud?.remove(); this.mini?.remove(); this.big?.remove(); this.bannerEl?.remove(); window.clearTimeout(this.bannerT);
     voice.stop();
-    store.set({ objective: null, hint: null, loading: false, moonNear: null, moonFreeze: false, moonRover: null, moonDriving: false, moonSpeed: 0 });
+    store.set({ objective: null, hint: null, loading: false, moonNear: null, moonFreeze: false, moonRover: null, moonDriving: false, moonSpeed: 0, moonRoverDist: -1 });
     this.disposers.forEach((d) => d());
     this.scene.traverse((o) => { const m = o as THREE.Mesh; m.geometry?.dispose(); const mat = (m as any).material; if (Array.isArray(mat)) mat.forEach((x) => x.dispose()); else mat?.dispose?.(); });
   }

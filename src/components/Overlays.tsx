@@ -846,7 +846,7 @@ function HubUI() {
 
           {/* Menu Action Cards */}
           <div className="flex flex-col gap-2">
-            {HUB_ACTIONS.map((a) => {
+            {HUB_ACTIONS.slice(0, 4).map((a) => {
               const isTargetNewGame = a.primary && !hasSeenHubIntro;
               return (
                 <div key={a.id} className="relative">
@@ -893,6 +893,16 @@ function HubUI() {
                 </div>
               );
             })}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/10">
+            {HUB_ACTIONS.slice(4).map((a) => (
+              <button key={a.id} onPointerEnter={() => audio.beep()} onClick={() => menuAction(a.id)}
+                className="hub-mini-pill flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-left hover:border-[#ffd97d]/60 hover:bg-white/[0.08] transition-colors">
+                <span className="text-base">{a.icon}</span>
+                <span className="font-display tracking-[0.12em] text-[11px] text-[#f6f1e4] truncate">{t(a.label, lang)}</span>
+              </button>
+            ))}
           </div>
 
           {/* Console Footer */}
