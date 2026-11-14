@@ -65,6 +65,11 @@ interface GameState {
   marsCard: string | null;
   moonNear: string | null;
   moonFreeze: boolean;
+  /** rideable Lunar Rover the player stands next to (lrv15/lrv17) */
+  moonRover: string | null;
+  /** true while the player drives a Lunar Rover */
+  moonDriving: boolean;
+  moonSpeed: number;
   showEncounter: boolean;
   showSpirit: boolean;
   showOppy: boolean;
@@ -122,6 +127,9 @@ class Store {
     marsCard: null,
     moonNear: null,
     moonFreeze: false,
+    moonRover: null,
+    moonDriving: false,
+    moonSpeed: 0,
     showEncounter: false,
     showSpirit: false,
     showOppy: false,

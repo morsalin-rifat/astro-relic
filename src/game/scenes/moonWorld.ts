@@ -38,6 +38,8 @@ const ZONE_SPOTS: Record<number, string[]> = { 0: A11_SPOTS, 1: A12_SPOTS, 2: A1
 const GRAVITY = 2.6; // gentle "1/6 g" feel
 const JUMP_V = 3.4;
 const SPEED = 4.2;
+// Lunar Rover feel (real LRV top speed ≈ 3.6 m/s; sped up so kids feel it)
+const ROVER_MAX = 11, ROVER_REV = 3.5, ROVER_ACCEL = 5, ROVER_BRAKE = 12, ROVER_DRAG = 0.6, ROVER_TURN = 1.6;
 
 type Site = { id: string; x: number; z: number; en: string; bn: string; info: string; r: number; zone?: number };
 export const MOON_SITES: Site[] = [
@@ -276,6 +278,10 @@ export class MoonWorldScene implements Scene {
   private disposed = false;
   private earth!: THREE.Mesh;
   private zone = 0;
+  private rovers: { id: string; g: THREE.Group; wheels: THREE.Object3D[] }[] = [];
+  private driving: { id: string; g: THREE.Group; wheels: THREE.Object3D[] } | null = null;
+  private rSpeed = 0; private rHead = 0; private drive = { gas: false, brake: false };
+  private rDust!: THREE.Points; private rDustI = 0; private rTracks!: THREE.InstancedMesh; private rTrackI = 0; private rLastTrack = new THREE.Vector3(1e9, 0, 0);
 
   private bannerEl?: HTMLDivElement; private bannerT = 0; private beacons: THREE.Object3D[] = [];
   private stars = new Map<string, THREE.Sprite>();
@@ -372,7 +378,9 @@ export class MoonWorldScene implements Scene {
     this.buildPassBeacons();
     this.buildStars();
     this.disposers.push(store.on("joystick", (d) => { this.joy = d as { x: number; y: number }; }));
-    const onKey = (e: KeyboardEvent) => { if (e.code === "Escape") store.emit("engine:goto", "hub"); if (e.code === "KeyM") this.bigOpen = !this.bigOpen; };
+    this.disposers.push(store.on("drive", (d) => { this.drive = { ...this.drive, ...(d as object) }; }));
+    this.disposers.push(store.on("rover:toggle", () => this.toggleRover()));
+    const onKey = (e: KeyboardEvent) => { if (e.code === "KeyF" && !e.repeat) this.toggleRover(); if (e.code === "Escape") store.emit("engine:goto", "hub"); if (e.code === "KeyM") this.bigOpen = !this.bigOpen; };
     window.addEventListener("keydown", onKey);
     this.disposers.push(() => window.removeEventListener("keydown", onKey));
     if (import.meta.env.DEV) (window as any).__moonZone = (z: number) => { const [x, zz] = LM_SPOTS[z]!; this.player.position.set(x + 7, this.groundHeight(x + 7, zz + 10), zz + 10); };
@@ -642,7 +650,8 @@ export class MoonWorldScene implements Scene {
       const ch = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.12, 3.0), silver); ch.position.y = 0.55; g.add(ch);
       const wheel = new THREE.TorusGeometry(0.4, 0.1, 8, 20); const wm = new THREE.MeshStandardMaterial({ color: 0x8c8a84, metalness: 0.7, roughness: 0.5, wireframe: false });
       for (const [x, z] of [[-0.8, 1.1], [0.8, 1.1], [-0.8, -1.1], [0.8, -1.1]] as const) {
-        const w = new THREE.Mesh(wheel, wm); w.rotation.y = Math.PI / 2; w.position.set(x, 0.42, z); g.add(w);
+        const w = new THREE.Mesh(wheel, wm); w.rotation.y = Math.PI / 2; w.position.set(x, 0.42, z); w.name = "wheel"; g.add(w);
+        for (let k = 0; k < 3; k++) { const sp = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.7, 0.03), dark); sp.rotation.x = k * Math.PI / 3; w.add(sp); } // spokes show the spin
         const f = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.03, 0.9), dark); f.position.set(x, 0.92, z); g.add(f); // fenders
       }
       for (const x of [-0.3, 0.3]) { const seat = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.5, 0.06), new THREE.MeshStandardMaterial({ color: 0x5c6470, roughness: 0.8 })); seat.position.set(x, 0.85, -0.1); seat.rotation.x = -0.2; g.add(seat); }
@@ -653,8 +662,10 @@ export class MoonWorldScene implements Scene {
       const cam = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.3), foil); cam.position.set(-0.3, 1.4, 1.2); g.add(cam);
       return g;
     };
-    this.place(makeLRV(), -14, -846, 1.1);
-    this.place(makeLRV(), 12, -1268, -0.7);
+    for (const [id, x, z, ry] of [["lrv15", -14, -846, 1.1], ["lrv17", 12, -1268, -0.7]] as const) {
+      const g = this.place(makeLRV(), x, z, ry) as THREE.Group; const wheels: THREE.Object3D[] = []; g.traverse((o) => { if (o.name === "wheel") wheels.push(o); });
+      this.rovers.push({ id, g, wheels });
+    }
 
     // --- Fallen Astronaut figurine + plaque (shown big enough for kids to spot) ---
     const fa = new THREE.Group();
@@ -697,6 +708,73 @@ export class MoonWorldScene implements Scene {
     this.dust = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xb8b4ac, size: 0.06, transparent: true, opacity: 0 }));
     this.dust.userData["v"] = new Float32Array(n * 3);
     this.scene.add(this.dust);
+    const rn = 260, rg = new THREE.BufferGeometry(); rg.setAttribute("position", new THREE.BufferAttribute(new Float32Array(rn * 3).fill(-9999), 3));
+    this.rDust = new THREE.Points(rg, new THREE.PointsMaterial({ color: 0xc4beb2, size: 0.14, transparent: true, opacity: 0.75, depthWrite: false }));
+    this.rDust.userData["v"] = new Float32Array(rn * 3); this.rDust.frustumCulled = false; this.scene.add(this.rDust);
+    const tyre = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, map: canvasTex(64, 64, (g) => { g.fillStyle = "rgba(30,28,26,.4)"; for (const x of [2, 52]) for (let y = 0; y < 64; y += 8) g.fillRect(x, y, 10, 5); }) });
+    this.rTracks = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.8, 0.75), tyre, 900); this.rTracks.count = 0; this.rTracks.frustumCulled = false; this.scene.add(this.rTracks);
+  }
+
+  private toggleRover() {
+    if (this.driving) {
+      const g = this.driving.g, side = new THREE.Vector3(Math.cos(this.rHead), 0, -Math.sin(this.rHead)).multiplyScalar(-1.8);
+      const px = g.position.x + side.x, pz = g.position.z + side.z; this.player.position.set(px, this.groundHeight(px, pz), pz);
+      g.rotation.set(0, this.rHead, 0); this.driving = null; this.rSpeed = 0; this.camDist = 7; this.vel.set(0, 0, 0);
+      store.set({ moonDriving: false, moonSpeed: 0 }); return;
+    }
+    if (store.get().moonFreeze) return;
+    const p = this.player.position; const r = this.rovers.find((v) => Math.hypot(v.g.position.x - p.x, v.g.position.z - p.z) < 4.5);
+    if (!r) return;
+    this.driving = r; this.rHead = r.g.rotation.y; this.rSpeed = 0; this.camDist = 10; this.camYaw = this.rHead + Math.PI;
+    store.set({ moonDriving: true, moonRover: null });
+  }
+
+  private updateRover(dt: number, k: Set<string>) {
+    const R = this.driving!; const g = R.g; const frozen = store.get().moonFreeze;
+    const steer = frozen ? 0 : THREE.MathUtils.clamp((k.has("KeyD") || k.has("ArrowRight") ? 1 : 0) - (k.has("KeyA") || k.has("ArrowLeft") ? 1 : 0) + this.joy.x, -1, 1);
+    const gas = !frozen && (k.has("KeyW") || k.has("ArrowUp") || this.drive.gas || this.joy.y > 0.4);
+    const brake = !frozen && (k.has("KeyS") || k.has("ArrowDown") || k.has("Space") || this.drive.brake || this.joy.y < -0.4);
+    if (gas) this.rSpeed += ROVER_ACCEL * dt;
+    else if (brake) this.rSpeed = this.rSpeed > 0.2 ? Math.max(0, this.rSpeed - ROVER_BRAKE * dt) : Math.max(-ROVER_REV, this.rSpeed - ROVER_ACCEL * 0.5 * dt);
+    else this.rSpeed *= Math.exp(-ROVER_DRAG * dt);
+    this.rSpeed = THREE.MathUtils.clamp(this.rSpeed, -ROVER_REV, ROVER_MAX); if (Math.abs(this.rSpeed) < 0.02 && !gas && !brake) this.rSpeed = 0;
+    this.rHead -= steer * ROVER_TURN * dt * THREE.MathUtils.clamp(Math.abs(this.rSpeed) / 3, 0, 1) * Math.sign(this.rSpeed || 1);
+    const p = g.position; p.x += Math.sin(this.rHead) * this.rSpeed * dt; p.z += Math.cos(this.rHead) * this.rSpeed * dt;
+    const lim = WORLD / 2 - 40; p.x = THREE.MathUtils.clamp(p.x, -lim, lim); p.z = THREE.MathUtils.clamp(p.z, ZMIN + 60, ZMAX - 40);
+    for (const [lx, lz] of LM_SPOTS) { const dx = p.x - lx, dz = p.z - lz, r = Math.hypot(dx, dz); if (r < 4 && r > 0) { p.x = lx + dx * 4 / r; p.z = lz + dz * 4 / r; this.rSpeed *= 0.5; } }
+    // follow the ground: pitch/roll from height samples + a small low-g bounce
+    const fx = Math.sin(this.rHead), fz = Math.cos(this.rHead);
+    const hF = this.groundHeight(p.x + fx * 1.3, p.z + fz * 1.3), hB = this.groundHeight(p.x - fx * 1.3, p.z - fz * 1.3);
+    const hL = this.groundHeight(p.x + fz * 0.8, p.z - fx * 0.8), hR = this.groundHeight(p.x - fz * 0.8, p.z + fx * 0.8);
+    const bounce = Math.abs(this.rSpeed) > 4 ? Math.abs(Math.sin(performance.now() * 0.006)) * 0.05 * (Math.abs(this.rSpeed) / ROVER_MAX) : 0;
+    p.y = THREE.MathUtils.lerp(p.y, (hF + hB + hL + hR) / 4 + bounce, Math.min(1, dt * 12));
+    g.rotation.set(0, 0, 0); g.rotateY(this.rHead); g.rotateX(-Math.atan2(hF - hB, 2.6)); g.rotateZ(Math.atan2(hL - hR, 1.6));
+    for (const w of R.wheels) w.rotateX(this.rSpeed * dt / 0.45);
+    // driver sits on the seat
+    const seat = new THREE.Vector3(-0.3, 0.45, -0.1).applyQuaternion(g.quaternion).add(g.position);
+    this.player.position.copy(seat); this.player.rotation.set(0, this.rHead, 0); this.vel.set(0, 0, 0); this.grounded = true;
+    // camera chases behind the rover
+    this.camYaw = THREE.MathUtils.lerp(this.camYaw, this.rHead + Math.PI, Math.min(1, dt * 2.5 * (Math.abs(this.rSpeed) > 0.5 ? 1 : 0)));
+    // rooster-tail dust from the rear wheels
+    const sp = Math.abs(this.rSpeed), pos = this.rDust.geometry.attributes["position"] as THREE.BufferAttribute, v = this.rDust.userData["v"] as Float32Array;
+    const emit = sp > 0.8 ? Math.ceil(sp * 1.4) : 0;
+    for (let e = 0; e < emit; e++) {
+      const i = this.rDustI++ % pos.count, side = e % 2 ? 0.8 : -0.8, back = this.rSpeed > 0 ? -1.2 : 1.2;
+      pos.setXYZ(i, p.x + fz * side + fx * back + (Math.random() - 0.5) * 0.3, p.y + 0.15, p.z - fx * side + fz * back + (Math.random() - 0.5) * 0.3);
+      const k2 = 0.25 + Math.random() * 0.35; v[i * 3] = -fx * this.rSpeed * k2 + (Math.random() - 0.5) * 1.2; v[i * 3 + 1] = 0.8 + Math.random() * sp * 0.25; v[i * 3 + 2] = -fz * this.rSpeed * k2 + (Math.random() - 0.5) * 1.2;
+    }
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i); if (y < -9000) continue;
+      v[i * 3 + 1]! -= GRAVITY * dt; const nx = pos.getX(i) + v[i * 3]! * dt, nz = pos.getZ(i) + v[i * 3 + 2]! * dt, ny = y + v[i * 3 + 1]! * dt;
+      if (ny < this.groundHeight(nx, nz) - 0.05) pos.setXYZ(i, 0, -9999, 0); else pos.setXYZ(i, nx, ny, nz); // no air: dust falls straight back in an arc
+    }
+    pos.needsUpdate = true;
+    // fresh tyre tracks behind the wheels
+    if (sp > 0.3 && p.distanceTo(this.rLastTrack) > 0.7) {
+      this.rLastTrack.copy(p); const o = new THREE.Object3D(); o.position.set(p.x, this.groundHeight(p.x, p.z) + 0.03, p.z); o.rotation.set(-Math.PI / 2, 0, this.rHead); o.updateMatrix();
+      this.rTracks.setMatrixAt(this.rTrackI % 900, o.matrix); this.rTrackI++; this.rTracks.count = Math.min(this.rTrackI, 900); this.rTracks.instanceMatrix.needsUpdate = true;
+    }
+    const kmh = Math.round(sp * 3.6); if (kmh !== store.get().moonSpeed) store.set({ moonSpeed: kmh });
   }
 
   private buildLabels() {
@@ -844,7 +922,7 @@ export class MoonWorldScene implements Scene {
   onWheel(d: number) { this.camDist = THREE.MathUtils.clamp(this.camDist + d * 0.01, 3.5, 16); }
   onKey(code: string, down: boolean) {
     if (down) this.keys.add(code); else this.keys.delete(code);
-    if (down && code === "Space" && this.grounded) { this.vy = JUMP_V; this.grounded = false; }
+    if (down && code === "Space" && this.grounded && !this.driving) { this.vy = JUMP_V; this.grounded = false; }
   }
   resize(w: number, h: number) { this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); }
 
@@ -863,12 +941,14 @@ export class MoonWorldScene implements Scene {
     const ix = (k.has("KeyD") || k.has("ArrowRight") ? 1 : 0) - (k.has("KeyA") || k.has("ArrowLeft") ? 1 : 0) + (store.get().moonFreeze ? 0 : this.joy.x);
     const iy = (k.has("KeyW") || k.has("ArrowUp") ? 1 : 0) - (k.has("KeyS") || k.has("ArrowDown") ? 1 : 0) + (store.get().moonFreeze ? 0 : this.joy.y);
     const p = this.player.position;
-    if (ix * ix + iy * iy > 0.001) {
+    if (this.driving) this.updateRover(dt, this.keys);
+    else if (ix * ix + iy * iy > 0.001) {
       const l = Math.hypot(ix, iy), x = ix / l, y = iy / l, s = Math.sin(this.camYaw), c = Math.cos(this.camYaw);
       const dir = new THREE.Vector3(x * c - y * s, 0, -y * c - x * s).multiplyScalar(k.has("ShiftLeft") ? SPEED * 1.6 : SPEED);
       this.vel.lerp(dir, dt * (this.grounded ? 5 : 1.2)); // little air control: momentum carries in low g
       this.player.rotation.y = Math.atan2(this.vel.x, this.vel.z);
     } else if (this.grounded) this.vel.multiplyScalar(Math.exp(-6 * dt));
+    if (!this.driving) {
     p.addScaledVector(this.vel, dt);
     const lim = WORLD / 2 - 40; p.x = THREE.MathUtils.clamp(p.x, -lim, lim); p.z = THREE.MathUtils.clamp(p.z, ZMIN + 60, ZMAX - 40);
     // keep out of the lander bodies
@@ -882,19 +962,23 @@ export class MoonWorldScene implements Scene {
       this.vy -= GRAVITY * dt; p.y += this.vy * dt;
       if (p.y <= gy) { p.y = gy; this.grounded = true; if (this.vy < -2) this.kickDust(); this.vy = 0; }
     } else p.y = gy;
+    }
+    const gyNow = this.groundHeight(p.x, p.z);
+    const zn2 = zoneOf(p.z); if (zn2 !== this.zone) this.enterZone(zn2);
+    if (!this.driving) { const rv = this.rovers.find((v) => Math.hypot(v.g.position.x - p.x, v.g.position.z - p.z) < 4.5); const id = rv ? rv.id : null; if (id !== store.get().moonRover) store.set({ moonRover: id }); }
 
     // persistent bootprints — no wind on the Moon, they stay forever
-    if (this.grounded && p.distanceTo(this.lastPrint) > 0.55) {
+    if (!this.driving && this.grounded && p.distanceTo(this.lastPrint) > 0.55) {
       this.lastPrint.copy(p); const o = new THREE.Object3D(); const side = this.printIdx % 2 ? 0.14 : -0.14, a = this.player.rotation.y;
-      o.position.set(p.x + Math.cos(a) * side, gy + 0.025, p.z - Math.sin(a) * side); o.rotation.set(-Math.PI / 2, 0, a + Math.PI); o.updateMatrix();
+      o.position.set(p.x + Math.cos(a) * side, gyNow + 0.025, p.z - Math.sin(a) * side); o.rotation.set(-Math.PI / 2, 0, a + Math.PI); o.updateMatrix();
       this.prints.setMatrixAt(this.printIdx % 500, o.matrix); this.printIdx++; this.prints.count = Math.min(this.printIdx, 500); this.prints.instanceMatrix.needsUpdate = true;
     }
     if (this.dustLife > 0) {
       this.dustLife -= dt; const pos = this.dust.geometry.attributes["position"] as THREE.BufferAttribute; const v = this.dust.userData["v"] as Float32Array;
-      for (let i = 0; i < pos.count; i++) { v[i * 3 + 1]! -= GRAVITY * dt; pos.setXYZ(i, pos.getX(i) + v[i * 3]! * dt, Math.max(gy, pos.getY(i) + v[i * 3 + 1]! * dt), pos.getZ(i) + v[i * 3 + 2]! * dt); }
+      for (let i = 0; i < pos.count; i++) { v[i * 3 + 1]! -= GRAVITY * dt; pos.setXYZ(i, pos.getX(i) + v[i * 3]! * dt, Math.max(gyNow, pos.getY(i) + v[i * 3 + 1]! * dt), pos.getZ(i) + v[i * 3 + 2]! * dt); }
       pos.needsUpdate = true; (this.dust.material as THREE.PointsMaterial).opacity = Math.max(0, this.dustLife / 1.6) * 0.8;
     }
-    if (this.mixer && this.walk) { this.walk.timeScale = this.grounded ? Math.min(this.vel.length() / SPEED, 1) * 0.8 : 0.1; this.mixer.update(dt); }
+    if (this.mixer && this.walk) { this.walk.timeScale = this.driving ? 0 : this.grounded ? Math.min(this.vel.length() / SPEED, 1) * 0.8 : 0.1; this.mixer.update(dt); }
 
     this.stars.forEach((sp, id) => { if (!sp.visible) return; sp.position.y = sp.userData["y"] + Math.sin(t * 2 + id.length) * 0.25; (sp.material as THREE.SpriteMaterial).rotation = Math.sin(t * 1.5 + id.length) * 0.3; });
     // labels: fade by distance, nearest site name in HUD
@@ -926,7 +1010,7 @@ export class MoonWorldScene implements Scene {
     this.disposed = true;
     this.hud?.remove(); this.mini?.remove(); this.big?.remove(); this.bannerEl?.remove(); window.clearTimeout(this.bannerT);
     voice.stop();
-    store.set({ objective: null, hint: null, loading: false, moonNear: null, moonFreeze: false });
+    store.set({ objective: null, hint: null, loading: false, moonNear: null, moonFreeze: false, moonRover: null, moonDriving: false, moonSpeed: 0 });
     this.disposers.forEach((d) => d());
     this.scene.traverse((o) => { const m = o as THREE.Mesh; m.geometry?.dispose(); const mat = (m as any).material; if (Array.isArray(mat)) mat.forEach((x) => x.dispose()); else mat?.dispose?.(); });
   }
