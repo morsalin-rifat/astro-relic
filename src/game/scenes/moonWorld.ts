@@ -835,8 +835,9 @@ export class MoonWorldScene implements Scene {
   onPointerDown(x: number, y: number) { this.dragging = true; this.last = { x, y }; }
   onPointerMove(x: number, y: number) {
     if (!this.dragging) return;
-    this.camYaw -= (x - this.last.x) * 2.4;
-    this.camPitch = THREE.MathUtils.clamp(this.camPitch + (y - this.last.y) * 1.6, 0.05, 1.1);
+    const sens = store.get().camSens * (matchMedia("(pointer: coarse)").matches ? 0.7 : 1);
+    this.camYaw -= (x - this.last.x) * 2.4 * sens;
+    this.camPitch = THREE.MathUtils.clamp(this.camPitch + (y - this.last.y) * 1.6 * sens, 0.05, 1.1);
     this.last = { x, y };
   }
   onPointerUp() { this.dragging = false; }

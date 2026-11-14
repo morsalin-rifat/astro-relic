@@ -24,6 +24,10 @@ interface GameState {
   universe: "mars" | "moon";
   lang: Lang;
   muted: boolean;
+  musicVol: number;
+  voiceVol: number;
+  camSens: number;
+  showSettings: boolean;
   // dialogue
   queue: DialogueLine[];
   current: DialogueLine | null;
@@ -82,6 +86,10 @@ class Store {
     universe: "mars",
     lang: persisted.lang === "bn" ? "bn" : "en",
     muted: false,
+    musicVol: typeof persisted.musicVol === "number" ? persisted.musicVol : 0.8,
+    voiceVol: typeof persisted.voiceVol === "number" ? persisted.voiceVol : 1,
+    camSens: typeof persisted.camSens === "number" ? persisted.camSens : 1,
+    showSettings: false,
     queue: [],
     current: null,
     choices: null,
@@ -140,6 +148,7 @@ class Store {
       "hasSeenHubIntro" in partial ||
       "badges" in partial
       || "marsStars" in partial
+      || "musicVol" in partial || "voiceVol" in partial || "camSens" in partial
     ) {
       try {
         localStorage.setItem(
@@ -150,6 +159,9 @@ class Store {
             tutorialDone: this.state.tutorialDone,
             badges: this.state.badges,
             marsStars: this.state.marsStars,
+            musicVol: this.state.musicVol,
+            voiceVol: this.state.voiceVol,
+            camSens: this.state.camSens,
           }),
         );
       } catch {

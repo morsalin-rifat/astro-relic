@@ -176,7 +176,8 @@ class AmbientAudio {
     const g = this.master.gain;
     g.cancelScheduledValues(this.ctx.currentTime);
     g.setValueAtTime(g.value, this.ctx.currentTime);
-    g.linearRampToValueAtTime(store.get().muted ? 0 : v, this.ctx.currentTime + secs);
+    this.lastV = v;
+    g.linearRampToValueAtTime(store.get().muted ? 0 : v * store.get().musicVol, this.ctx.currentTime + secs);
   }
 
   // Short radio blip for UI feedback (works even before the ambient drone starts).
@@ -206,6 +207,10 @@ class AmbientAudio {
     if (!this.ctx || !this.master) return;
     this.fadeTo(on ? 0.12 : 1, 0.4);
   }
+
+  private lastV = 1;
+  /** Re-apply music volume from settings. */
+  refreshVolume() { this.fadeTo(this.lastV, 0.2); }
 
   setMuted(muted: boolean) {
     if (!this.ctx || !this.master) return;

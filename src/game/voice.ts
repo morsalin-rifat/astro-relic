@@ -14,6 +14,7 @@ class VoicePlayer {
     }
     const lang = store.get().lang === "bn" ? "bn" : "en";
     const el = new Audio(`/audio/${name.includes("/") ? name : "sojourner/" + name}_${lang}.mp3`);
+    el.volume = Math.max(0, Math.min(1, store.get().voiceVol));
     this.el = el;
     audio.duck(true);
     const done = () => {

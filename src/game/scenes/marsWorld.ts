@@ -1069,9 +1069,10 @@ export class MarsWorldScene implements Scene {
 
   onPointerMove(x: number, y: number) {
     if (!this.dragging) return;
-    this.camYaw -= (x - this.lastPointer.x) * 2.4;
+    const sens = store.get().camSens * (matchMedia("(pointer: coarse)").matches ? 0.7 : 1);
+    this.camYaw -= (x - this.lastPointer.x) * 2.4 * sens;
     this.camPitch = THREE.MathUtils.clamp(
-      this.camPitch + (y - this.lastPointer.y) * 1.6,
+      this.camPitch + (y - this.lastPointer.y) * 1.6 * sens,
       0.05,
       1.1,
     );
