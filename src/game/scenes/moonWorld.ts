@@ -955,7 +955,7 @@ export class MoonWorldScene implements Scene {
     for (const [lx, lz] of LM_SPOTS) { const dx = p.x - lx, dz = p.z - lz, r = Math.hypot(dx, dz); if (r < 2.4 && r > 0) { p.x = lx + dx * 2.4 / r; p.z = lz + dz * 2.4 / r; } }
     const zn = zoneOf(p.z); if (zn !== this.zone) this.enterZone(zn);
     // low-gravity vertical motion + bunny hop while walking
-    const gy0 = this.groundHeight(p.x, p.z);
+    const gy = this.groundHeight(p.x, p.z);
     const moving = this.vel.length() > 0.5;
     if (this.grounded && moving && Math.sin(t * 5.5) > 0.97) { this.vy = 1.1; this.grounded = false; }
     if (!this.grounded) {
@@ -963,19 +963,19 @@ export class MoonWorldScene implements Scene {
       if (p.y <= gy) { p.y = gy; this.grounded = true; if (this.vy < -2) this.kickDust(); this.vy = 0; }
     } else p.y = gy;
     }
-    const gy = this.groundHeight(p.x, p.z);
+    const gyNow = this.groundHeight(p.x, p.z);
     const zn2 = zoneOf(p.z); if (zn2 !== this.zone) this.enterZone(zn2);
     if (!this.driving) { const rv = this.rovers.find((v) => Math.hypot(v.g.position.x - p.x, v.g.position.z - p.z) < 4.5); const id = rv ? rv.id : null; if (id !== store.get().moonRover) store.set({ moonRover: id }); }
 
     // persistent bootprints — no wind on the Moon, they stay forever
     if (!this.driving && this.grounded && p.distanceTo(this.lastPrint) > 0.55) {
       this.lastPrint.copy(p); const o = new THREE.Object3D(); const side = this.printIdx % 2 ? 0.14 : -0.14, a = this.player.rotation.y;
-      o.position.set(p.x + Math.cos(a) * side, gy + 0.025, p.z - Math.sin(a) * side); o.rotation.set(-Math.PI / 2, 0, a + Math.PI); o.updateMatrix();
+      o.position.set(p.x + Math.cos(a) * side, gyNow + 0.025, p.z - Math.sin(a) * side); o.rotation.set(-Math.PI / 2, 0, a + Math.PI); o.updateMatrix();
       this.prints.setMatrixAt(this.printIdx % 500, o.matrix); this.printIdx++; this.prints.count = Math.min(this.printIdx, 500); this.prints.instanceMatrix.needsUpdate = true;
     }
     if (this.dustLife > 0) {
       this.dustLife -= dt; const pos = this.dust.geometry.attributes["position"] as THREE.BufferAttribute; const v = this.dust.userData["v"] as Float32Array;
-      for (let i = 0; i < pos.count; i++) { v[i * 3 + 1]! -= GRAVITY * dt; pos.setXYZ(i, pos.getX(i) + v[i * 3]! * dt, Math.max(gy, pos.getY(i) + v[i * 3 + 1]! * dt), pos.getZ(i) + v[i * 3 + 2]! * dt); }
+      for (let i = 0; i < pos.count; i++) { v[i * 3 + 1]! -= GRAVITY * dt; pos.setXYZ(i, pos.getX(i) + v[i * 3]! * dt, Math.max(gyNow, pos.getY(i) + v[i * 3 + 1]! * dt), pos.getZ(i) + v[i * 3 + 2]! * dt); }
       pos.needsUpdate = true; (this.dust.material as THREE.PointsMaterial).opacity = Math.max(0, this.dustLife / 1.6) * 0.8;
     }
     if (this.mixer && this.walk) { this.walk.timeScale = this.driving ? 0 : this.grounded ? Math.min(this.vel.length() / SPEED, 1) * 0.8 : 0.1; this.mixer.update(dt); }
