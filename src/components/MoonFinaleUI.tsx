@@ -98,10 +98,17 @@ async function makeSelfie(face: string, o: { zoom: number; dx: number; dy: numbe
   g.fillRect(px - 260, top + 4, 260, 6);
   drawFlag(g, o.flag, px - 260, top + 10, 255, 170, cu);
   // name strip
-  g.fillStyle = "rgba(5,8,20,.75)"; g.fillRect(0, H - 150, W, 150);
+  const stripH = o.mars ? 212 : 150;
+  g.fillStyle = "rgba(5,8,20,.75)"; g.fillRect(0, H - stripH, W, stripH);
   g.fillStyle = GOLD; g.textAlign = "center"; g.font = "bold 50px serif";
-  g.fillText(`ASTRONAUT ${(o.name || "EXPLORER").toUpperCase()}`, W / 2, H - 88);
-  g.fillStyle = SILVER; g.font = "italic 26px serif"; g.fillText("“Abandoned, but never forgotten.” · Astro Relic", W / 2, H - 40);
+  g.fillText(`ASTRONAUT ${(o.name || "EXPLORER").toUpperCase()}`, W / 2, H - (o.mars ? 152 : 88));
+  g.fillStyle = SILVER; g.font = "italic 26px serif"; g.fillText("“Abandoned, but never forgotten.” · Astro Relic", W / 2, H - (o.mars ? 108 : 40));
+  if (o.mars) {
+    g.fillStyle = "rgba(255,217,125,.92)"; g.font = "bold 21px sans-serif";
+    g.fillText("NO HUMAN HAS WALKED ON MARS YET — THIS IS A GENERATED DREAM PHOTO", W / 2, H - 62);
+    g.fillStyle = "#ffffff"; g.font = "bold 27px sans-serif";
+    g.fillText("★ BE THE FIRST TO PLANT YOUR FOOTPRINT! ★", W / 2, H - 24);
+  }
   return c.toDataURL("image/jpeg", 0.92);
 }
 
@@ -232,6 +239,11 @@ export function SelfieBooth({ tt, name, setName, onDone, onBack, mars }: { tt: (
           </div>
         </div>
       </div>
+      {mars && (
+        <div className="mt-3 rounded-lg border px-3 py-2 text-center text-[11px] leading-snug md:text-xs" style={{ borderColor: "rgba(255,217,125,.4)", background: "rgba(255,217,125,.07)", color: "#ffe9bd" }}>
+          🚀 {tt({ en: "No human has walked on Mars yet — this is a generated dream photo. Be the first to plant your footprint!", bn: "এখনো মঙ্গলো মানুষ পা রাখোনি — এটো একটান জেনারটেড ছবি। তুমিই আগে পা রাখো!" })}
+        </div>
+      )}
     </div>
   );
 }
