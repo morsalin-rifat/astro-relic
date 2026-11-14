@@ -12,7 +12,7 @@ import { SpiritEncounter } from "./SpiritUI";
 import { OppyEncounter } from "./OppyUI";
 import { InsightEncounter } from "./InsightUI";
 import { FinaleUI } from "./FinaleUI";
-import { MoonFinaleUI, MOON_PATCHES } from "./MoonFinaleUI";
+import { MoonFinaleUI, MOON_PATCHES, SelfieBooth } from "./MoonFinaleUI";
 import { Apollo11Mission } from "./Apollo11UI";
 import { Apollo12Mission } from "./Apollo12UI";
 import { Apollo15Mission } from "./Apollo15UI";
@@ -613,7 +613,7 @@ function TelemetryBar() {
 
 /* ---------------- Mission Command Hub ---------------- */
 
-type HubPanel = "chapters" | "howto" | "reset" | "trophy" | null;
+type HubPanel = "chapters" | "howto" | "reset" | "trophy" | "selfie" | null;
 
 const HUB_ACTIONS: {
   id: string;
@@ -625,11 +625,12 @@ const HUB_ACTIONS: {
 }[] = [
   { id: "newgame", icon: "▶", label: HUB.newGame, desc: HUB.newGameSub, num: "01", primary: true },
   { id: "chapters", icon: "🚩", label: HUB.chapters, desc: HUB.chaptersSub, num: "02" },
-  { id: "trophy", icon: "🎖️", label: { en: "HALL OF FAME", bn: "হল অফ ফেম" }, desc: { en: "Your rover medals", bn: "তোমার রোভার মেডেল" }, num: "03" },
-  { id: "howto", icon: "🤖", label: HUB.howToPlay, desc: HUB.howtoSub, num: "04" },
-  { id: "settings", icon: "⚙️", label: { en: "SETTINGS", bn: "সেটিংস" }, desc: { en: "Language, sound, controls", bn: "ভাষা, শব্দ, কন্ট্রোল" }, num: "05" },
-  { id: "reset", icon: "🔄", label: HUB.resetGame, desc: HUB.resetSub, num: "06" },
-  { id: "home", icon: "⌂", label: HUB.home, desc: HUB.homeSub, num: "07" },
+  { id: "selfie", icon: "📸", label: { en: "SPACE SELFIE", bn: "স্পেস সেলফি" }, desc: { en: "Selfie on Mars or the Moon", bn: "মঙ্গল বা চাঁদে সেলফি তোলো" }, num: "03" },
+  { id: "trophy", icon: "🎖️", label: { en: "HALL OF FAME", bn: "হল অফ ফেম" }, desc: { en: "Your rover medals", bn: "তোমার রোভার মেডেল" }, num: "04" },
+  { id: "howto", icon: "🤖", label: HUB.howToPlay, desc: HUB.howtoSub, num: "05" },
+  { id: "settings", icon: "⚙️", label: { en: "SETTINGS", bn: "সেটিংস" }, desc: { en: "Language, sound, controls", bn: "ভাষা, শব্দ, কন্ট্রোল" }, num: "06" },
+  { id: "reset", icon: "🔄", label: HUB.resetGame, desc: HUB.resetSub, num: "07" },
+  { id: "home", icon: "⌂", label: HUB.home, desc: HUB.homeSub, num: "08" },
 ];
 
 function FlagMark({ tone }: { tone: "gold" | "locked" }) {
@@ -639,6 +640,24 @@ function FlagMark({ tone }: { tone: "gold" | "locked" }) {
       <div
         className={`hub-flag-cloth ${tone === "gold" ? "hub-flag-cloth-gold" : "hub-flag-cloth-locked"}`}
       />
+    </div>
+  );
+}
+
+function HubSelfie({ mars: m0, onClose }: { mars: boolean; onClose: () => void }) {
+  const lang = useGame((s) => s.lang);
+  const [mars, setMars] = useState(m0);
+  const [name, setName] = useState("");
+  const tt = (l: { en: string; bn: string }) => t(l, lang);
+  const tab = (on: boolean) => `px-4 py-2 rounded-full border text-sm font-bold ${on ? "border-[#ffd97d] bg-[#ffd97d]/20 text-[#ffd97d]" : "border-white/25 text-white/70"}`;
+  return (
+    <div className="fixed inset-0 z-[60] bg-black/75 backdrop-blur-sm overflow-y-auto text-[#f3ede0] p-3 sm:p-6 flex flex-col items-center pointer-events-auto">
+      <div className="flex gap-2 mb-3">
+        <button className={tab(mars)} onClick={() => setMars(true)}>🔴 {tt({ en: "Selfie on Mars", bn: "মঙ্গলে সেলফি" })}</button>
+        <button className={tab(!mars)} onClick={() => setMars(false)}>⚪ {tt({ en: "Selfie on the Moon", bn: "চাঁদে সেলফি" })}</button>
+        <button className={tab(false)} onClick={onClose} aria-label="close">✕</button>
+      </div>
+      <SelfieBooth key={mars ? "m" : "n"} mars={mars} tt={tt} name={name} setName={setName} onBack={onClose} onDone={onClose} />
     </div>
   );
 }
@@ -881,6 +900,8 @@ function HubUI() {
           </div>
         </div>
       </div>
+
+      {panel === "selfie" && <HubSelfie mars={universe === "mars"} onClose={() => setPanel(null)} />}
 
       {/* chapters panel with waving flags */}
       {panel === "chapters" && (
