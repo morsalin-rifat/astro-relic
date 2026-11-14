@@ -651,7 +651,7 @@ function HubSelfie({ mars: m0, onClose }: { mars: boolean; onClose: () => void }
   const tt = (l: { en: string; bn: string }) => t(l, lang);
   const tab = (on: boolean) => `px-4 py-2 rounded-full border text-sm font-bold ${on ? "border-[#ffd97d] bg-[#ffd97d]/20 text-[#ffd97d]" : "border-white/25 text-white/70"}`;
   return (
-    <div className="fixed inset-0 z-[60] bg-black/75 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 flex flex-col items-center pointer-events-auto">
+    <div className="fixed inset-0 z-[60] bg-black/75 backdrop-blur-sm overflow-y-auto text-[#f3ede0] p-3 sm:p-6 flex flex-col items-center pointer-events-auto">
       <div className="flex gap-2 mb-3">
         <button className={tab(mars)} onClick={() => setMars(true)}>🔴 {tt({ en: "Selfie on Mars", bn: "মঙ্গলে সেলফি" })}</button>
         <button className={tab(!mars)} onClick={() => setMars(false)}>⚪ {tt({ en: "Selfie on the Moon", bn: "চাঁদে সেলফি" })}</button>
