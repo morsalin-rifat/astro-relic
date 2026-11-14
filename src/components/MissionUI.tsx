@@ -133,7 +133,7 @@ export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker
         {nova ? (
           <img src="/images/nova.png" alt="Nova" className="w-[72px] sm:w-[110px] md:w-[140px] h-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.65)]" draggable={false} />
         ) : (
-          <div className="w-[72px] h-[72px] sm:w-[104px] sm:h-[104px] rounded-full border-2 flex items-center justify-center text-4xl sm:text-6xl" style={{ borderColor: acc, background: `radial-gradient(circle, ${acc}33, #221a14)`, boxShadow: `0 0 ${speaking ? 26 : 14}px ${acc}${speaking ? "" : "66"}` }}>{speaker === "eagle" ? "🦅" : speaker === "intrepid" ? "🚀" : speaker === "falcon" ? "🦅" : speaker === "challenger" ? "🚀" : "🤖"}</div>
+          <div className="w-[72px] h-[72px] sm:w-[104px] sm:h-[104px] rounded-full border-2 flex items-center justify-center text-4xl sm:text-6xl" style={{ borderColor: acc, background: `radial-gradient(circle, ${acc}33, #221a14)`, boxShadow: `0 0 ${speaking ? 26 : 14}px ${acc}${speaking ? "" : "66"}` }}>{buddy ? <img src={`/images/buddies/${buddy}.webp`} alt="" className="w-[92%] h-[92%] object-contain buddy-bob" draggable={false} /> : speaker === "eagle" ? "🦅" : speaker === "intrepid" ? "🚀" : speaker === "falcon" ? "🦅" : speaker === "challenger" ? "🚀" : "🤖"}</div>
         )}
       </div>
       <div className="nova-bubble relative flex-1 md:flex-none md:w-[min(360px,calc(50vw-260px))] md:min-w-[260px] mb-3 cursor-pointer">
