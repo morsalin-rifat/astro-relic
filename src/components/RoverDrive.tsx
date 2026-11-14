@@ -67,7 +67,7 @@ export function RoverDrive() {
               <span><kbd className="rounded bg-white/15 px-1 font-mono text-[#ffd97d]">F</kbd> {bn ? "নামো" : "Get off"}</span>
             </span>
           </div>
-          <div className="rover-dash absolute z-40 left-1/2 -translate-x-1/2 top-[6.5rem] pointer-events-none max-w-[90vw] rounded-xl bg-black/55 px-3 py-1.5 text-center text-[11px] leading-snug text-white/85">
+          <div className="rover-dash absolute z-40 left-1/2 -translate-x-1/2 top-[6.5rem] pointer-events-none max-w-[min(90vw,30rem)] rounded-xl bg-black/55 px-3 py-1 text-center text-[10px] leading-snug text-white/85">
             🔇 {bn ? "চাঁদে বাতাস নেই, তাই বাইরে কোনো শব্দ ছড়ায় না। তুমি যে মৃদু গুঞ্জন শুনছ, তা সিট আর স্পেসস্যুটের কম্পন দিয়ে আসছে!" : "No air on the Moon, so sound can't travel outside. The soft hum you hear comes through the seat and your spacesuit!"}
           </div>
           {speed <= 2 && (

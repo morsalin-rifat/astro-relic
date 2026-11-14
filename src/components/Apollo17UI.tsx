@@ -161,16 +161,17 @@ export function Apollo17Mission() {
     </div>
   );
 
+  const driving = useGame((s) => s.moonDriving);
   return (
     <>
       {line && createPortal(<HoloBubble key={line.who + t(line.text, lang)} speaker={line.who} text={t(line.text, lang)} speaking={speaking} />, document.body)}
 
-      {(stage === "hunt" || stage === "spot") && (
+      {(stage === "hunt" || stage === "spot") && !driving && (
         <div className="absolute z-40 top-[118px] left-1/2 -translate-x-1/2 flex gap-1.5 rounded-full bg-black/55 border border-white/15 px-3 py-1.5 pointer-events-none">
           {SPOTS.map((s) => <span key={s.id} title={t(s.name, lang)} className={`text-base sm:text-lg ${seen.includes(s.id) ? "" : "grayscale opacity-35"}`}>{seen.includes(s.id) ? s.icon : "⭐"}</span>)}
         </div>
       )}
-      {stage === "hunt" && (
+      {stage === "hunt" && !driving && (
         <div className="absolute z-40 top-[160px] left-1/2 -translate-x-1/2 rounded-2xl bg-black/65 border px-4 py-2 text-xs sm:text-sm text-center text-white/90 pointer-events-none max-w-[92vw]" style={{ borderColor: `${ACC}66` }}>
           {B("⭐ Walk to a golden star → 🗺️ stars glow ★ on your mini-map → press [E] to explore!", "⭐ সোনালি তারার কাছে হাঁটো → 🗺️ মিনি-ম্যাপে ★ দেখো → কাছে গিয়ে [E] চাপো!")}
           <span className="ml-2 font-bold" style={{ color: ACC }}>{seen.length}/7</span>
