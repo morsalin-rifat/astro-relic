@@ -185,7 +185,7 @@ export function SelfieBooth({ tt, name, setName, onDone, onBack, mars }: { tt: (
   const chip = (on: boolean) => ({ borderColor: on ? GOLD : "#ffffff30", background: on ? `${GOLD}33` : "transparent" });
   return (
     <div className="w-full max-w-4xl rounded-2xl border-2 p-4 md:p-6" style={{ borderColor: SILVER, background: "rgba(10,14,30,.94)" }}>
-      <div className="text-center text-xs tracking-[0.3em] mb-3" style={{ color: GOLD }}>👨‍🚀 BE AN ASTRONAUT · MOON SELFIE</div>
+      <div className="text-center text-xs tracking-[0.3em] mb-3" style={{ color: GOLD }}>👨‍🚀 BE AN ASTRONAUT · {mars ? "MARS" : "MOON"} SELFIE</div>
       <div className="grid md:grid-cols-2 gap-5">
         <div className="relative w-full aspect-[1024/1280] rounded-lg overflow-hidden bg-black">
           {out && <img src={out} alt="Your astronaut poster" className="w-full h-full object-cover" />}
