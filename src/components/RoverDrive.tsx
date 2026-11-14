@@ -31,6 +31,12 @@ export function RoverDrive() {
               <span><kbd className="rounded bg-white/15 px-1 font-mono text-[#ffd97d]">F</kbd> {bn ? "নামো" : "Get off"}</span>
             </span>
           </div>
+          {speed <= 2 && (
+            <button onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); store.emit("rover:toggle"); }}
+              className="rover-ride absolute z-40 left-1/2 -translate-x-1/2 bottom-24 pointer-events-auto rounded-2xl border-2 border-[#ffd97d] bg-black/70 px-5 py-3 text-[#ffd97d] font-bold text-base">
+              🚪 {bn ? "রোভার থেকে নামো" : "Get out of Rover"} <kbd className="ml-2 hidden [@media(pointer:fine)]:inline rounded bg-white/15 px-1.5 font-mono text-xs">F</kbd>
+            </button>
+          )}
           <div className="rover-pedals absolute z-40 right-5 bottom-6 flex items-end gap-3 pointer-events-auto [@media(pointer:fine)]:hidden">
             <button aria-label="Get off" onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); store.emit("rover:toggle"); }} className={pedal + " w-12 h-12 text-[10px] border-white/50 bg-black/55 text-white"}>🚶<span>{bn ? "নামো" : "Exit"}</span></button>
             <button aria-label="Brake" onPointerDown={hold("brake", true)} onPointerUp={hold("brake", false)} onPointerCancel={hold("brake", false)} onPointerLeave={hold("brake", false)} className={pedal + " w-16 h-16 text-xs border-[#ff6b5b] bg-[#ff6b5b]/30 text-white"}>🛑<span>{bn ? "ব্রেক" : "Brake"}</span></button>

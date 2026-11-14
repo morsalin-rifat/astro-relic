@@ -524,9 +524,22 @@ export class MoonWorldScene implements Scene {
       o.position.set(x, this.groundHeight(x, z) + s * 0.15, z);
       o.rotation.set(rnd() * 3, rnd() * 6, rnd() * 3); o.scale.set(s, s * (0.6 + rnd() * 0.5), s * (0.8 + rnd() * 0.4)); o.updateMatrix();
       rocks.setMatrixAt(i, o.matrix);
+      if (s > 0.45) this.addRock(x, z, s * 0.85);
     }
     rocks.castShadow = rocks.receiveShadow = true;
     this.scene.add(rocks);
+  }
+
+  private rockGrid = new Map<string, [number, number, number][]>();
+  private addRock(x: number, z: number, r: number) { const key = `${Math.floor(x / 8)},${Math.floor(z / 8)}`; (this.rockGrid.get(key) ?? this.rockGrid.set(key, []).get(key)!).push([x, z, r]); }
+  /** push a circle of radius `pr` out of big boulders; returns true on hit */
+  private pushOutRocks(p: THREE.Vector3, pr: number) {
+    let hit = false; const gx = Math.floor(p.x / 8), gz = Math.floor(p.z / 8);
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const [x, z, r] of this.rockGrid.get(`${gx + a},${gz + b}`) ?? []) {
+      const dx = p.x - x, dz = p.z - z, d = Math.hypot(dx, dz), m = r + pr;
+      if (d < m && d > 1e-4) { p.x = x + dx / d * m; p.z = z + dz / d * m; hit = true; }
+    }
+    return hit;
   }
 
   private place(obj: THREE.Object3D, x: number, z: number, ry = 0) {
@@ -665,6 +678,15 @@ export class MoonWorldScene implements Scene {
     for (const [id, x, z, ry] of [["lrv15", -14, -846, 1.1], ["lrv17", 12, -1268, -0.7]] as const) {
       const g = this.place(makeLRV(), x, z, ry) as THREE.Group; const wheels: THREE.Object3D[] = []; g.traverse((o) => { if (o.name === "wheel") wheels.push(o); });
       this.rovers.push({ id, g, wheels });
+      loader().load("/models/lrv.glb", (gl) => {
+        if (this.disposed) return;
+        const m = gl.scene; const box = new THREE.Box3().setFromObject(m); const sz = box.getSize(new THREE.Vector3());
+        const k = 3.1 / Math.max(sz.x, sz.z, 0.001); m.scale.setScalar(k); m.rotation.y = -Math.PI / 2;
+        const c = box.getCenter(new THREE.Vector3()); m.position.set(c.z * k, -box.min.y * k, -c.x * k);
+        m.traverse((o) => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+        for (const ch of [...g.children]) ch.visible = false;
+        g.add(m);
+      });
     }
 
     // --- Fallen Astronaut figurine + plaque (shown big enough for kids to spot) ---
@@ -738,10 +760,11 @@ export class MoonWorldScene implements Scene {
     else if (brake) this.rSpeed = this.rSpeed > 0.2 ? Math.max(0, this.rSpeed - ROVER_BRAKE * dt) : Math.max(-ROVER_REV, this.rSpeed - ROVER_ACCEL * 0.5 * dt);
     else this.rSpeed *= Math.exp(-ROVER_DRAG * dt);
     this.rSpeed = THREE.MathUtils.clamp(this.rSpeed, -ROVER_REV, ROVER_MAX); if (Math.abs(this.rSpeed) < 0.02 && !gas && !brake) this.rSpeed = 0;
-    this.rHead -= steer * ROVER_TURN * dt * THREE.MathUtils.clamp(Math.abs(this.rSpeed) / 3, 0, 1) * Math.sign(this.rSpeed || 1);
+    this.rHead -= steer * ROVER_TURN * dt * THREE.MathUtils.clamp(0.45 + Math.abs(this.rSpeed) / 3, 0, 1) * Math.sign(this.rSpeed || 1);
     const p = g.position; p.x += Math.sin(this.rHead) * this.rSpeed * dt; p.z += Math.cos(this.rHead) * this.rSpeed * dt;
     const lim = WORLD / 2 - 40; p.x = THREE.MathUtils.clamp(p.x, -lim, lim); p.z = THREE.MathUtils.clamp(p.z, ZMIN + 60, ZMAX - 40);
     for (const [lx, lz] of LM_SPOTS) { const dx = p.x - lx, dz = p.z - lz, r = Math.hypot(dx, dz); if (r < 4 && r > 0) { p.x = lx + dx * 4 / r; p.z = lz + dz * 4 / r; this.rSpeed *= 0.5; } }
+    if (this.pushOutRocks(p, 1.4)) this.rSpeed *= Math.exp(-8 * dt);
     // follow the ground: pitch/roll from height samples + a small low-g bounce
     const fx = Math.sin(this.rHead), fz = Math.cos(this.rHead);
     const hF = this.groundHeight(p.x + fx * 1.3, p.z + fz * 1.3), hB = this.groundHeight(p.x - fx * 1.3, p.z - fz * 1.3);
@@ -751,7 +774,7 @@ export class MoonWorldScene implements Scene {
     g.rotation.set(0, 0, 0); g.rotateY(this.rHead); g.rotateX(-Math.atan2(hF - hB, 2.6)); g.rotateZ(Math.atan2(hL - hR, 1.6));
     for (const w of R.wheels) w.rotateX(this.rSpeed * dt / 0.45);
     // driver sits on the seat
-    const seat = new THREE.Vector3(-0.3, 0.45, -0.1).applyQuaternion(g.quaternion).add(g.position);
+    const seat = new THREE.Vector3(-0.3, 0.05, -0.1).applyQuaternion(g.quaternion).add(g.position);
     this.player.position.copy(seat); this.player.rotation.set(0, this.rHead, 0); this.vel.set(0, 0, 0); this.grounded = true;
     // camera chases behind the rover
     this.camYaw = THREE.MathUtils.lerp(this.camYaw, this.rHead + Math.PI, Math.min(1, dt * 2.5 * (Math.abs(this.rSpeed) > 0.5 ? 1 : 0)));
@@ -951,6 +974,7 @@ export class MoonWorldScene implements Scene {
     if (!this.driving) {
     p.addScaledVector(this.vel, dt);
     const lim = WORLD / 2 - 40; p.x = THREE.MathUtils.clamp(p.x, -lim, lim); p.z = THREE.MathUtils.clamp(p.z, ZMIN + 60, ZMAX - 40);
+    this.pushOutRocks(p, 0.35);
     // keep out of the lander bodies
     for (const [lx, lz] of LM_SPOTS) { const dx = p.x - lx, dz = p.z - lz, r = Math.hypot(dx, dz); if (r < 2.4 && r > 0) { p.x = lx + dx * 2.4 / r; p.z = lz + dz * 2.4 / r; } }
     const zn = zoneOf(p.z); if (zn !== this.zone) this.enterZone(zn);
