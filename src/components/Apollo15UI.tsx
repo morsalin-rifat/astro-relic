@@ -50,6 +50,7 @@ export function Apollo15Mission() {
   const phase = useGame((s) => s.phase);
   const lang = useGame((s) => s.lang);
   const near = useGame((s) => s.moonNear);
+  const driving = useGame((s) => s.moonDriving);
   const [stage, setStage] = useState<Stage>("idle");
   const [line, setLine] = useState<{ who: Who; text: L } | null>(null);
   const [speaking, setSpeaking] = useState(false);
@@ -160,7 +161,6 @@ export function Apollo15Mission() {
     </div>
   );
 
-  const driving = useGame((s) => s.moonDriving);
   return (
     <>
       {line && createPortal(<HoloBubble key={line.who + t(line.text, lang)} speaker={line.who} text={t(line.text, lang)} speaking={speaking} />, document.body)}
