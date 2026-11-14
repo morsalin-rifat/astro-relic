@@ -1194,6 +1194,12 @@ export class MarsWorldScene implements Scene {
     const bz0 = h ? h.minZ + 15 : -WORLD / 2 + 10, bz1 = h ? h.minZ + h.sz * (h.nz - 1) - 15 : WORLD / 2 - 10;
     this.player.position.x = THREE.MathUtils.clamp(this.player.position.x, bx0, bx1);
     this.player.position.z = THREE.MathUtils.clamp(this.player.position.z, bz0, bz1);
+    // big boulders are solid: slide around them
+    for (const r of this.rockData) {
+      if (r.s < 0.6) continue; const rr = r.s * 0.55 + 0.35, dx = this.player.position.x - r.x, dz = this.player.position.z - r.z;
+      if (Math.abs(dx) > rr || Math.abs(dz) > rr) continue; const d = Math.hypot(dx, dz);
+      if (d < rr && d > 1e-4) { this.player.position.x = r.x + dx / d * rr; this.player.position.z = r.z + dz / d * rr; }
+    }
     // no teleporting up cliffs: block steps steeper than ~55°, fall smoothly down drops
     let gy = this.groundHeight(this.player.position.x, this.player.position.z);
     const run = Math.hypot(this.player.position.x - prevX, this.player.position.z - prevZ);
