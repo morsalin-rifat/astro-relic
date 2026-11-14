@@ -961,6 +961,7 @@ function HubUI() {
                     className={`hub-chapter ${c.ready ? "" : "hub-chapter-locked"}`}
                   >
                     <FlagMark tone={c.ready ? "gold" : "locked"} />
+                    <img src={`/images/buddies/${({ ch1: "sojourner", ch2: "oppy", ch3: "oppy", ch8: "insight" } as Record<string, string>)[c.id] ?? "lrv"}.webp`} alt="" className="w-10 h-10 object-contain flex-shrink-0 buddy-bob" draggable={false} loading="lazy" />
                     <span className="flex-1 min-w-0 text-left">
                       <span className="block text-[9px] tracking-[0.35em] text-white/40 mb-0.5">
                         CH {String(i + 1).padStart(2, "0")} · {t(c.tag, lang)}
@@ -1018,13 +1019,16 @@ function HubUI() {
               {t(HUB.howToPlay, lang)}
             </div>
             <div className="mt-4 space-y-2.5">
-              {HOWTO.map((s) => (
+              {HOWTO.map((s, hi) => (
                 <div
                   key={s.title.en}
                   className="flex gap-4 items-start p-3 rounded-xl bg-white/[0.03] border border-white/5"
                 >
-                  <div className="text-2xl leading-none mt-0.5">{s.icon}</div>
-                  <div>
+                  <div className="relative flex-shrink-0 w-12 h-12">
+                    <img src={`/images/buddies/${["sojourner", "oppy", "insight", "lrv"][hi % 4]}.webp`} alt="" className="w-12 h-12 object-contain buddy-bob" draggable={false} loading="lazy" />
+                    <span className="absolute -bottom-1 -right-1 text-base leading-none">{s.icon}</span>
+                  </div>
+                  <div className="min-w-0">
                     <div className="text-sm tracking-[0.1em] text-[#ffd97d] font-display">
                       {t(s.title, lang)}
                     </div>
