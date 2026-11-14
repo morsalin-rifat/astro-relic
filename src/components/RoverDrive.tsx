@@ -16,7 +16,7 @@ export function RoverDrive() {
       {!driving && (
         <button onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); store.emit("rover:toggle"); }}
           className="rover-ride absolute z-40 left-1/2 -translate-x-1/2 bottom-24 pointer-events-auto rounded-2xl border-2 border-[#ffd97d] bg-black/70 px-5 py-3 text-[#ffd97d] font-bold text-base animate-pulse">
-          🏎️ {bn ? "রোভারে ওঠো" : "Ride the Moon Rover"} <kbd className="ml-2 hidden md:inline rounded bg-white/15 px-1.5 font-mono text-xs">F</kbd>
+          🏎️ {bn ? "রোভারে ওঠো" : "Ride the Moon Rover"} <kbd className="ml-2 hidden [@media(pointer:fine)]:inline rounded bg-white/15 px-1.5 font-mono text-xs">F</kbd>
         </button>
       )}
       {driving && (
@@ -24,7 +24,7 @@ export function RoverDrive() {
           <div className="rover-dash absolute z-40 left-1/2 -translate-x-1/2 top-14 pointer-events-none flex items-center gap-3 rounded-2xl border border-[#ffd97d]/50 bg-black/65 px-4 py-2 text-white">
             <span className="text-2xl font-black text-[#ffd97d] tabular-nums w-12 text-right">{speed}</span>
             <span className="text-[11px] leading-tight text-white/70">km/h<br />LRV</span>
-            <span className="hidden md:flex gap-2 text-[11px] text-white/80 ml-2">
+            <span className="hidden [@media(pointer:fine)]:flex gap-2 text-[11px] text-white/80 ml-2">
               <span><kbd className="rounded bg-white/15 px-1 font-mono text-[#ffd97d]">W</kbd> {bn ? "চালাও" : "Go"}</span>
               <span><kbd className="rounded bg-white/15 px-1 font-mono text-[#ffd97d]">S</kbd> {bn ? "ব্রেক/পেছনে" : "Brake/Back"}</span>
               <span><kbd className="rounded bg-white/15 px-1 font-mono text-[#ffd97d]">A D</kbd> {bn ? "ঘোরাও" : "Steer"}</span>
