@@ -270,6 +270,7 @@ export class MoonWorldScene implements Scene {
   private walk: THREE.AnimationAction | null = null;
   private bones: Record<string, THREE.Object3D> = {};
   private sitK = 0;
+  private seatRest: Map<THREE.Object3D, THREE.Quaternion> | null = null;
   private hud!: HTMLDivElement;
   private mini!: HTMLCanvasElement;
   private miniBg!: HTMLCanvasElement;
@@ -687,7 +688,8 @@ export class MoonWorldScene implements Scene {
         const c = box.getCenter(new THREE.Vector3()); m.position.set(c.z * k, -box.min.y * k, -c.x * k);
         m.traverse((o) => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true; } });
         for (const ch of [...g.children]) ch.visible = false;
-        g.add(m);
+        g.add(m); m.updateMatrixWorld(true);
+        const glbWheels = splitWheels(m); if (glbWheels.length) { const r = this.rovers.find((v) => v.g === g); if (r) r.wheels = glbWheels; }
       });
     }
 
@@ -766,6 +768,7 @@ export class MoonWorldScene implements Scene {
       ["L_Shoulder", -0.9, 0, 0.35], ["R_Shoulder", -0.9, 0, -0.35],
       ["L_Elbow", -0.7, 0, 0], ["R_Elbow", -0.7, 0, 0],
     ];
+    if (!this.seatRest) { this.seatRest = new Map(); for (const [n] of pose) { const b = B[n]; if (b) this.seatRest.set(b, b.quaternion.clone()); } }
     for (const [n, x, y, z] of pose) { const b = B[n]; if (!b) continue; q.setFromEuler(e.set(x * k, y * k, z * k)); b.quaternion.multiply(q); }
   }
 
@@ -790,7 +793,7 @@ export class MoonWorldScene implements Scene {
     const bounce = Math.abs(this.rSpeed) > 4 ? Math.abs(Math.sin(performance.now() * 0.006)) * 0.05 * (Math.abs(this.rSpeed) / ROVER_MAX) : 0;
     p.y = THREE.MathUtils.lerp(p.y, (hF + hB + hL + hR) / 4 + bounce, Math.min(1, dt * 12));
     g.rotation.set(0, 0, 0); g.rotateY(this.rHead); g.rotateX(-Math.atan2(hF - hB, 2.6)); g.rotateZ(Math.atan2(hL - hR, 1.6));
-    for (const w of R.wheels) w.rotateX(this.rSpeed * dt / 0.45);
+    for (const w of R.wheels) { const a = this.rSpeed * dt / 0.45, ax = w.userData["axle"]; if (ax === "y") w.rotateY(a); else if (ax === "z") w.rotateZ(a); else w.rotateX(a); }
     // driver sits on the seat
     const seat = new THREE.Vector3(-0.3, -0.32 * this.sitK, -0.1).applyQuaternion(g.quaternion).add(g.position);
     this.player.position.copy(seat); this.player.rotation.set(0, this.rHead, 0); this.vel.set(0, 0, 0); this.grounded = true;
@@ -1022,6 +1025,8 @@ export class MoonWorldScene implements Scene {
       for (let i = 0; i < pos.count; i++) { v[i * 3 + 1]! -= GRAVITY * dt; pos.setXYZ(i, pos.getX(i) + v[i * 3]! * dt, Math.max(gyNow, pos.getY(i) + v[i * 3 + 1]! * dt), pos.getZ(i) + v[i * 3 + 2]! * dt); }
       pos.needsUpdate = true; (this.dust.material as THREE.PointsMaterial).opacity = Math.max(0, this.dustLife / 1.6) * 0.8;
     }
+    // reset seat-posed bones so the sitting offset never accumulates frame to frame (caused the spinning driver)
+    if (this.seatRest) this.seatRest.forEach((q0, b) => b.quaternion.copy(q0));
     if (this.mixer && this.walk) { this.walk.timeScale = this.driving ? 0 : this.grounded ? Math.min(this.vel.length() / SPEED, 1) * 0.8 : 0.1; this.mixer.update(dt); }
     this.applySeat(dt);
 
@@ -1059,4 +1064,35 @@ export class MoonWorldScene implements Scene {
     this.disposers.forEach((d) => d());
     this.scene.traverse((o) => { const m = o as THREE.Mesh; m.geometry?.dispose(); const mat = (m as any).material; if (Array.isArray(mat)) mat.forEach((x) => x.dispose()); else mat?.dispose?.(); });
   }
+}
+
+/** The LRV GLB stores all 4 wheels as one mesh; split it into 4 pivoted meshes (by quadrant) so each can spin on its axle. */
+function splitWheels(root: THREE.Object3D): THREE.Object3D[] {
+  let wm: THREE.Mesh | null = null;
+  root.traverse((o) => { const me = o as THREE.Mesh; if (!wm && me.isMesh) { const mat = me.material as THREE.Material; if (/wheel/i.test(mat?.name ?? "")) wm = me; } });
+  const mesh = wm as THREE.Mesh | null; if (!mesh) return [];
+  const src = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry.clone();
+  const pos = src.attributes["position"] as THREE.BufferAttribute; src.computeBoundingBox(); const bb = src.boundingBox!;
+  const c = bb.getCenter(new THREE.Vector3()), sz = bb.getSize(new THREE.Vector3());
+  // the two wide horizontal axes hold the wheel layout; the axle is the narrower of them (track) — split along both
+  const ax: ("x" | "y" | "z")[] = (["x", "y", "z"] as const).slice().sort((a, b) => sz[b] - sz[a]).slice(0, 2) as ("x" | "y" | "z")[];
+  const buckets: number[][] = [[], [], [], []];
+  const v = new THREE.Vector3();
+  for (let t = 0; t < pos.count; t += 3) {
+    v.set(0, 0, 0); for (let j = 0; j < 3; j++) v.add(new THREE.Vector3().fromBufferAttribute(pos, t + j)); v.divideScalar(3);
+    const q = (v[ax[0]!] > c[ax[0]!] ? 1 : 0) + (v[ax[1]!] > c[ax[1]!] ? 2 : 0); buckets[q]!.push(t);
+  }
+  if (buckets.some((b) => b.length === 0)) return [];
+  const parent = mesh.parent!; const out: THREE.Object3D[] = [];
+  const attrs = Object.keys(src.attributes);
+  for (const tris of buckets) {
+    const g = new THREE.BufferGeometry();
+    for (const a of attrs) { const A = src.attributes[a] as THREE.BufferAttribute; const arr = new (A.array.constructor as Float32ArrayConstructor)(tris.length * 3 * A.itemSize); let o = 0; for (const t of tris) for (let j = 0; j < 3; j++) for (let k = 0; k < A.itemSize; k++) arr[o++] = A.array[(t + j) * A.itemSize + k]!; g.setAttribute(a, new THREE.BufferAttribute(arr, A.itemSize, A.normalized)); }
+    g.computeBoundingBox(); const wc = g.boundingBox!.getCenter(new THREE.Vector3()); const ws = g.boundingBox!.getSize(new THREE.Vector3()); g.translate(-wc.x, -wc.y, -wc.z);
+    const axle = (["x", "y", "z"] as const).reduce((a, b) => (ws[b] < ws[a] ? b : a));
+    const pivot = new THREE.Object3D(); pivot.position.copy(mesh.position).add(wc.clone().multiply(mesh.scale).applyQuaternion(mesh.quaternion)); pivot.quaternion.copy(mesh.quaternion); pivot.scale.copy(mesh.scale);
+    const spin = new THREE.Object3D(); pivot.add(spin); spin.userData["axle"] = axle;
+    const w = new THREE.Mesh(g, mesh.material); w.castShadow = true; spin.add(w); parent.add(pivot); out.push(spin);
+  }
+  mesh.visible = false; return out;
 }

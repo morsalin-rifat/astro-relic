@@ -6,7 +6,8 @@ export function MoonControls() {
   const phase = useGame((s) => s.phase);
   const lang = useGame((s) => s.lang);
   const [open, setOpen] = useState(true);
-  if (phase !== "moon") return null;
+  const driving = useGame((s) => s.moonDriving);
+  if (phase !== "moon" || driving) return null;
   const bn = lang === "bn";
   const keys: [string, string][] = [["W A S D", bn ? "হাঁটো" : "Walk"], ["SPACE", bn ? "লাফ" : "Jump"], ["E", bn ? "কথা বলো / দেখো" : "Talk / Inspect"], ["M", bn ? "বড় ম্যাপ" : "Big map"], ["ESC", bn ? "হাব" : "Hub"]];
   if (!open) return (
