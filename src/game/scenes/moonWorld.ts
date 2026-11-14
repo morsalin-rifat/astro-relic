@@ -955,7 +955,7 @@ export class MoonWorldScene implements Scene {
     for (const [lx, lz] of LM_SPOTS) { const dx = p.x - lx, dz = p.z - lz, r = Math.hypot(dx, dz); if (r < 2.4 && r > 0) { p.x = lx + dx * 2.4 / r; p.z = lz + dz * 2.4 / r; } }
     const zn = zoneOf(p.z); if (zn !== this.zone) this.enterZone(zn);
     // low-gravity vertical motion + bunny hop while walking
-    const gy = this.groundHeight(p.x, p.z);
+    const gy0 = this.groundHeight(p.x, p.z);
     const moving = this.vel.length() > 0.5;
     if (this.grounded && moving && Math.sin(t * 5.5) > 0.97) { this.vy = 1.1; this.grounded = false; }
     if (!this.grounded) {
@@ -963,6 +963,7 @@ export class MoonWorldScene implements Scene {
       if (p.y <= gy) { p.y = gy; this.grounded = true; if (this.vy < -2) this.kickDust(); this.vy = 0; }
     } else p.y = gy;
     }
+    const gy = this.groundHeight(p.x, p.z);
     const zn2 = zoneOf(p.z); if (zn2 !== this.zone) this.enterZone(zn2);
     if (!this.driving) { const rv = this.rovers.find((v) => Math.hypot(v.g.position.x - p.x, v.g.position.z - p.z) < 4.5); const id = rv ? rv.id : null; if (id !== store.get().moonRover) store.set({ moonRover: id }); }
 
