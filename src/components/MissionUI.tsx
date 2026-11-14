@@ -104,6 +104,7 @@ export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker
   useEffect(() => { if (!speaking) setN((x) => (x > 0 ? text.length : x)); }, [speaking, text]);
   const done = n >= text.length;
   const nova = speaker === "nova";
+  const buddy = speaker === "sojourner" ? "sojourner" : speaker === "spirit" || speaker === "oppy" ? "oppy" : speaker === "insight" ? "insight" : null;
   const acc = speaker === "spirit" ? "#ff8a5c" : speaker === "oppy" ? "#6cc6ff" : speaker === "insight" ? "#b58cff" : "#ffd97d";
   const skip = (e: React.MouseEvent) => { e.stopPropagation(); setN(text.length); if (speaking) voice.skip(); };
   const onDown = (e: React.PointerEvent) => { drag.current = { sx: e.clientX, sy: e.clientY, ox: pos.x, oy: pos.y, moved: false }; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); e.stopPropagation(); };
@@ -119,7 +120,7 @@ export function HoloBubble({ speaker, text, speaking, onClick, hint }: { speaker
       <button onClick={() => { bubbleHidden = false; setHidden(false); }} title="Show Nova"
         className="fixed z-[56] left-3 bottom-24 md:bottom-auto md:top-[18%] w-14 h-14 rounded-full border-2 bg-black/60 flex items-center justify-center pointer-events-auto animate-float-gentle"
         style={{ borderColor: acc, boxShadow: `0 0 ${speaking ? 22 : 10}px ${acc}` }}>
-        {nova ? <img src="/images/nova.png" alt="Nova" className="w-11 h-11 object-contain" draggable={false} /> : <span className="text-2xl">{speaker === "eagle" ? "🦅" : speaker === "intrepid" ? "🚀" : speaker === "falcon" ? "🦅" : speaker === "challenger" ? "🚀" : "🤖"}</span>}
+        {nova ? <img src="/images/nova.png" alt="Nova" className="w-11 h-11 object-contain" draggable={false} /> : (buddy ? <img src={`/images/buddies/${buddy}.webp`} alt="" className="w-11 h-11 object-contain" draggable={false} /> : <span className="text-2xl">{buddy ? <img src={`/images/buddies/${buddy}.webp`} alt="" className="w-[88%] h-[88%] object-contain buddy-bob" draggable={false} /> : speaker === "eagle" ? "🦅" : speaker === "intrepid" ? "🚀" : speaker === "falcon" ? "🦅" : speaker === "challenger" ? "🚀" : "🤖"}</span>)}
         {speaking && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full animate-ping" style={{ background: acc }} />}
       </button>
     );

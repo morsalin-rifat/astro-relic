@@ -74,7 +74,7 @@ function drawFlag(g: CanvasRenderingContext2D, id: string, x: number, y: number,
 }
 
 /** Face-in-helmet poster: kid's face inside the astronaut visor, chosen flag planted beside them. */
-async function makeSelfie(face: string, o: { zoom: number; dx: number; dy: number; flag: string; custom: string | null; name: string; mars?: boolean | undefined }): Promise<string> {
+async function makeSelfie(face: string, o: { zoom: number; dx: number; dy: number; flag: string; custom: string | null; name: string; mars?: boolean | undefined; buddy?: string }): Promise<string> {
   const W = 1024, H = 1280;
   const c = document.createElement("canvas"); c.width = W; c.height = H;
   const g = c.getContext("2d")!;
@@ -97,6 +97,7 @@ async function makeSelfie(face: string, o: { zoom: number; dx: number; dy: numbe
   g.fillStyle = pole; g.fillRect(px - 5, top, 10, base - top);
   g.fillRect(px - 260, top + 4, 260, 6);
   drawFlag(g, o.flag, px - 260, top + 10, 255, 170, cu);
+  if (o.buddy) { const b = await loadImg(`/images/buddies/${o.buddy}.webp`); if (b.naturalWidth) g.drawImage(b, 20, H - (o.mars ? 212 : 150) - 330, 340, 340); }
   // name strip
   const stripH = o.mars ? 212 : 150;
   g.fillStyle = "rgba(5,8,20,.75)"; g.fillRect(0, H - stripH, W, stripH);
@@ -169,9 +170,10 @@ export function SelfieBooth({ tt, name, setName, onDone, onBack, mars }: { tt: (
   const [dy, setDy] = useState(0);
   const [flag, setFlag] = useState<string>("bd");
   const [custom, setCustom] = useState<string | null>(null);
+  const [buddy, setBuddy] = useState<string>("");
   const stop = () => { stream.current?.getTracks().forEach((t) => t.stop()); stream.current = null; setLive(false); };
   useEffect(() => stop, []);
-  useEffect(() => { makeSelfie(face ?? "", { zoom, dx, dy, flag, custom, name, mars }).then(setOut); }, [face, zoom, dx, dy, flag, custom, name, mars]);
+  useEffect(() => { makeSelfie(face ?? "", { zoom, dx, dy, flag, custom, name, mars, buddy }).then(setOut); }, [face, zoom, dx, dy, flag, custom, name, mars, buddy]);
   const startCam = async () => {
     try {
       const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
@@ -225,6 +227,17 @@ export function SelfieBooth({ tt, name, setName, onDone, onBack, mars }: { tt: (
                 📁 {tt({ en: "My own flag", bn: "নিজের পতাকা" })}
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => read(e.target.files?.[0], (u) => { setCustom(u); setFlag("custom"); })} />
               </label>
+            </div>
+          </div>
+          <div>
+            <div className="text-sm mb-2" style={{ color: GOLD }}>🤖 {tt({ en: "Add a rover buddy", bn: "রোভার বন্ধু যোগ করো" })}</div>
+            <div className="flex flex-wrap gap-2">
+              <button className="px-3 py-2 rounded-full border text-sm" style={chip(buddy === "")} onClick={() => setBuddy("")}>{tt({ en: "None", bn: "কেউ না" })}</button>
+              {(mars ? ["sojourner", "oppy", "insight", "lrv"] : ["lrv", "sojourner", "oppy", "insight"]).map((b) => (
+                <button key={b} className="w-12 h-12 rounded-full border p-1" style={chip(buddy === b)} onClick={() => setBuddy(b)} aria-label={b}>
+                  <img src={`/images/buddies/${b}.webp`} alt="" className="w-full h-full object-contain" draggable={false} />
+                </button>
+              ))}
             </div>
           </div>
           <div>
