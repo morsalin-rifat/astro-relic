@@ -1,4 +1,28 @@
+import { useEffect, useRef } from "react";
 import { store, useGame } from "../state/store";
+
+/** Soft structure-borne motor hum (felt through the seat — no air on the Moon). */
+function useRoverHum(driving: boolean, speed: number) {
+  const r = useRef<{ ctx: AudioContext; o: OscillatorNode; g: GainNode } | null>(null);
+  useEffect(() => {
+    if (!driving) return;
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.value = 55;
+      const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 220;
+      const g = ctx.createGain(); g.gain.value = 0;
+      o.connect(lp); lp.connect(g); g.connect(ctx.destination); o.start();
+      r.current = { ctx, o, g };
+    } catch { /* no audio */ }
+    return () => { r.current?.o.stop(); r.current?.ctx.close(); r.current = null; };
+  }, [driving]);
+  useEffect(() => {
+    const a = r.current; if (!a) return;
+    const t = a.ctx.currentTime, k = Math.min(speed / 12, 1);
+    a.o.frequency.setTargetAtTime(55 + k * 90, t, 0.25);
+    a.g.gain.setTargetAtTime((0.012 + k * 0.03) * (store.get().musicVol ?? 1), t, 0.25);
+  }, [speed]);
+}
 
 /** Lunar Rover ride/drive controls (Apollo 15 & 17). Scene logic lives in moonWorld; this only shows prompts + touch pedals. */
 export function RoverDrive() {
@@ -8,6 +32,7 @@ export function RoverDrive() {
   const speed = useGame((s) => s.moonSpeed);
   const freeze = useGame((s) => s.moonFreeze);
   const bn = useGame((s) => s.lang) === "bn";
+  useRoverHum(driving && phase === "moon", speed);
   if (phase !== "moon" || freeze || (!near && !driving)) return null;
   const hold = (k: "gas" | "brake", on: boolean) => (e: React.PointerEvent) => { e.preventDefault(); e.stopPropagation(); store.emit("drive", { [k]: on }); };
   const pedal = "touch-none select-none rounded-full border-2 font-bold flex flex-col items-center justify-center active:scale-90 transition-transform shadow-lg";
@@ -30,6 +55,9 @@ export function RoverDrive() {
               <span><kbd className="rounded bg-white/15 px-1 font-mono text-[#ffd97d]">A D</kbd> {bn ? "ঘোরাও" : "Steer"}</span>
               <span><kbd className="rounded bg-white/15 px-1 font-mono text-[#ffd97d]">F</kbd> {bn ? "নামো" : "Get off"}</span>
             </span>
+          </div>
+          <div className="rover-dash absolute z-40 left-1/2 -translate-x-1/2 top-[6.5rem] pointer-events-none max-w-[90vw] rounded-xl bg-black/55 px-3 py-1.5 text-center text-[11px] leading-snug text-white/85">
+            🔇 {bn ? "চাঁদে বাতাস নেই, তাই বাইরে কোনো শব্দ ছড়ায় না। তুমি যে মৃদু গুঞ্জন শুনছ, তা সিট আর স্পেসস্যুটের কম্পন দিয়ে আসছে!" : "No air on the Moon, so sound can't travel outside. The soft hum you hear comes through the seat and your spacesuit!"}
           </div>
           {speed <= 2 && (
             <button onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); store.emit("rover:toggle"); }}
