@@ -736,7 +736,7 @@ export class MoonWorldScene implements Scene {
     back.onclick = () => store.emit("engine:goto", "hub");
     document.body.appendChild(back); this.disposers.push(() => back.remove());
     const c = document.createElement("canvas"); c.width = c.height = 220;
-    c.style.cssText = "position:fixed;top:72px;right:16px;width:180px;height:180px;border-radius:50%;border:2px solid rgba(200,220,255,.7);box-shadow:0 0 20px rgba(0,0,0,.6);z-index:40;background:#111;cursor:pointer;pointer-events:auto";
+    c.className = "game-minimap"; c.style.cssText = "position:fixed;top:72px;right:16px;width:180px;height:180px;border-radius:50%;border:2px solid rgba(200,220,255,.7);box-shadow:0 0 20px rgba(0,0,0,.6);z-index:40;background:#111;cursor:pointer;pointer-events:auto";
     c.title = "Open map";
     const stop = (e: Event) => e.stopPropagation();
     c.addEventListener("pointerdown", stop);

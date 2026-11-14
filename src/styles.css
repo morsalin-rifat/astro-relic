@@ -844,3 +844,15 @@ body {
 @media (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
   .badge-pill.badge-play { display: none; }
 }
+
+/* ---- Phone readability + compact minimap (touch only; desktop untouched) ---- */
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
+  .hub-console-wrap { zoom: 1 !important; }
+  .hub-console-wrap .hub-console-panel { width: min(330px, 44vw) !important; padding: 0.6rem 0.75rem !important; }
+  .hub-console-wrap .hub-action-card { padding: 0.45rem 0.7rem; gap: 0.6rem; }
+  .hub-console-wrap .hub-action-card .font-display { font-size: 15px !important; font-weight: 700; letter-spacing: 0.1em !important; }
+  .hub-console-wrap .hub-action-card .text-\[10px\] { font-size: 12px !important; color: rgba(255,255,255,0.72) !important; }
+  .hub-console-wrap .hub-action-icon { width: 2rem; height: 2rem; }
+  .game-minimap { width: 112px !important; height: 112px !important; top: 56px !important; right: 10px !important; }
+  .kbd-bar { display: none !important; }
+}
