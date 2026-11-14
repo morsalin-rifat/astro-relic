@@ -720,7 +720,7 @@ export class MoonWorldScene implements Scene {
       const g = this.driving.g, side = new THREE.Vector3(Math.cos(this.rHead), 0, -Math.sin(this.rHead)).multiplyScalar(-1.8);
       const px = g.position.x + side.x, pz = g.position.z + side.z; this.player.position.set(px, this.groundHeight(px, pz), pz);
       g.rotation.set(0, this.rHead, 0); this.driving = null; this.rSpeed = 0; this.camDist = 7; this.vel.set(0, 0, 0);
-      store.set({ moonDriving: false, moonSpeed: 0 }); audio.sfx?.("click"); return;
+      store.set({ moonDriving: false, moonSpeed: 0 }); return;
     }
     if (store.get().moonFreeze) return;
     const p = this.player.position; const r = this.rovers.find((v) => Math.hypot(v.g.position.x - p.x, v.g.position.z - p.z) < 4.5);
@@ -751,7 +751,7 @@ export class MoonWorldScene implements Scene {
     g.rotation.set(0, 0, 0); g.rotateY(this.rHead); g.rotateX(-Math.atan2(hF - hB, 2.6)); g.rotateZ(Math.atan2(hL - hR, 1.6));
     for (const w of R.wheels) w.rotateX(this.rSpeed * dt / 0.45);
     // driver sits on the seat
-    const seat = new THREE.Vector3(-0.3, 0.45, -0.1).applyMatrix4(g.matrixWorld.clone().compose(g.position, g.quaternion, new THREE.Vector3(1, 1, 1)));
+    const seat = new THREE.Vector3(-0.3, 0.45, -0.1).applyQuaternion(g.quaternion).add(g.position);
     this.player.position.copy(seat); this.player.rotation.set(0, this.rHead, 0); this.vel.set(0, 0, 0); this.grounded = true;
     // camera chases behind the rover
     this.camYaw = THREE.MathUtils.lerp(this.camYaw, this.rHead + Math.PI, Math.min(1, dt * 2.5 * (Math.abs(this.rSpeed) > 0.5 ? 1 : 0)));
