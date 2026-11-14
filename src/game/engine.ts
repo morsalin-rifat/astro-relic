@@ -66,6 +66,7 @@ export class Engine {
     el.addEventListener("pointerdown", this.onPointerDown);
     window.addEventListener("pointermove", this.onPointerMove);
     window.addEventListener("pointerup", this.onPointerUp);
+    window.addEventListener("pointercancel", this.onPointerUp);
     el.addEventListener("wheel", this.onWheel, { passive: false });
     window.addEventListener("keydown", this.onKeyDown);
     window.addEventListener("keyup", this.onKeyUp);
@@ -154,7 +155,10 @@ export class Engine {
     ];
   }
 
+  private activePointer: number | null = null;
   private onPointerDown = (e: PointerEvent) => {
+    if (this.activePointer !== null && this.activePointer !== e.pointerId) return; // second finger: ignore
+    this.activePointer = e.pointerId;
     this.pointerDown = true;
     this.downAt = { x: e.clientX, y: e.clientY };
     const [x, y] = this.norm(e);
@@ -162,11 +166,15 @@ export class Engine {
   };
 
   private onPointerMove = (e: PointerEvent) => {
+    // only the finger that started on the 3D view steers the camera (joystick finger stays separate)
+    if (this.activePointer !== null && e.pointerId !== this.activePointer) return;
     const [x, y] = this.norm(e);
     this.scene?.onPointerMove?.(x, y, this.pointerDown);
   };
 
   private onPointerUp = (e?: PointerEvent) => {
+    if (e && this.activePointer !== null && e.pointerId !== this.activePointer) return;
+    this.activePointer = null;
     // treat as click if barely moved
     if (this.pointerDown && e) {
       const dx = e.clientX - this.downAt.x;
@@ -201,6 +209,7 @@ export class Engine {
     window.removeEventListener("resize", this.onResize);
     window.removeEventListener("pointermove", this.onPointerMove);
     window.removeEventListener("pointerup", this.onPointerUp);
+    window.removeEventListener("pointercancel", this.onPointerUp);
     window.removeEventListener("keydown", this.onKeyDown);
     window.removeEventListener("keyup", this.onKeyUp);
     this.renderer.dispose();

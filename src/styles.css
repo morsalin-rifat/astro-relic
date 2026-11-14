@@ -844,3 +844,19 @@ body {
 @media (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
   .badge-pill.badge-play { display: none; }
 }
+
+/* ---- Phone readability + compact minimap (touch only; desktop untouched) ---- */
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
+  .hub-console-wrap { zoom: 1 !important; }
+  .hub-console-wrap .hub-console-panel { width: min(330px, 44vw) !important; padding: 0.6rem 0.75rem !important; }
+  .hub-console-wrap .hub-action-card { padding: 0.28rem 0.6rem; gap: 0.55rem; }
+  .hub-console-wrap .hub-console-panel { gap: 0.3rem !important; top: auto; }
+  .hub-console-wrap .hub-console-panel > div:first-child, .hub-console-wrap .hub-console-panel > div:nth-child(2), .hub-console-wrap .hub-console-panel > div:last-child { display: none; }
+  .hub-console-wrap .hub-console-panel .flex.flex-col.gap-2 { gap: 0.3rem; }
+  .hub-console-wrap { top: 55% !important; }
+  .hub-console-wrap .hub-action-card .font-display { font-size: 15px !important; font-weight: 700; letter-spacing: 0.1em !important; }
+  .hub-console-wrap .hub-action-card .text-\[10px\] { font-size: 12px !important; color: rgba(255,255,255,0.72) !important; }
+  .hub-console-wrap .hub-action-icon { width: 1.9rem; height: 1.9rem; }
+  .game-minimap { width: 112px !important; height: 112px !important; top: 56px !important; right: 10px !important; }
+  .kbd-bar { display: none !important; }
+}

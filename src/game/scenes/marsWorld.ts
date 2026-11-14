@@ -700,7 +700,7 @@ export class MarsWorldScene implements Scene {
   private buildMinimap() {
     const c = document.createElement("canvas");
     c.width = c.height = 180;
-    c.style.cssText = "position:fixed;top:72px;right:16px;width:150px;height:150px;border-radius:50%;border:2px solid rgba(255,210,150,.7);box-shadow:0 0 18px rgba(0,0,0,.5);z-index:40;pointer-events:auto;cursor:pointer;background:#2a140a";
+    c.className = "game-minimap"; c.style.cssText = "position:fixed;top:72px;right:16px;width:150px;height:150px;border-radius:50%;border:2px solid rgba(255,210,150,.7);box-shadow:0 0 18px rgba(0,0,0,.5);z-index:40;pointer-events:auto;cursor:pointer;background:#2a140a";
     c.title = "Open map";
     c.addEventListener("click", () => store.set({ bigMap: true }));
     document.body.appendChild(c);
@@ -1069,9 +1069,10 @@ export class MarsWorldScene implements Scene {
 
   onPointerMove(x: number, y: number) {
     if (!this.dragging) return;
-    this.camYaw -= (x - this.lastPointer.x) * 2.4;
+    const sens = store.get().camSens * (matchMedia("(pointer: coarse)").matches ? 0.7 : 1);
+    this.camYaw -= (x - this.lastPointer.x) * 2.4 * sens;
     this.camPitch = THREE.MathUtils.clamp(
-      this.camPitch + (y - this.lastPointer.y) * 1.6,
+      this.camPitch + (y - this.lastPointer.y) * 1.6 * sens,
       0.05,
       1.1,
     );
