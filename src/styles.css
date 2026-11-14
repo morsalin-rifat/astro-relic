@@ -867,3 +867,6 @@ body {
   .rover-ride { bottom: 1.25rem !important; font-size: 14px; padding: 0.6rem 1rem; }
   .rover-dash { top: 0.6rem !important; padding: 0.3rem 0.8rem; }
 }
+
+@keyframes buddy-bob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-4px) rotate(2deg); } }
+.buddy-bob { animation: buddy-bob 2.4s ease-in-out infinite; }
