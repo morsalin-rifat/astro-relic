@@ -1,4 +1,5 @@
 import { MobileLandscape } from "@/components/MobileLandscape";
+import { RoverDrive } from "./RoverDrive";
 import { SettingsButton, SettingsPanel } from "./SettingsPanel";
 import { voice } from "../game/voice";
 import { useEffect, useRef, useState } from "react";
@@ -520,10 +521,11 @@ function pressKey(code: string) {
 }
 function TouchActions() {
   const phase = useGame((s) => s.phase);
+  const driving = useGame((s) => s.moonDriving);
   const moonNear = useGame((s) => s.moonNear);
   const marsNear = useGame((s) => s.marsNear);
   const lang = useGame((s) => s.lang);
-  if (phase !== "moon" && phase !== "explore") return null;
+  if ((phase !== "moon" && phase !== "explore") || driving) return null;
   const near = phase === "moon" ? moonNear : marsNear;
   const btn = "touch-btn rounded-full border border-[#ffd97d]/60 bg-black/45 text-[#ffd97d] font-semibold touch-none select-none active:scale-90 transition-transform flex items-center justify-center";
   return (
@@ -1110,6 +1112,7 @@ export function Overlays() {
       <SettingsPanel />
       <Joystick />
       <TouchActions />
+      <RoverDrive />
       <MobileLandscape />
       <SojournerEncounter />
       <SpiritEncounter />
