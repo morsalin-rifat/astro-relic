@@ -37,7 +37,7 @@ class VoicePlayer {
   }
 
   /** Fast-forward: end the clip now and run its onEnd (story continues). */
-  skip() { const f = this.end; if (f) f(); else this.stop(); if (this.el) { this.el.pause(); } }
+  skip() { const el = this.el; const f = this.end; if (el) { el.onended = null; el.onerror = null; el.pause(); } if (f) f(); else this.stop(); }
 
   isPlaying() { return !!this.el; }
 
